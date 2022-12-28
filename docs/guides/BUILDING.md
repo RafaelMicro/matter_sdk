@@ -24,7 +24,7 @@ Build system features:
 To check out the Matter repository:
 
 ```
-git clone --recurse-submodules git@github.com:project-chip/connectedhomeip.git
+git clone --recurse-submodules git@github.com:RafaelMicro/matter_sdk.git
 ```
 
 If you already have a checkout, run the following command to sync submodules:

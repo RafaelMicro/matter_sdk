@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+
+#
+# Copyright (c) 2022 Project CHIP Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+set -e
+
+_install_lcov() {
+    if ! lcov --version >/dev/null 2>&1; then
+        echo "lcov not installed. Installing..."
+        case "$(uname)" in
+            "Darwin")
+                brew install lcov
+                ;;
+            "Linux")
+                sudo apt-get update
+                sudo apt-get install -y lcov
+                ;;
+            *)
+                die
+                ;;
+        esac
+    fi
+}
+
+_install_lcov
+
+_normpath() {
+    python3 -c "import os.path; print(os.path.normpath('$@'))"
+}
+
+CHIP_ROOT=$(_normpath "$(dirname "$0")/..")
+OUTPUT_ROOT="$CHIP_ROOT/out/coverage"
+COVERAGE_ROOT="$OUTPUT_ROOT/coverage"
+skip_gn=false
+run_yaml=false
+
+help() {
+
+    echo "Usage: $file_name [ options ... ]"
+
+    echo "General Options:
+  -h, --help                Display this information.
+  -f, --full                Run both yaml and unit tests for unified coverage.
+Input Options:
+  -o, --output_root         Set the build output directory.  When set manually, performs only lcov stage
+                            on provided build output.  Assumes output_root has been built with 'use_coverage=true'
+                            and that 'ninja check' was run.
+  "
+}
+
+file_name=${0##*/}
+
+while (($#)); do
+    case $1 in
+        --help | -h)
+            help
+            exit 1
+            ;;
+        --full | -f)
+            run_yaml=true
+            ;;
+        --output_root | -o)
+            OUTPUT_ROOT=$2
+            COVERAGE_ROOT="$OUTPUT_ROOT/coverage"
+            skip_gn=true
+            shift
+            ;;
+        -*)
+            help
+            echo "Unknown Option \"$1\""
+            exit 1
+            ;;
+    esac
+    shift
+done
+
+# Ensure we have a compilation environment
+source "$CHIP_ROOT/scripts/activate.sh"
+
+# Generates ninja files
+if [ "$skip_gn" == false ]; then
+    gn --root="$CHIP_ROOT" gen "$OUTPUT_ROOT" --args='use_coverage=true chip_build_all_clusters_app=true'
+    ninja -C "$OUTPUT_ROOT"
+fi
+
+# Run unit tests
+if [ "$skip_gn" == false ]; then
+    ninja -C "$OUTPUT_ROOT" check
+fi
+
+# Run yaml tests
+if [ "$run_yaml" == true ]; then
+    scripts/run_in_build_env.sh \
+        "./scripts/tests/run_test_suite.py \
+         --chip-tool ""$OUTPUT_ROOT/chip-tool \
+         run \
+         --iterations 1 \
+         --test-timeout-seconds 120 \
+         --all-clusters-app ""$OUTPUT_ROOT/chip-all-clusters-app
+      "
+fi
+
+# Remove unit test itself from coverage statistics
+find "$OUTPUT_ROOT/obj/src/" -depth -name 'tests' -exec rm -rf {} \;
+
+mkdir -p "$COVERAGE_ROOT"
+lcov --initial --capture --directory "$OUTPUT_ROOT/obj/src" --exclude="$PWD"/zzz_generated/* --exclude="$PWD"/third_party/* --exclude=/usr/include/* --output-file "$COVERAGE_ROOT/lcov_base.info"
+lcov --capture --directory "$OUTPUT_ROOT/obj/src" --exclude="$PWD"/zzz_generated/* --exclude="$PWD"/third_party/* --exclude=/usr/include/* --output-file "$COVERAGE_ROOT/lcov_test.info"
+lcov --add-tracefile "$COVERAGE_ROOT/lcov_base.info" --add-tracefile "$COVERAGE_ROOT/lcov_test.info" --output-file "$COVERAGE_ROOT/lcov_final.info"
+genhtml "$COVERAGE_ROOT/lcov_final.info" --output-directory "$COVERAGE_ROOT/html"

@@ -1,0 +1,144 @@
+# Copyright (c) 2020 Project CHIP Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build_overrides/chip.gni")
+import("//build_overrides/openthread.gni")
+import("//build_overrides/rt582_sdk.gni")
+
+import("${rt582_sdk_build_root}/rt582_sdk.gni")
+import("${chip_root}/src/platform/device.gni")
+
+openthread_rt582_root = "${chip_root}/third_party/openthread/ot-rt582"
+if(!use_static_sdk_lib) {
+  openthread_platform_root = "${chip_root}/third_party/openthread/platforms/rt582"
+}
+
+config("openthread_rt582_config") {
+  include_dirs = [ "${chip_root}/examples/platform/rt582" ]
+}
+
+source_set("openthread_core_config_rt582") {
+  sources = [
+    "${openthread_rt582_root}/openthread/src/cli/cli_config.h",
+    "${chip_root}/examples/platform/rt582/project_include/OpenThreadConfig.h",
+  ]
+  public_deps = [ "${rt582_sdk_build_root}:rt582_sdk" ]
+
+  public_configs = [ ":openthread_rt582_config" ]
+  
+}
+
+source_set("libopenthread-rt582") {
+  deps =[
+    ":openthread-rt582-platform",
+    ":openthread-rt582-root",
+  ]
+}
+
+static_library("openthread-rt582-platform") {
+  public_deps = [
+    ":openthread_core_config_rt582",
+    "${openthread_rt582_root}/openthread/src/core:libopenthread_core_headers",
+    "..:libopenthread-platform",
+    "..:libopenthread-platform-utils",
+  ]
+  include_dirs = [ 
+    "${chip_root}/examples/platform/rt582/project_include/",
+   ]
+
+  if (chip_openthread_ftd) {
+    public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+  } else {
+    public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+  }
+  
+  if(use_static_sdk_lib) {
+    libs=["${chip_root}/third_party/rafael/rt58x_sdk/libotrt582platform.a"] 
+  }
+  else {
+    output_name = "libotrt582platform"
+    output_dir = "${root_out_dir}/lib"
+
+    sources = [
+      "${openthread_platform_root}/rt58x/src/alarm.c",
+      "${openthread_platform_root}/rt58x/src/entropy.c",
+      "${openthread_platform_root}/rt58x/src/flash.c",
+      "${openthread_platform_root}/rt58x/src/logging.c",
+      "${openthread_platform_root}/rt58x/src/mac_frame.cpp",
+      "${openthread_platform_root}/rt58x/src/misc.c",
+      "${openthread_platform_root}/rt58x/src/radio.c",
+      "${openthread_platform_root}/rt58x/src/soft_source_match_table.c",
+      "${openthread_platform_root}/rt58x/src/system.c",
+      "${openthread_platform_root}/rt58x/src/uart.c",
+    ]
+  }
+}
+
+static_library("openthread-rt582-root") {
+  public_deps = [
+    ":openthread_core_config_rt582",
+    "${openthread_rt582_root}/openthread/src/core:libopenthread_core_headers",
+    "..:libopenthread-platform",
+    "..:libopenthread-platform-utils",
+  ]
+  include_dirs = [ 
+    "${chip_root}/examples/platform/rt582/project_include/",
+   ]
+
+  if (chip_openthread_ftd) {
+    public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+  } else {
+    public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+  }
+
+  if(use_static_sdk_lib) {
+    libs=["${chip_root}/third_party/rafael/rt58x_sdk/libotrt582.a"] 
+  }
+  else {
+    output_name = "libotrt582"
+    output_dir = "${root_out_dir}/lib"
+    
+    sources = [
+      "${openthread_rt582_root}/openthread/examples/apps/cli/cli_uart.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_coap.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_coap.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_coap_secure.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_coap_secure.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_commissioner.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_commissioner.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_config.h",
+      "${openthread_rt582_root}/openthread/src/cli/cli_dataset.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_dataset.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_history.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_history.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_joiner.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_joiner.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_network_data.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_network_data.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_output.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_output.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_srp_client.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_srp_client.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_srp_server.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_srp_server.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_tcp.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_tcp.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_udp.cpp",
+      "${openthread_rt582_root}/openthread/src/cli/cli_udp.hpp",
+      "${openthread_rt582_root}/openthread/src/cli/x509_cert_key.hpp",
+    ]
+  }
+}

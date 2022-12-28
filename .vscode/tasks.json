@@ -1,0 +1,107 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ISP flash tool",
+            "command": "/mnt/c/Users/SW/Desktop/VM/isp_download_cmd/isp_download_tool.exe -a ${workspaceFolder}/out/${input:exampleproject}/RT582/chip-rt582-${input:exampleproject}-example.bin -p COM${input:COMPort}",
+            "type": "shell",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+        {
+            "label": "launchJLink",
+            "command": "'/mnt/c/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe' -if swd -device ARMCM3 -nolocalhostonly",
+            "type": "shell",
+            "isBackground": true,
+            "problemMatcher": []
+        },
+
+        {
+            "label": "postDebugKill",
+            "command": "echo ${input:terminate}",
+            "type": "shell"
+        },
+        {
+            "label": "RT matter dev setup",
+            "type": "shell",
+            "command": "echo 'Env setup finished'",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "RT matter image build (Step I)",
+                "RT matter container build (Step II)",
+                "RT matter container env setup (Step III)"
+            ]
+        },
+        {
+            "label": "RT matter image build (Step I)",
+            "type": "shell",
+            "command": "docker build -f ${workspaceFolder}/.devcontainer/RT582_Dockerfile -t rafael_matter . --no-cache",
+            "group": "build"
+        },
+        {
+            "label": "RT matter container build (Step II)",
+            "type": "shell",
+            "command": "docker run -i -d --name RT_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter",
+            "group": "build"
+        },
+        {
+            "label": "RT matter container env run/setup (Step III)",
+            "type": "shell",
+            "command": "docker exec RT_matter_builder bash /var/chip/scripts/activate.sh",
+            "group": "build"
+        },
+        {
+            "label": "Build RT example",
+            "type": "shell",
+            "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject}",
+            "group": "build"
+        },
+        {
+            "label": "Remove output of RT building example",
+            "type": "shell",
+            "command": "docker exec RT_matter_builder rm -fr /var/chip/out/${input:exampleproject}/RT582",
+            "group": "build"
+        },
+        {
+            // Clean Build RT example
+            "label": "Clean build RT example",
+            "type": "shell",
+            "command": "echo '${input:exampleproject} building finished'",
+            "dependsOrder": "sequence",
+            "dependsOn": ["Remove out of RT example", "Build RT example"]
+        }
+        // { // Build RT lighting example
+        //     "label": "Build RT lighting example",
+        //     "type": "shell",
+        //     "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/lighting-app/rt582 /var/chip/out/lighting-app",
+        //     "group": "build",
+        //     "problemMatcher": {
+        //         "base": "$gcc"
+        //     }
+        // },
+        // { // Build RT light-switch example
+        //     "label": "Build RT light-switch example",
+        //     "type": "shell",
+        //     "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/light-switch-app/rt582 /var/chip/out/light-switch-app",
+        //     "group": "build",
+        //     "problemMatcher": {
+        //         "base": "$gcc"
+        //     }
+        // },
+    ],
+    "inputs": [
+        {
+            "type": "pickString",
+            "id": "exampleproject",
+            "description": "Which example do you want to create?",
+            "options": ["lighting-app", "light-switch-app", "lock-app"],
+            "default": ""
+        },
+        {
+            "type": "promptString",
+            "id": "COMPort",
+            "description": "Which COM port's number do you want to flash? (input the number of port number)",
+            "default": ""
+        }
+    ]
+}

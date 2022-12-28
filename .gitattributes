@@ -1,0 +1,13 @@
+# Mark all files in generated folders as auto-generated to hide them in diffs
+**/gen/** linguist-generated
+# Same for files in zap-generated folders
+**/zap-generated/** linguist-generated
+# And some specific generated files
+src/controller/python/chip/clusters/CHIPClusters.py linguist-generated
+src/controller/python/chip/clusters/Objects.py linguist-generated
+
+* text=auto
+# Let bat file use CRLF linebreak
+**/*.bat eol=crlf
+# Let sh file use LF linebreak
+**/*.sh eol=lf

@@ -53,11 +53,11 @@ static_library("shell") {
       "MainLoopEFR32.cpp",
       "streamer_efr32.cpp",
     ]
-  } else if (chip_device_platform == "rt582") {
-    sources += [
+    } else if (chip_device_platform == "rt582") {
+      sources += [
       "MainLoopRT582.cpp",
       "streamer_rt582.cpp",
-    ]
+    ]    
   } else if (chip_device_platform == "k32w0") {
     sources += [
       "MainLoopDefault.cpp",
@@ -87,12 +87,12 @@ static_library("shell") {
   } else if (chip_device_platform == "bl602") {
     sources += [
       "MainLoopDefault.cpp",
-      "streamer_bl602.cpp",
+      "streamer_bouffalolab.cpp",
     ]
   } else if (chip_device_platform == "bl702") {
     sources += [
       "MainLoopDefault.cpp",
-      "streamer_bl702.cpp",
+      "streamer_bouffalolab.cpp",
     ]
   } else if (chip_device_platform == "cc13x2_26x2") {
     sources += [
@@ -108,6 +108,11 @@ static_library("shell") {
     sources += [
       "MainLoopDefault.cpp",
       "streamer_ameba.cpp",
+    ]
+  } else if (chip_device_platform == "openiotsdk") {
+    sources += [
+      "MainLoopDefault.cpp",
+      "streamer_openiotsdk.cpp",
     ]
   } else {
     sources += [ "MainLoopDefault.cpp" ]

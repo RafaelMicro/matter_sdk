@@ -9,11 +9,14 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.matter.tv.app.api.IMatterAppAgent;
 import com.matter.tv.app.api.MatterIntentConstants;
 import com.matter.tv.server.model.ContentApp;
 import com.matter.tv.server.receivers.ContentAppDiscoveryService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class ContentAppAgentService extends Service {
@@ -24,7 +27,21 @@ public class ContentAppAgentService extends Service {
   public static final String EXTRA_RESPONSE_RECEIVING_PACKAGE = "EXTRA_RESPONSE_RECEIVING_PACKAGE";
   public static final String EXTRA_RESPONSE_ID = "EXTRA_RESPONSE_ID";
 
+  public static final String FAILURE_KEY = "PlatformError";
+  public static final String FAILURE_STATUS_KEY = "Status";
+  public static final int FAILED_UNSUPPORTED_ENDPOINT = 0x7f;
+  public static final int FAILED_UNSUPPORTED_CLUSTER = 0xc3;
+  public static final int FAILED_UNSUPPORTED_COMMAND = 0x81;
+  public static final int FAILED_UNSUPPORTED_ATTRIBUTE = 0x86;
+  public static final int FAILED_UNKNOWN = 0x01;
+  public static final int FAILED_TIMEOUT = 0x94;
+
+  private static final int COMMAND_TIMEOUT = 8; // seconds
+  private static final int ATTRIBUTE_TIMEOUT = 2; // seconds
+
   private static ResponseRegistry responseRegistry = new ResponseRegistry();
+  private static ExecutorService executorService =
+      Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
   private final IBinder appAgentBinder =
       new IMatterAppAgent.Stub() {
@@ -63,8 +80,14 @@ public class ContentAppAgentService extends Service {
           ContentApp contentApp =
               ContentAppDiscoveryService.getReceiverInstance().getDiscoveredContentApp(pkg);
           if (contentApp != null && contentApp.getEndpointId() != ContentApp.INVALID_ENDPOINTID) {
-            AppPlatformService.get()
-                .reportAttributeChange(contentApp.getEndpointId(), clusterId, attributeId);
+            // Make this call async so that even if the content apps make this call during command
+            // processing and synchronously, the command processing thread will not block for the
+            // chip stack lock.
+            executorService.execute(
+                () -> {
+                  AppPlatformService.get()
+                      .reportAttributeChange(contentApp.getEndpointId(), clusterId, attributeId);
+                });
             return true;
           }
           Log.e(TAG, "No matter content app found for package " + pkg);
@@ -100,13 +123,7 @@ public class ContentAppAgentService extends Service {
         MatterIntentConstants.EXTRA_DIRECTIVE_RESPONSE_PENDING_INTENT,
         getPendingIntentForResponse(context, packageName, messageId));
     context.sendBroadcast(in);
-    responseRegistry.waitForMessage(messageId, 10, TimeUnit.SECONDS);
-    String response = responseRegistry.readAndRemoveResponse(messageId);
-    if (response == null) {
-      response = "";
-    }
-    Log.d(TAG, "Response " + response + " being returned for message " + messageId);
-    return response;
+    return getResponse(messageId, COMMAND_TIMEOUT);
   }
 
   public static String sendAttributeReadRequest(
@@ -127,10 +144,61 @@ public class ContentAppAgentService extends Service {
         MatterIntentConstants.EXTRA_DIRECTIVE_RESPONSE_PENDING_INTENT,
         getPendingIntentForResponse(context, packageName, messageId));
     context.sendBroadcast(in);
-    responseRegistry.waitForMessage(messageId, 10, TimeUnit.SECONDS);
-    String response = responseRegistry.readAndRemoveResponse(messageId);
-    if (response == null) {
-      response = "";
+    return getResponse(messageId, ATTRIBUTE_TIMEOUT);
+  }
+
+  @NonNull
+  private static String getResponse(int messageId, int timeout) {
+    ResponseRegistry.WaitState status =
+        responseRegistry.waitForMessage(messageId, timeout, TimeUnit.SECONDS);
+    String response = "";
+    switch (status) {
+      case SUCCESS:
+      case INVALID_COUNTER:
+        response = responseRegistry.readAndRemoveResponse(messageId);
+        if (response == null) {
+          response =
+              "{\""
+                  + FAILURE_KEY
+                  + "\":{\""
+                  + ContentAppAgentService.FAILURE_STATUS_KEY
+                  + "\":"
+                  + FAILED_UNKNOWN
+                  + "}}";
+        }
+        break;
+      case TIMED_OUT:
+        response =
+            "{\""
+                + FAILURE_KEY
+                + "\":{\""
+                + ContentAppAgentService.FAILURE_STATUS_KEY
+                + "\":"
+                + FAILED_TIMEOUT
+                + "}}";
+        break;
+      case INTERRUPTED:
+        response = responseRegistry.readAndRemoveResponse(messageId);
+        if (response == null) {
+          response =
+              "{\""
+                  + FAILURE_KEY
+                  + "\":{\""
+                  + ContentAppAgentService.FAILURE_STATUS_KEY
+                  + "\":"
+                  + FAILED_TIMEOUT
+                  + "}}";
+        }
+        break;
+      default:
+        response =
+            "{\""
+                + FAILURE_KEY
+                + "\":{\""
+                + ContentAppAgentService.FAILURE_STATUS_KEY
+                + "\":"
+                + FAILED_UNKNOWN
+                + "}}";
     }
     Log.d(TAG, "Response " + response + " being returned for message " + messageId);
     return response;

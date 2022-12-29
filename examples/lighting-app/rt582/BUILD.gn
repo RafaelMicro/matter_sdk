@@ -20,14 +20,7 @@ import("//build_overrides/rt582_sdk.gni")
 import("${build_root}/config/defaults.gni")
 import("${rt582_sdk_build_root}/rt582_executable.gni")
 import("${rt582_sdk_build_root}/rt582_sdk.gni")
-
-import("${chip_root}/examples/common/pigweed/pigweed_rpcs.gni")
 import("${chip_root}/src/platform/device.gni")
-
-if (chip_enable_pw_rpc) {
-  import("//build_overrides/pigweed.gni")
-  import("$dir_pw_build/target_types.gni")
-}
 
 assert(current_os == "freertos")
 
@@ -85,13 +78,6 @@ rt582_sdk("sdk") {
     "CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR=${setupDiscriminator}",
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
   ]
-
-  if (chip_enable_pw_rpc) {
-    defines += [
-      "HAL_VCOM_ENABLE=1",
-      "PW_RPC_ENABLED",
-    ]
-  }
 }
 
 rt582_executable("lighting_app") {
@@ -137,51 +123,6 @@ rt582_executable("lighting_app") {
   if (chip_enable_ota_requestor) {
     defines += [ "RT582_OTA_ENABLED" ]
     sources += [ "${examples_plat_dir}/OTAConfig.cpp" ]
-  }
-
-  if (chip_enable_pw_rpc) {
-    defines += [
-      "PW_RPC_ENABLED",
-      "PW_RPC_ATTRIBUTE_SERVICE=1",
-      "PW_RPC_BUTTON_SERVICE=1",
-      "PW_RPC_DESCRIPTOR_SERVICE=1",
-      "PW_RPC_DEVICE_SERVICE=1",
-      "PW_RPC_LIGHTING_SERVICE=1",
-      "PW_RPC_OTCLI_SERVICE=1",
-      "PW_RPC_THREAD_SERVICE=1",
-      "PW_RPC_TRACING_SERVICE=1",
-    ]
-
-    sources += [
-      "${chip_root}/examples/common/pigweed/RpcService.cpp",
-      "${chip_root}/examples/common/pigweed/rt582/PigweedLoggerMutex.cpp",
-      "${examples_plat_dir}/PigweedLogger.cpp",
-      "${examples_plat_dir}/Rpc.cpp",
-    ]
-
-    deps += [
-      "$dir_pw_hdlc:rpc_channel_output",
-      "$dir_pw_stream:sys_io_stream",
-      "$dir_pw_trace",
-      "$dir_pw_trace_tokenized",
-      "$dir_pw_trace_tokenized:trace_rpc_service",
-      "${chip_root}/config/rt582/lib/pw_rpc:pw_rpc",
-      "${chip_root}/examples/common/pigweed:attributes_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:button_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:descriptor_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:device_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:lighting_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:ot_cli_service.nanopb_rpc",
-      "${chip_root}/examples/common/pigweed:thread_service.nanopb_rpc",
-      "${examples_plat_dir}/pw_sys_io:pw_sys_io_rt582",
-    ]
-
-    deps += pw_build_LINK_DEPS
-
-    include_dirs += [
-      "${chip_root}/examples/common",
-      "${chip_root}/examples/common/pigweed/rt582",
-    ]
   }
 
   ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"

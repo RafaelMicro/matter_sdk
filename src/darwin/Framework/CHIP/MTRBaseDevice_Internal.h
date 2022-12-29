@@ -23,7 +23,18 @@
 #include <app/ConcreteEventPath.h>
 #include <app/DeviceProxy.h>
 
+@class MTRDeviceController;
+
 NS_ASSUME_NONNULL_BEGIN
+
+static inline MTRTransportType MTRMakeTransportType(chip::Transport::Type type)
+{
+    static_assert(MTRTransportTypeUndefined == (uint8_t) chip::Transport::Type::kUndefined, "MTRTransportType != Transport::Type");
+    static_assert(MTRTransportTypeUDP == (uint8_t) chip::Transport::Type::kUdp, "MTRTransportType != Transport::Type");
+    static_assert(MTRTransportTypeBLE == (uint8_t) chip::Transport::Type::kBle, "MTRTransportType != Transport::Type");
+    static_assert(MTRTransportTypeTCP == (uint8_t) chip::Transport::Type::kTcp, "MTRTransportType != Transport::Type");
+    return static_cast<MTRTransportType>(type);
+}
 
 @interface MTRBaseDevice ()
 
@@ -54,12 +65,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, readonly) chip::NodeId nodeID;
 
 /**
- * Controllers are created via the MTRDeviceControllerFactory object.
- */
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
-
-/**
  * Initialize the device object as a CASE device with the given node id and
  * controller.  This will always succeed, even if there is no such node id on
  * the controller's fabric, but attempts to actually use the MTRBaseDevice will
@@ -67,6 +72,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (instancetype)initWithNodeID:(NSNumber *)nodeID controller:(MTRDeviceController *)controller;
 
+@end
+
+@interface MTRClusterPath ()
+- (instancetype)initWithPath:(const chip::app::ConcreteClusterPath &)path;
 @end
 
 @interface MTRAttributePath ()

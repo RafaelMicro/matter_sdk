@@ -21,9 +21,9 @@
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 
-// #include <drivers/flash.h>
-// #include <fprotect.h>
-// #include <pm_config.h>
+#include <drivers/flash.h>
+#include <fprotect.h>
+#include <pm_config.h>
 #include <system/SystemError.h>
 
 #include "FactoryDataParser.h"
@@ -99,6 +99,9 @@ public:
     CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
     CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
     CHIP_ERROR GetProductId(uint16_t & productId) override;
+    CHIP_ERROR GetPartNumber(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductURL(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductLabel(char * buf, size_t bufSize) override;
     CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
     CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
     CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;

@@ -69,7 +69,19 @@
             "command": "echo '${input:exampleproject} building finished'",
             "dependsOrder": "sequence",
             "dependsOn": ["Remove out of RT example", "Build RT example"]
-        }
+        },
+        {
+            "label": "Stop RT container",
+            "type": "shell",
+            "command": "docker stop RT_matter_builder",
+            "group": "build"
+        },
+        {
+            "label": "Start RT container",
+            "type": "shell",
+            "command": "docker start RT_matter_builder",
+            "group": "build"
+        },
         // { // Build RT lighting example
         //     "label": "Build RT lighting example",
         //     "type": "shell",

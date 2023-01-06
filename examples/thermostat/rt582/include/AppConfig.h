@@ -1,6 +1,7 @@
 /*
  *
  *    Copyright (c) 2020 Project CHIP Authors
+ *    Copyright (c) 2019 Google LLC.
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +16,15 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-/*******************************************************************************/
+
 #pragma once
 
-#include "util_log.h"
+// #include "efr32_utils.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// ---- Lighting Example App Config ----
 
-void init_rt582Platform(void);
-void init_rt582_led_flash(uint32_t pin, uint32_t onTimeMs, uint32_t offTimeMs);
-void rt582_led_level_ctl(uint32_t id, uint8_t current_lv);
-#ifdef __cplusplus
-}
-#endif
+#define APP_TASK_NAME "Lit"
+
+// Time it takes in ms for the simulated actuator to move from one
+// state to another.
+#define ACTUATOR_MOVEMENT_PERIOS_MS 10

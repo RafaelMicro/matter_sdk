@@ -37,7 +37,7 @@
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
 #endif
 
-#include "task_hci.h"
+#include "task_dual.h"
 #include "ble_event.h"
 #include "ble_profile.h"
 #include "ble_att_gatt.h"
@@ -875,7 +875,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
 #if 1
     gt_app_cfg.pf_evt_indication = ble_evt_indication_cb;
 
-    task_hci_init();
+    task_dual_init();
 
     ble_host_stack_init(&gt_app_cfg);
 

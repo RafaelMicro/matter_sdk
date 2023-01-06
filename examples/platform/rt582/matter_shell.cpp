@@ -79,7 +79,7 @@ void startShellTask()
     // TODO move at least OTCLI to default commands in lib/shell/commands
     cmd_misc_init();
     cmd_otcli_init();
-    cmd_rafael_init();
+    //cmd_rafael_init();
 
     shellTaskHandle = xTaskCreateStatic(MatterShellTask, "matter_cli", ArraySize(shellStack), NULL, SHELL_TASK_PRIORITY, shellStack,
                                         &shellTaskStruct);

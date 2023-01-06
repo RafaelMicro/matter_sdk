@@ -351,7 +351,80 @@ void AppTask::InitServer(intptr_t arg)
         sCommissioned = true;
         UpdateStatusLED();
     }
+    // Initial lock state
+    chip::app::DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> state;
+    chip::EndpointId endpointId{ 1 };
+    //chip::DeviceLayer::PlatformMgr().LockChipStack();
+    chip::app::Clusters::DoorLock::Attributes::LockState::Get(endpointId, state);
 
+    uint8_t numberOfCredentialsPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfCredentialsSupportedPerUser(endpointId, numberOfCredentialsPerUser))
+    {
+        ChipLogError(Zcl,
+                     "Unable to get number of credentials supported per user when initializing lock endpoint, defaulting to 5 "
+                     "[endpointId=%d]",
+                     endpointId);
+        numberOfCredentialsPerUser = 5;
+    }
+
+    uint16_t numberOfUsers = 0;
+    if (!DoorLockServer::Instance().GetNumberOfUserSupported(endpointId, numberOfUsers))
+    {
+        ChipLogError(Zcl,
+                     "Unable to get number of supported users when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+                     endpointId);
+        numberOfUsers = 10;
+    }
+
+    uint8_t numberOfWeekdaySchedulesPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfWeekDaySchedulesPerUserSupported(endpointId, numberOfWeekdaySchedulesPerUser))
+    {
+        ChipLogError(
+            Zcl,
+            "Unable to get number of supported weekday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+            endpointId);
+        numberOfWeekdaySchedulesPerUser = 10;
+    }
+
+    uint8_t numberOfYeardaySchedulesPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfYearDaySchedulesPerUserSupported(endpointId, numberOfYeardaySchedulesPerUser))
+    {
+        ChipLogError(
+            Zcl,
+            "Unable to get number of supported yearday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+            endpointId);
+        numberOfYeardaySchedulesPerUser = 10;
+    }
+
+    uint8_t numberOfHolidaySchedules = 0;
+    if (!DoorLockServer::Instance().GetNumberOfHolidaySchedulesSupported(endpointId, numberOfHolidaySchedules))
+    {
+        ChipLogError(
+            Zcl,
+            "Unable to get number of supported holiday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+            endpointId);
+        numberOfHolidaySchedules = 10;
+    }
+
+    //chip::DeviceLayer::PlatformMgr().UnlockChipStack();
+
+    err = LockMgr().Init(state,
+                         ParamBuilder()
+                             .SetNumberOfUsers(numberOfUsers)
+                             .SetNumberOfCredentialsPerUser(numberOfCredentialsPerUser)
+                             .SetNumberOfWeekdaySchedulesPerUser(numberOfWeekdaySchedulesPerUser)
+                             .SetNumberOfYeardaySchedulesPerUser(numberOfYeardaySchedulesPerUser)
+                             .SetNumberOfHolidaySchedules(numberOfHolidaySchedules)
+                             .GetLockParam());
+
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "LockMgr().Init() failed");
+    }
+
+    LockMgr().SetCallbacks(ActionInitiated, ActionCompleted);    
+
+    chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
 }
 
 void AppTask::UpdateStatusLED()
@@ -413,113 +486,14 @@ CHIP_ERROR AppTask::Init()
     ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
     
 
-    bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
-
-    // Initial lock state
-    chip::app::DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> state;
-    chip::EndpointId endpointId{ 1 };
-    chip::DeviceLayer::PlatformMgr().LockChipStack();
-    chip::app::Clusters::DoorLock::Attributes::LockState::Get(endpointId, state);
-
-    uint8_t numberOfCredentialsPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfCredentialsSupportedPerUser(endpointId, numberOfCredentialsPerUser))
-    {
-        ChipLogError(Zcl,
-                     "Unable to get number of credentials supported per user when initializing lock endpoint, defaulting to 5 "
-                     "[endpointId=%d]",
-                     endpointId);
-        numberOfCredentialsPerUser = 5;
-    }
-
-    uint16_t numberOfUsers = 0;
-    if (!DoorLockServer::Instance().GetNumberOfUserSupported(endpointId, numberOfUsers))
-    {
-        ChipLogError(Zcl,
-                     "Unable to get number of supported users when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-                     endpointId);
-        numberOfUsers = 10;
-    }
-
-    uint8_t numberOfWeekdaySchedulesPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfWeekDaySchedulesPerUserSupported(endpointId, numberOfWeekdaySchedulesPerUser))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported weekday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfWeekdaySchedulesPerUser = 10;
-    }
-
-    uint8_t numberOfYeardaySchedulesPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfYearDaySchedulesPerUserSupported(endpointId, numberOfYeardaySchedulesPerUser))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported yearday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfYeardaySchedulesPerUser = 10;
-    }
-
-    uint8_t numberOfHolidaySchedules = 0;
-    if (!DoorLockServer::Instance().GetNumberOfHolidaySchedulesSupported(endpointId, numberOfHolidaySchedules))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported holiday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfHolidaySchedules = 10;
-    }
-
-    chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-
-    err = LockMgr().Init(state,
-                         ParamBuilder()
-                             .SetNumberOfUsers(numberOfUsers)
-                             .SetNumberOfCredentialsPerUser(numberOfCredentialsPerUser)
-                             .SetNumberOfWeekdaySchedulesPerUser(numberOfWeekdaySchedulesPerUser)
-                             .SetNumberOfYeardaySchedulesPerUser(numberOfYeardaySchedulesPerUser)
-                             .SetNumberOfHolidaySchedules(numberOfHolidaySchedules)
-                             .GetLockParam());
-
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "LockMgr().Init() failed");
-    }
-
-    LockMgr().SetCallbacks(ActionInitiated, ActionCompleted);    
-
-    chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR AppTask::StartAppTask()
-{
-    CHIP_ERROR err;
-    
-    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
-                                    sAppEventQueueBuffer, &sAppEventQueueStruct);
-    if (sAppEventQueue == nullptr)
-    {
-        ChipLogError(NotSpecified, "Failed to allocate app event queue");
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-    // Start App task.
-    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
-                                    ArraySize(appStack), nullptr, 1, appStack, &appTaskStruct);
-    if (sAppTaskHandle == nullptr)
-    {
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
+    //err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
+    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
@@ -537,7 +511,32 @@ CHIP_ERROR AppTask::StartAppTask()
     }
 
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
+    PlatformMgr().ScheduleWork(InitServer, 0);
 
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR AppTask::StartAppTask()
+{
+    CHIP_ERROR err;
+    
+    bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
+
+    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
+                                    sAppEventQueueBuffer, &sAppEventQueueStruct);
+    if (sAppEventQueue == nullptr)
+    {
+        ChipLogError(NotSpecified, "Failed to allocate app event queue");
+        return CHIP_ERROR_NO_MEMORY;
+    }
+
+    // Start App task.
+    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
+                                    ArraySize(appStack), nullptr, 1, appStack, &appTaskStruct);
+    if (sAppTaskHandle == nullptr)
+    {
+        return CHIP_ERROR_NO_MEMORY;
+    }
 #if CONFIG_CHIP_FACTORY_DATA
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
@@ -546,8 +545,6 @@ CHIP_ERROR AppTask::StartAppTask()
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
-
-    PlatformMgr().ScheduleWork(InitServer, 0);
 
     return CHIP_NO_ERROR;
 }

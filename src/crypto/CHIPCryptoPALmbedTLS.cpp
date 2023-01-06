@@ -55,6 +55,25 @@
 
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int mbedtls_spake2p_compute_L(uint8_t * Lout, const uint8_t * w1in, size_t w1in_len);
+
+extern int mbedtls_spake2p_compute_Z(mbedtls_ecp_group * grp, mbedtls_ecp_point * Z, mbedtls_mpi * y, mbedtls_ecp_point * X,
+                                       mbedtls_mpi * w0, mbedtls_ecp_point * M);  
+extern int mbedtls_spake2p_verifier_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp_point * V, mbedtls_mpi * y, mbedtls_ecp_point * L);
+
+extern int mbedtls_spake2p_prover_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp_point * V, mbedtls_mpi * w0, mbedtls_mpi * w1,
+                                            mbedtls_ecp_point * Y, mbedtls_ecp_point * N);
+                                       
+
+#ifdef __cplusplus
+}
+#endif
+
+#define RT582_HW_CRYPTO_ENGINE_ENABLE
+
 namespace chip {
 namespace Crypto {
 
@@ -1201,6 +1220,7 @@ CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::PointCofactorMul(void * R)
     return CHIP_NO_ERROR;
 }
 
+#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
 CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeL(uint8_t * Lout, size_t * L_len, const uint8_t * w1in, size_t w1in_len)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;
@@ -1239,6 +1259,72 @@ exit:
 
     return error;
 }
+#else
+CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeL(uint8_t * Lout, size_t * L_len, const uint8_t * w1in, size_t w1in_len)
+{
+    CHIP_ERROR error = CHIP_NO_ERROR;
+
+    uint8_t buf[64];
+
+    mbedtls_spake2p_compute_L(buf, w1in, w1in_len);
+
+    /* for MBEDTLS_ECP_PF_UNCOMPRESSED mode */
+    Lout[0] = 0x04;
+    memcpy(Lout+1, buf, 64);
+    * L_len = 65;
+
+    return error;
+}
+
+#endif
+
+
+CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeZ(void *Z_in, void * y_in, void * X_in, void * w0_in, void * M_in)
+{
+    CHIP_ERROR error = CHIP_NO_ERROR;
+    Spake2p_Context * context = to_inner_spake2p_context(&mSpake2pContext);
+
+    mbedtls_ecp_point *the_Z = (mbedtls_ecp_point *) Z_in;
+    mbedtls_ecp_point *the_X = (mbedtls_ecp_point *) X_in;
+    mbedtls_ecp_point *the_M = (mbedtls_ecp_point *) M_in;
+    mbedtls_mpi       *the_y = (mbedtls_mpi *) y_in;
+    mbedtls_mpi       *the_w0 = (mbedtls_mpi *) w0_in;  
+
+    mbedtls_spake2p_compute_Z(&context->curve, the_Z, the_y, the_X, the_w0, the_M);
+
+    return error;
+}
+
+CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeVerifierV(void * V_in, void * y_in, void * L_in)
+{
+    CHIP_ERROR error = CHIP_NO_ERROR;
+    Spake2p_Context * context = to_inner_spake2p_context(&mSpake2pContext);
+
+    mbedtls_ecp_point *the_V = (mbedtls_ecp_point *) V_in;
+    mbedtls_ecp_point *the_L = (mbedtls_ecp_point *) L_in; 
+    mbedtls_mpi       *the_y = (mbedtls_mpi *) y_in;   
+
+    mbedtls_spake2p_verifier_compute_V(&context->curve, the_V, the_y, the_L);
+
+    return error;
+}
+
+CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeProverV(void * V_in, void * w0_in, void * w1_in, void * XY_in, void * MN_in)
+{
+    CHIP_ERROR error = CHIP_NO_ERROR;
+    Spake2p_Context * context = to_inner_spake2p_context(&mSpake2pContext);
+
+    mbedtls_ecp_point *the_V = (mbedtls_ecp_point *) V_in;
+    mbedtls_ecp_point *the_XY = (mbedtls_ecp_point *) XY_in; 
+    mbedtls_ecp_point *the_MN = (mbedtls_ecp_point *) MN_in; 
+    mbedtls_mpi       *the_w0 = (mbedtls_mpi *) w0_in;   
+    mbedtls_mpi       *the_w1 = (mbedtls_mpi *) w1_in;   
+
+    mbedtls_spake2p_prover_compute_V(&context->curve, the_V, the_w0, the_w1, the_XY, the_MN);
+
+    return error;
+}
+
 
 CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::PointIsValid(void * R)
 {

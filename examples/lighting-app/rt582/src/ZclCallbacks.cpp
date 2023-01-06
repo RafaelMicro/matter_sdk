@@ -22,6 +22,7 @@
 
 #include "AppConfig.h"
 #include "LightingManager.h"
+#include "init_rt582Platform.h"
 
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
@@ -42,12 +43,11 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     {
         LightMgr().InitiateAction(AppEvent::kEventType_Light, *value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION);
     }
-    else if (clusterId == LevelControl::Id)
+    else if (clusterId == LevelControl::Id && attributeId == LevelControl::Attributes::CurrentLevel::Id)
     {
-        //ChipLogProgress(Zcl, "Level Control attribute ID: " ChipLogFormatMEI " Type: %u Value: %u, length %u",
-        //                ChipLogValueMEI(attributeId), type, *value, size);
+        ChipLogProgress(Zcl, "Cluster LevelControl: attribute CurrentLevel set to %u", *value);
 
-        // WIP Apply attribute change to Light
+        rt582_led_level_ctl(3, *value);
     }
     else if (clusterId == ColorControl::Id)
     {

@@ -23,9 +23,17 @@
 
 #include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/attribute-type.h>
+#include <app-common/zap-generated/attributes/Accessors.h>
+#include <app-common/zap-generated/callback.h>
+#include <app-common/zap-generated/cluster-objects.h>
+#include <app-common/zap-generated/command-id.h>
+#include <app-common/zap-generated/enums.h>
+#include <app-common/zap-generated/ids/Attributes.h>
+
+#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/cluster-id.h>
 #include <app/clusters/identify-server/identify-server.h>
-#include <app/clusters/on-off-server/on-off-server.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/server/Dnssd.h>
@@ -163,95 +171,6 @@ void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
 }
-void AppTask::OpenCommissioning(intptr_t arg)
-{
-    // Enable BLE advertisements
-    chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow();
-    ChipLogProgress(NotSpecified, "BLE advertising started. Waiting for Pairing.");
-}
-
-/**
- * Update cluster status after application level changes
- */
-void AppTask::UpdateClusterState(void)
-{
-    ChipLogProgress(NotSpecified, "UpdateClusterState");
-
-    // write the new on/off value
-    EmberAfStatus status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), false);
-
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
-    {
-        ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
-    }
-}
-
-void AppTask::ActionInitiated(LightingManager::Action_t aAction, int32_t aActor)
-{
-    // Placeholder for light action
-    if (aAction == LightingManager::ON_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light goes on");
-        rt582_led_level_ctl(3, 255);
-    }
-    else if (aAction == LightingManager::OFF_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light goes off ");
-        rt582_led_level_ctl(3, 0);
-    }
-}
-
-void AppTask::ActionCompleted(LightingManager::Action_t aAction)
-{
-    // Placeholder for light action completed
-    if (aAction == LightingManager::ON_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light On Action has been completed");
-    }
-    else if (aAction == LightingManager::OFF_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light Off Action has been completed");
-    }
-
-    if (sAppTask.mSyncClusterToButtonAction)
-    {
-        sAppTask.UpdateClusterState();
-        sAppTask.mSyncClusterToButtonAction = false;
-    }
-}
-
-void AppTask::LightActionEventHandler(AppEvent * aEvent)
-{
-    bool initiated = false;
-    LightingManager::Action_t action;
-    int32_t actor;
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
-    if (aEvent->Type == AppEvent::kEventType_Light)
-    {
-        action = static_cast<LightingManager::Action_t>(aEvent->LightEvent.Action);
-        actor  = aEvent->LightEvent.Actor;
-    }
-    else if (aEvent->Type == AppEvent::kEventType_Button)
-    {
-        action = (LightMgr().IsTurnedOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
-        actor  = AppEvent::kEventType_Button;
-    }
-    else
-    {
-        err = APP_ERROR_UNHANDLED_EVENT;
-    }
-
-    if (err == CHIP_NO_ERROR)
-    {
-        initiated = LightMgr().InitiateAction(actor, action);
-
-        if (!initiated)
-        {
-            ChipLogProgress(NotSpecified, "Action is already in progress or active.");
-        }
-    }
-}
 
 void AppTask::InitServer(intptr_t arg)
 {
@@ -284,24 +203,19 @@ void AppTask::InitServer(intptr_t arg)
         sCommissioned = true;
         UpdateStatusLED();
     }
-
-    // Setup light
-    err = LightMgr().Init();
+    err = SensorMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "LightingMgr().Init() failed");
-        //return err;
-    }
-    LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
+        ChipLogError(NotSpecified, "SensorMgr::Init() failed");
 
-    if(LightMgr().IsTurnedOn())
-    {
-        rt582_led_level_ctl(3, 255);
     }
-    else
+  
+    err = TempMgr().Init();
+    if (err != CHIP_NO_ERROR)
     {
-        rt582_led_level_ctl(3, 0);      
+        ChipLogError(NotSpecified, "TempMgr::Init() failed");
     }
+
 }
 
 void AppTask::UpdateStatusLED()
@@ -537,8 +451,43 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
 
     xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
 }
+uint8_t AppTask::_data_checksum_calc(uint8_t *p, uint8_t l)
+{
+    uint8_t cs = 0;
 
+    for(int i=0; i<l; i++)
+        cs+=p[i];
 
+    return (~cs);
+}
+void AppTask::UpdateThermoStatUI()
+{
+    uint8_t uart_report_data[15] = { 0xFF, 0xFC, 0xFC, 0xFF, 0x09, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCC };
+
+    info("Thermostat Status - M:%d T:%d'C H:%d'C C:%d'C", TempMgr().GetMode(), TempMgr().GetCurrentTemp(),
+               TempMgr().GetHeatingSetPoint(), TempMgr().GetCoolingSetPoint());
+
+    info("===========================================\n");
+
+    uart_report_data[7] = TempMgr().GetMode();
+
+    uart_report_data[8] = (TempMgr().GetCurrentTemp() & 0xFF);
+    uart_report_data[9] = (TempMgr().GetCurrentTemp() >> 8);
+
+    uart_report_data[10] = (TempMgr().GetHeatingSetPoint() & 0xFF);
+    uart_report_data[11] = (TempMgr().GetHeatingSetPoint() >> 8) & 0xFF;
+
+    uart_report_data[12] = (TempMgr().GetCoolingSetPoint() & 0xFF);
+    uart_report_data[13] = (TempMgr().GetCoolingSetPoint() >> 8) & 0xFF;
+
+    uart_report_data[14] = _data_checksum_calc(&uart_report_data[4], 10);
+    
+    for(int i=0;i<15;i++)
+    {
+        info("%02X ", uart_report_data[i]);
+    }
+    info("\n");
+}
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;

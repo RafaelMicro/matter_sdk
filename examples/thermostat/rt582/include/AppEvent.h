@@ -1,6 +1,7 @@
 /*
  *
  *    Copyright (c) 2020 Project CHIP Authors
+ *    Copyright (c) 2018 Nest Labs, Inc.
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +16,41 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-/*******************************************************************************/
+
 #pragma once
 
-#include "util_log.h"
+struct AppEvent;
+typedef void (*EventHandler)(AppEvent *);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct AppEvent
+{
+    enum AppEventTypes
+    {
+        kEventType_Button = 0,
+        kEventType_Timer,
+        kEventType_Install,
+    };
 
-void init_rt582Platform(void);
-void init_rt582_led_flash(uint32_t pin, uint32_t onTimeMs, uint32_t offTimeMs);
-void rt582_led_level_ctl(uint32_t id, uint8_t current_lv);
-#ifdef __cplusplus
-}
-#endif
+    uint16_t Type;
+
+    union
+    {
+        struct
+        {
+            uint8_t Action;
+            uint8_t ButtonIdx;
+
+        } ButtonEvent;
+        struct
+        {
+            void * Context;
+        } TimerEvent;
+        struct
+        {
+            uint8_t Action;
+            int32_t Actor;
+        } LightEvent;
+    };
+
+    EventHandler Handler;
+};

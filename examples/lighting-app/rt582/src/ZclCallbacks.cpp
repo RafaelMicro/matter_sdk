@@ -125,7 +125,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             {
                 hsv.s = *value;
                 // get hue from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, &hsv.h);
+                EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
                 assert(status == EMBER_ZCL_STATUS_SUCCESS);
             }
             ChipLogProgress(Zcl, "New HSV color: %u|%u", hsv.h, hsv.s);

@@ -319,7 +319,9 @@ void init_rt582Platform(void)
     init_rt582_led_level_ctl(2);
     init_rt582_led_level_ctl(3);
     init_rt582_led_level_ctl(4);
+    rt582_led_level_ctl(2, 0);
     rt582_led_level_ctl(3, 0);
+    rt582_led_level_ctl(4, 0);
     //otSysInit(0, NULL);
 
     cfg.int_en = ENABLE;

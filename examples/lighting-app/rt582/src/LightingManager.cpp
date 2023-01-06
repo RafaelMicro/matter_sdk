@@ -199,7 +199,9 @@ bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t 
 void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
-    mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    mHSV.v = mLevel;
+    //mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    mRGB   = HsvToRgb(mHSV);
     UpdateLight();
 }
 
@@ -211,11 +213,13 @@ void LightingManager::SetColor(uint16_t x, uint16_t y)
     UpdateLight();
 }
 
-void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
+void LightingManager::SetColor(uint16_t hue, uint8_t saturation)
 {
-    mHSV.h = hue;
-    mHSV.s = saturation;
+    mHSV.h = (uint16_t)((hue * 360)/254);
+    mHSV.s = (saturation * 100)/254;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
+
+    ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
     mRGB   = HsvToRgb(mHSV);
     UpdateLight();
 }

@@ -91,6 +91,7 @@ rt582_executable("lighting_app") {
     "${examples_plat_dir}/init_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
+    "include/LightingManager.h",
     "src/AppTask.cpp",
     "src/LightingManager.cpp",
     "src/ZclCallbacks.cpp",
@@ -100,6 +101,7 @@ rt582_executable("lighting_app") {
   deps = [
     ":sdk",
     "${chip_root}/examples/lighting-app/lighting-common",
+    "${chip_root}/examples/lighting-app/lighting-common:color-format",
     "${chip_root}/examples/providers:device_info_provider",
     "${chip_root}/src/lib",
     "${chip_root}/src/setup_payload", 

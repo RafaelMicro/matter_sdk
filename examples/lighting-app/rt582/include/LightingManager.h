@@ -21,12 +21,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "AppEvent.h"
+#include <functional>
 
+#include "AppEvent.h"
+#include "ColorFormat.h"
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
-#include <app/clusters/on-off-server/on-off-server.h>
 
+#include "init_rt582Platform.h"
 #include <lib/core/CHIPError.h>
 
 class LightingManager
@@ -36,7 +38,10 @@ public:
     {
         ON_ACTION = 0,
         OFF_ACTION,
-
+        LEVEL_ACTION,
+        COLOR_ACTION_XY,
+        COLOR_ACTION_HSV,
+        COLOR_ACTION_CT,
         INVALID_ACTION
     } Action;
 
@@ -48,37 +53,36 @@ public:
 
     CHIP_ERROR Init();
     bool IsTurnedOn();
-    void EnableAutoTurnOff(bool aOn);
-    void SetAutoTurnOffDuration(uint32_t aDurationInSecs);
-    bool IsActionInProgress();
-    bool InitiateAction(int32_t aActor, Action_t aAction);
+    uint8_t GetLevel();
+    RgbColor_t GetRgb();
+    bool InitiateAction(Action_t aAction, int32_t aActor, uint16_t size, uint8_t * value);
 
-    typedef void (*Callback_fn_initiated)(Action_t, int32_t aActor);
-    typedef void (*Callback_fn_completed)(Action_t);
-    void SetCallbacks(Callback_fn_initiated aActionInitiated_CB, Callback_fn_completed aActionCompleted_CB);
+    using LightingCallback_fn = std::function<void(Action_t)>;
 
-    static void OnTriggerOffWithEffect(OnOffEffect * effect);
+    void SetCallbacks(LightingCallback_fn aActionInitiated_CB, LightingCallback_fn aActionCompleted_CB);
+
 
 private:
     friend LightingManager & LightMgr(void);
     State_t mState;
+    uint8_t mLevel;
+    XyColor_t mXY;
+    HsvColor_t mHSV;
+    RgbColor_t mRGB;
+    CtColor_t mCT;
 
-    Callback_fn_initiated mActionInitiated_CB;
-    Callback_fn_completed mActionCompleted_CB;
+    LightingCallback_fn mActionInitiated_CB;
+    LightingCallback_fn mActionCompleted_CB;
 
-    bool mAutoTurnOff;
-    uint32_t mAutoTurnOffDuration;
-    bool mAutoTurnOffTimerArmed;
-    bool mOffEffectArmed;
+    void Set(bool aOn);
+    void SetLevel(uint8_t aLevel);
+    void SetColor(uint16_t x, uint16_t y);
+    void SetColor(uint8_t hue, uint8_t saturation);
+    void SetColorTemperature(CtColor_t ct);
 
-    void CancelTimer(void);
-    void StartTimer(uint32_t aTimeoutMs);
+    void UpdateLight();
 
     static void TimerEventHandler(TimerHandle_t xTimer);
-    static void AutoTurnOffTimerEventHandler(AppEvent * aEvent);
-    static void ActuatorMovementTimerEventHandler(AppEvent * aEvent);
-    static void OffEffectTimerEventHandler(AppEvent * aEvent);
-
     static LightingManager sLight;
 };
 

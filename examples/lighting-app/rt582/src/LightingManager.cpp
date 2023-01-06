@@ -22,28 +22,21 @@
 #include "AppConfig.h"
 #include "AppTask.h"
 #include <FreeRTOS.h>
+#include <app/clusters/on-off-server/on-off-server.h>
+
+// initialization values for Blue in XY color space
+constexpr XyColor_t kBlueXY = { 9830, 3932 };
+
+// initialization values for Blue in HSV color space
+constexpr HsvColor_t kBlueHSV = { 240, 100, 255 };
+
+// default initialization value for the light level after start
+constexpr uint8_t kDefaultLevel = 64;
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
 
 LightingManager LightingManager::sLight;
-
-TimerHandle_t sLightTimer;
-
-namespace {
-
-/**********************************************************
- * OffWithEffect Callbacks
- *********************************************************/
-
-OnOffEffect gEffect = {
-    chip::EndpointId{ 1 },
-    LightMgr().OnTriggerOffWithEffect,
-    EMBER_ZCL_ON_OFF_EFFECT_IDENTIFIER_DELAYED_ALL_OFF,
-    static_cast<uint8_t>(EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_FADE_TO_OFF_IN_0P8_SECONDS),
-};
-
-} // namespace
 
 CHIP_ERROR LightingManager::Init()
 {
@@ -52,17 +45,16 @@ CHIP_ERROR LightingManager::Init()
     //chip::DeviceLayer::PlatformMgr().LockChipStack();
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
     //chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-
-    mState                 = currentLedState ? kState_On : kState_Off;
-    mAutoTurnOffTimerArmed = false;
-    mAutoTurnOff           = false;
-    mAutoTurnOffDuration   = 0;
-    mOffEffectArmed        = false;
+    mLevel = kDefaultLevel;
+    mXY    = kBlueXY;
+    mHSV   = kBlueHSV;
+    mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    mState = currentLedState ? kState_On : kState_Off;
 
     return CHIP_NO_ERROR;
 }
 
-void LightingManager::SetCallbacks(Callback_fn_initiated aActionInitiated_CB, Callback_fn_completed aActionCompleted_CB)
+void LightingManager::SetCallbacks(LightingCallback_fn aActionInitiated_CB, LightingCallback_fn aActionCompleted_CB)
 {
     mActionInitiated_CB = aActionInitiated_CB;
     mActionCompleted_CB = aActionCompleted_CB;
@@ -73,11 +65,23 @@ bool LightingManager::IsTurnedOn()
     return mState == kState_On;
 }
 
+uint8_t LightingManager::GetLevel()
+{
+    return mLevel;
+}
 
-bool LightingManager::InitiateAction(int32_t aActor, Action_t aAction)
+RgbColor_t LightingManager::GetRgb()
+{
+    return mRGB;
+}
+
+bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t size, uint8_t * value)
 {
     bool action_initiated = false;
     State_t new_state;
+    XyColor_t xy;
+    HsvColor_t hsv;
+    CtColor_t ct;
 
     switch (aAction)
     {
@@ -87,6 +91,21 @@ bool LightingManager::InitiateAction(int32_t aActor, Action_t aAction)
     case OFF_ACTION:
         ChipLogProgress(NotSpecified, "LightMgr:OFF: %s->OFF", mState == kState_On ? "ON" : "OFF");
         break;
+    case LEVEL_ACTION:
+        ChipLogProgress(NotSpecified, "LightMgr:LEVEL: lev:%u->%u", mLevel, *value);
+        break;
+    case COLOR_ACTION_XY:
+        xy = *reinterpret_cast<XyColor_t *>(value);
+        ChipLogProgress(NotSpecified, "LightMgr:COLOR: xy:%u|%u->%u|%u", mXY.x, mXY.y, xy.x, xy.y);
+        break;
+    case COLOR_ACTION_HSV:
+        hsv = *reinterpret_cast<HsvColor_t *>(value);
+        ChipLogProgress(NotSpecified, "LightMgr:COLOR: hsv:%u|%u->%u|%u", mHSV.h, mHSV.s, hsv.h, hsv.s);
+        break;
+    case COLOR_ACTION_CT:
+        ct.ctMireds = *reinterpret_cast<uint16_t *>(value);
+        ChipLogProgress(NotSpecified, "LightMgr:COLOR: ct:%u->%u", mCT.ctMireds, ct.ctMireds);
+        break;        
     default:
         ChipLogProgress(NotSpecified, "LightMgr:Unknown");
         break;
@@ -105,145 +124,130 @@ bool LightingManager::InitiateAction(int32_t aActor, Action_t aAction)
 
         new_state = kState_Off;
     }
-
-    if (action_initiated)
+    else if (aAction == LEVEL_ACTION && *value != mLevel)
     {
-        // Since the timer started successfully, update the state and trigger callback
-        mState = new_state;
-
+        action_initiated = true;
+        if (*value == 0)
+        {
+            new_state = kState_Off;
+        }
+        else
+        {
+            new_state = kState_On;
+        }
+    }
+    else if (aAction == COLOR_ACTION_XY)
+    {
+        action_initiated = true;
+        if (xy.x == 0 && xy.y == 0)
+        {
+            new_state = kState_Off;
+        }
+        else
+        {
+            new_state = kState_On;
+        }
+    }
+    else if (aAction == COLOR_ACTION_HSV)
+    {
+        action_initiated = true;
+        if (hsv.h == 0 && hsv.s == 0)
+        {
+            new_state = kState_Off;
+        }
+        else
+        {
+           new_state = kState_On;
+        }
+    }
+    if (action_initiated)
+    {        
         if (mActionInitiated_CB)
         {
-            mActionInitiated_CB(aAction, aActor);
+            mActionInitiated_CB(aAction);
+        }
+        if (aAction == LEVEL_ACTION)
+        {
+            SetLevel(*value);
+        }
+        else if (aAction == COLOR_ACTION_XY)
+        {
+            SetColor(xy.x, xy.y);
+        }
+        else if (aAction == COLOR_ACTION_HSV)
+        {
+            SetColor(hsv.h, hsv.s);
+        }
+        else if (aAction == COLOR_ACTION_CT)
+        {
+            SetColorTemperature(ct);
+        }
+        else
+        {
+            Set(new_state == kState_On);
+        }
+
+        if (mActionCompleted_CB)
+        {
+            mActionCompleted_CB(aAction);
         }
     }
 
     return action_initiated;
 }
 
-void LightingManager::StartTimer(uint32_t aTimeoutMs)
+void LightingManager::SetLevel(uint8_t aLevel)
 {
-    if (xTimerIsTimerActive(sLightTimer))
-    {
-        CancelTimer();
-    }
-
-    // timer is not active, change its period to required value (== restart).
-    // FreeRTOS- Block for a maximum of 100 ticks if the change period command
-    // cannot immediately be sent to the timer command queue.
-    if (xTimerChangePeriod(sLightTimer, (aTimeoutMs / portTICK_PERIOD_MS), 100) != pdPASS)
-    {
-        return ; // START_TIMER_FAILED
-    }
+    mLevel = aLevel;
+    mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    UpdateLight();
 }
 
-void LightingManager::CancelTimer(void)
+void LightingManager::SetColor(uint16_t x, uint16_t y)
 {
-    if (xTimerStop(sLightTimer, 0) == pdFAIL)
-    {
-        return ; // STOP_TIMER_FAILED
-    }
+    mXY.x = x;
+    mXY.y = y;
+    mRGB  = XYToRgb(mLevel, mXY.x, mXY.y);
+    UpdateLight();
 }
 
-void LightingManager::TimerEventHandler(TimerHandle_t xTimer)
+void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 {
-    // Get light obj context from timer id.
-    LightingManager * light = static_cast<LightingManager *>(pvTimerGetTimerID(xTimer));
+    mHSV.h = hue;
+    mHSV.s = saturation;
+    mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
+    mRGB   = HsvToRgb(mHSV);
+    UpdateLight();
+}
 
-    // The timer event handler will be called in the context of the timer task
-    // once sLightTimer expires. Post an event to apptask queue with the actual handler
-    // so that the event can be handled in the context of the apptask.
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Timer;
-    event.TimerEvent.Context = light;
-    if (light->mAutoTurnOffTimerArmed)
+void LightingManager::SetColorTemperature(CtColor_t ct)
+{
+    mCT  = ct;
+    mRGB = CTToRgb(ct);
+    UpdateLight();
+}
+
+void LightingManager::Set(bool aOn)
+{
+    if (aOn)
     {
-        event.Handler = AutoTurnOffTimerEventHandler;
-    }
-    else if (light->mOffEffectArmed)
-    {
-        event.Handler = OffEffectTimerEventHandler;
+        mState = kState_On;
     }
     else
     {
-        event.Handler = ActuatorMovementTimerEventHandler;
+        mState = kState_Off;
     }
-    GetAppTask().PostEvent(&event);
+    UpdateLight();
 }
 
-void LightingManager::AutoTurnOffTimerEventHandler(AppEvent * aEvent)
+void LightingManager::UpdateLight()
 {
-    LightingManager * light = static_cast<LightingManager *>(aEvent->TimerEvent.Context);
-    int32_t actor           = AppEvent::kEventType_Timer;
+    ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
 
-    // Make sure auto turn off timer is still armed.
-    if (!light->mAutoTurnOffTimerArmed)
+    if(mState == kState_On && mLevel > 1)
     {
-        return;
+        rt582_led_level_ctl(2, mRGB.b);
+        rt582_led_level_ctl(3, mRGB.r);
+        rt582_led_level_ctl(4, mRGB.g);
     }
-
-    light->mAutoTurnOffTimerArmed = false;
-
-
-    light->InitiateAction(actor, OFF_ACTION);
-}
-
-void LightingManager::OffEffectTimerEventHandler(AppEvent * aEvent)
-{
-    LightingManager * light = static_cast<LightingManager *>(aEvent->TimerEvent.Context);
-    int32_t actor           = AppEvent::kEventType_Timer;
-
-    // Make sure auto turn off timer is still armed.
-    if (!light->mOffEffectArmed)
-    {
-        return;
-    }
-
-    light->mOffEffectArmed = false;
-
-
-    light->InitiateAction(actor, OFF_ACTION);
-}
-
-void LightingManager::OnTriggerOffWithEffect(OnOffEffect * effect)
-{
-    chip::app::Clusters::OnOff::OnOffEffectIdentifier effectId = effect->mEffectIdentifier;
-    uint8_t effectVariant                                      = effect->mEffectVariant;
-    uint32_t offEffectDuration                                 = 0;
-
-    // Temporary print outs and delay to test OffEffect behaviour
-    // Until dimming is supported for dev boards.
-    if (effectId == EMBER_ZCL_ON_OFF_EFFECT_IDENTIFIER_DELAYED_ALL_OFF)
-    {
-        if (effectVariant == EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_FADE_TO_OFF_IN_0P8_SECONDS)
-        {
-            offEffectDuration = 800;
-            ChipLogProgress(Zcl, "EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_FADE_TO_OFF_IN_0P8_SECONDS");
-        }
-        else if (effectVariant == EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_NO_FADE)
-        {
-            offEffectDuration = 800;
-            ChipLogProgress(Zcl, "EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_NO_FADE");
-        }
-        else if (effectVariant ==
-                 EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_50_PERCENT_DIM_DOWN_IN_0P8_SECONDS_THEN_FADE_TO_OFF_IN_12_SECONDS)
-        {
-            offEffectDuration = 12800;
-            ChipLogProgress(Zcl,
-                            "EMBER_ZCL_ON_OFF_DELAYED_ALL_OFF_EFFECT_VARIANT_50_PERCENT_DIM_DOWN_IN_0P8_SECONDS_THEN_FADE_TO_OFF_"
-                            "IN_12_SECONDS");
-        }
-    }
-    else if (effectId == EMBER_ZCL_ON_OFF_EFFECT_IDENTIFIER_DYING_LIGHT)
-    {
-        if (effectVariant ==
-            EMBER_ZCL_ON_OFF_DYING_LIGHT_EFFECT_VARIANT_20_PERCENTER_DIM_UP_IN_0P5_SECONDS_THEN_FADE_TO_OFF_IN_1_SECOND)
-        {
-            offEffectDuration = 1500;
-            ChipLogProgress(
-                Zcl, "EMBER_ZCL_ON_OFF_DYING_LIGHT_EFFECT_VARIANT_20_PERCENTER_DIM_UP_IN_0P5_SECONDS_THEN_FADE_TO_OFF_IN_1_SECOND");
-        }
-    }
-
-    LightMgr().mOffEffectArmed = true;
-    LightMgr().StartTimer(offEffectDuration);
 }

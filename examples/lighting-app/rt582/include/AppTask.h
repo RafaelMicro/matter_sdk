@@ -74,7 +74,7 @@ private:
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
     static void LightActionEventHandler(AppEvent * aEvent);
-    static void ActionInitiated(LightingManager::Action_t aActio, int32_t aActor);
+    static void ActionInitiated(LightingManager::Action_t aAction);
     static void ActionCompleted(LightingManager::Action_t aAction);
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);

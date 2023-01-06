@@ -186,31 +186,40 @@ void AppTask::UpdateClusterState(void)
     }
 }
 
-void AppTask::ActionInitiated(LightingManager::Action_t aAction, int32_t aActor)
+void AppTask::ActionInitiated(LightingManager::Action_t aAction)
 {
     // Placeholder for light action
     if (aAction == LightingManager::ON_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light goes on");
-        rt582_led_level_ctl(3, 255);
     }
     else if (aAction == LightingManager::OFF_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light goes off ");
-        rt582_led_level_ctl(3, 0);
     }
 }
 
 void AppTask::ActionCompleted(LightingManager::Action_t aAction)
 {
     // Placeholder for light action completed
+    uint8_t current_level = 0;
+    RgbColor_t RGB;
     if (aAction == LightingManager::ON_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light On Action has been completed");
+
+        current_level = LightMgr().GetLevel();
+        RGB = LightMgr().GetRgb();
+        rt582_led_level_ctl(2, RGB.b);
+        rt582_led_level_ctl(3, RGB.r);
+        rt582_led_level_ctl(4, RGB.g);
     }
     else if (aAction == LightingManager::OFF_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light Off Action has been completed");
+        rt582_led_level_ctl(2, 0);
+        rt582_led_level_ctl(3, 0);
+        rt582_led_level_ctl(4, 0); 
     }
 
     if (sAppTask.mSyncClusterToButtonAction)
@@ -219,7 +228,6 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
         sAppTask.mSyncClusterToButtonAction = false;
     }
 }
-
 void AppTask::LightActionEventHandler(AppEvent * aEvent)
 {
     bool initiated = false;
@@ -244,7 +252,12 @@ void AppTask::LightActionEventHandler(AppEvent * aEvent)
 
     if (err == CHIP_NO_ERROR)
     {
-        initiated = LightMgr().InitiateAction(actor, action);
+
+        // Toggle Dimming of light between 2 fixed levels
+        uint8_t val = 0x0;
+        val         = LightMgr().GetLevel() == 0x7f ? 0x1 : 0x7f;
+        action      = LightingManager::LEVEL_ACTION;
+        initiated = LightMgr().InitiateAction(action, 0, 1, &val);
 
         if (!initiated)
         {
@@ -320,7 +333,7 @@ void AppTask::UpdateStatusLED()
     }
     if(sCommissioned)
     {
-        gpio_pin_clear(21);
+        //gpio_pin_clear(21);
     }
 }
 

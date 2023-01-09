@@ -28,10 +28,10 @@
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
 // initialization values for Blue in HSV color space
-constexpr HsvColor_t kBlueHSV = { 240, 100, 255 };
+constexpr HsvColor_t kHSV = { 60, 0, 255 };
 
 // default initialization value for the light level after start
-constexpr uint8_t kDefaultLevel = 64;
+constexpr uint8_t kDefaultLevel = 254;
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
@@ -47,8 +47,8 @@ CHIP_ERROR LightingManager::Init()
     //chip::DeviceLayer::PlatformMgr().UnlockChipStack();
     mLevel = kDefaultLevel;
     mXY    = kBlueXY;
-    mHSV   = kBlueHSV;
-    mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    mHSV   = kHSV;
+    mRGB   = HsvToRgb(mHSV);
     mState = currentLedState ? kState_On : kState_Off;
 
     return CHIP_NO_ERROR;

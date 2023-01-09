@@ -56,8 +56,9 @@ if (chip_device_platform == "cc13x2_26x2") {
 } else if (chip_device_platform == "mt793x") {
   import("//build_overrides/mt793x_sdk.gni")
 } else if (chip_device_platform == "rt582") {
-  import("//build_overrides/rt582_sdk.gni")
+  import("//build_overrides/rt582_sdk.gni")  
 }
+
 buildconfig_header("system_buildconfig") {
   header = "SystemBuildConfig.h"
   header_dir = "system"

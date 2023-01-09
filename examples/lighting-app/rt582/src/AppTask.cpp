@@ -307,13 +307,22 @@ void AppTask::InitServer(intptr_t arg)
     }
     LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
+    uint8_t current_level = 0;
+    RgbColor_t RGB;
+
     if(LightMgr().IsTurnedOn())
     {
-        rt582_led_level_ctl(3, 255);
+        current_level = LightMgr().GetLevel();
+        RGB = LightMgr().GetRgb();
+        rt582_led_level_ctl(2, RGB.b);
+        rt582_led_level_ctl(3, RGB.r);
+        rt582_led_level_ctl(4, RGB.g);
     }
     else
     {
-        rt582_led_level_ctl(3, 0);      
+        rt582_led_level_ctl(2, 0); 
+        rt582_led_level_ctl(3, 0); 
+        rt582_led_level_ctl(4, 0);      
     }
 }
 

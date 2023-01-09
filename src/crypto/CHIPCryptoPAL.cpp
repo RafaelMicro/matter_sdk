@@ -31,8 +31,6 @@
 #include <lib/support/Span.h>
 #include <string.h>
 
-#define RT582_HW_CRYPTO_ENGINE_ENABLE
-
 using chip::ByteSpan;
 using chip::MutableByteSpan;
 using chip::Encoding::BufferWriter;
@@ -369,7 +367,6 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         MN     = N;
         XY     = Y;
         Kcaorb = Kca;
-
     }
     else if (role == CHIP_SPAKE2P_ROLE::VERIFIER)
     {
@@ -380,39 +377,17 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         MN     = M;
         XY     = X;
         Kcaorb = Kcb;
-
     }
     VerifyOrExit(MN != nullptr, error = CHIP_ERROR_INTERNAL);
     VerifyOrExit(XY != nullptr, error = CHIP_ERROR_INTERNAL);
 
-
     SuccessOrExit(error = PointLoad(in, in_len, XY));
     SuccessOrExit(error = PointIsValid(XY));
+    SuccessOrExit(error = FEMul(tempbn, xy, w0));
+    SuccessOrExit(error = PointInvert(MN));
+    SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
+    SuccessOrExit(error = PointCofactorMul(Z));
 
-#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
-
-        SuccessOrExit(error = ComputeZ(Z, xy, XY, w0, MN));
-#else
-        SuccessOrExit(error = FEMul(tempbn, xy, w0));
-        SuccessOrExit(error = PointInvert(MN));
-        SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
-        SuccessOrExit(error = PointCofactorMul(Z));
-
-#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
-
-
-#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
-
-    if (role == CHIP_SPAKE2P_ROLE::PROVER)
-    {
-        SuccessOrExit(error = ComputeProverV(V, w0, w1, XY, MN));
-    }
-    else if (role == CHIP_SPAKE2P_ROLE::VERIFIER)
-    {
-
-        SuccessOrExit(error = ComputeVerifierV(V, xy, L));
-    }
-#else
     if (role == CHIP_SPAKE2P_ROLE::PROVER)
     {
         SuccessOrExit(error = FEMul(tempbn, w1, w0));
@@ -422,10 +397,6 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
     {
         SuccessOrExit(error = PointMul(V, L, xy));
     }
-
-#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
-
-   
 
     SuccessOrExit(error = PointCofactorMul(V));
     SuccessOrExit(error = PointWrite(Z, point_buffer, point_size));
@@ -546,7 +517,6 @@ CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeW0(uint8_t * w0out, size_t * w0
 
     return CHIP_NO_ERROR;
 }
-
 
 CHIP_ERROR Spake2pVerifier::Serialize(MutableByteSpan & outSerialized) const
 {

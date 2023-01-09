@@ -28,8 +28,7 @@
             "dependsOrder": "sequence",
             "dependsOn": [
                 "RT matter image build (Step I)",
-                "RT matter container build (Step II)",
-                "RT matter container env setup (Step III)"
+                "RT matter container env run/setup (Step II)"
             ]
         },
         {
@@ -39,74 +38,35 @@
             "group": "build"
         },
         {
-            "label": "RT matter container build (Step II)",
+            "label": "RT matter container env run/setup (Step II)",
             "type": "shell",
-            "command": "docker run -i -d --name RT_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter",
-            "group": "build"
-        },
-        {
-            "label": "RT matter container env run/setup (Step III)",
-            "type": "shell",
-            "command": "docker exec RT_matter_builder bash /var/chip/scripts/activate.sh",
+            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter bash /var/chip/scripts/activate.sh",
             "group": "build"
         },
         {
             "label": "Build RT example",
             "type": "shell",
-            "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject}",
+            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject}",
             "group": "build"
         },
         {
             "label": "Remove output of RT building example",
             "type": "shell",
-            "command": "docker exec RT_matter_builder rm -fr /var/chip/out/${input:exampleproject}/RT582",
+            "command": "sudo rm -fr out/${input:exampleproject}/RT582",
             "group": "build"
-        },
-        {
-            // Clean Build RT example
-            "label": "Clean build RT example",
-            "type": "shell",
-            "command": "echo '${input:exampleproject} building finished'",
-            "dependsOrder": "sequence",
-            "dependsOn": ["Remove out of RT example", "Build RT example"]
-        },
-        {
-            "label": "Stop RT container",
-            "type": "shell",
-            "command": "docker stop RT_matter_builder",
-            "group": "build"
-        },
-        {
-            "label": "Start RT container",
-            "type": "shell",
-            "command": "docker start RT_matter_builder",
-            "group": "build"
-        },
-        // { // Build RT lighting example
-        //     "label": "Build RT lighting example",
-        //     "type": "shell",
-        //     "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/lighting-app/rt582 /var/chip/out/lighting-app",
-        //     "group": "build",
-        //     "problemMatcher": {
-        //         "base": "$gcc"
-        //     }
-        // },
-        // { // Build RT light-switch example
-        //     "label": "Build RT light-switch example",
-        //     "type": "shell",
-        //     "command": "docker exec RT_matter_builder /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/light-switch-app/rt582 /var/chip/out/light-switch-app",
-        //     "group": "build",
-        //     "problemMatcher": {
-        //         "base": "$gcc"
-        //     }
-        // },
+        }
     ],
     "inputs": [
         {
             "type": "pickString",
             "id": "exampleproject",
             "description": "Which example do you want to create?",
-            "options": ["lighting-app", "light-switch-app", "lock-app", "thermostat"],
+            "options": [
+                "lighting-app",
+                "light-switch-app",
+                "lock-app",
+                "thermostat"
+            ],
             "default": ""
         },
         {

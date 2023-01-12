@@ -21,6 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt582Platform.h"
+#include "init_thermostat_rt582Platform.h"
 #include <DeviceInfoProviderImpl.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
@@ -47,6 +48,7 @@ int main(void)
     CHIP_ERROR err;
 
     init_rt582Platform();
+    init_thermostat_rt582Platform();
 
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)

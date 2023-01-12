@@ -23,6 +23,7 @@
 #include "AppConfig.h"
 #include "LightingManager.h"
 #include "init_rt582Platform.h"
+#include "init_lighting_rt582Platform.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>

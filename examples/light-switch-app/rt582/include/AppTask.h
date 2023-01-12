@@ -81,7 +81,6 @@ public:
     void PostEvent(const AppEvent * event);
     void UpdateClusterState();
 
-
 private:
     friend AppTask & GetAppTask(void);
 
@@ -103,6 +102,7 @@ private:
 
     void StartTimer(uint32_t aTimeoutMs);
     void CancelTimer(void);
+    static void UpdateStatusLED();
 
     enum Function_t
     {

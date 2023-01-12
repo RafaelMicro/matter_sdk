@@ -21,6 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt582Platform.h"
+#include "init_light_switch_app_rt582Platform.h"
 #include <DeviceInfoProviderImpl.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
@@ -64,7 +65,8 @@ int main(void)
     CHIP_ERROR err;
 
     init_rt582Platform();
-
+    init_light_switch_app_rt582Platform();
+    
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
     {
@@ -88,33 +90,11 @@ int main(void)
         goto exit;
     }
     
-
-    err = ThreadStackMgr().InitThreadStack();
+    err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+        ChipLogError(NotSpecified, "PlatformMgr().InitChipStack() failed");
         goto exit;
-    }
-
-    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
-        goto exit;
-    }
-
-    err = ThreadStackMgr().StartThreadTask();
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
-        goto exit;
-    }    
-
-    PlatformMgr().AddEventHandler(ChipEventHandler, 0);
-
-    if (PlatformMgr().StartEventLoopTask() != CHIP_NO_ERROR)
-    {
-       ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
     }
 
     err = GetAppTask().StartAppTask();

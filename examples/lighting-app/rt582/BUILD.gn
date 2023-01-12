@@ -82,13 +82,17 @@ rt582_sdk("sdk") {
 
 rt582_executable("lighting_app") {
   output_name = "chip-rt582-lighting-app-example.out"
-  include_dirs = [ "include" ]
+  include_dirs = [ 
+    "include",
+    "${examples_plat_dir}/projcrt_peripheral/lighting_app"
+  ]
   defines = []
 
   sources = [
     "${examples_plat_dir}/BaseApplication.cpp",
     "${examples_plat_dir}/heap_4_rt582.c",
     "${examples_plat_dir}/init_rt582Platform.cpp",
+    "${examples_plat_dir}/projcrt_peripheral/lighting_app/init_lighting_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "include/LightingManager.h",

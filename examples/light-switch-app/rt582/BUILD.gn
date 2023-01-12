@@ -97,13 +97,17 @@ rt582_sdk("sdk") {
 
 rt582_executable("light_switch_app") {
   output_name = "chip-rt582-light-switch-app-example.out"
-  include_dirs = [ "include" ]
+  include_dirs = [ 
+    "include",
+    "${examples_plat_dir}/projcrt_peripheral/light_switch_app"
+  ]
   defines = []
 
   sources = [
     "${examples_plat_dir}/BaseApplication.cpp",
     "${examples_plat_dir}/heap_4_rt582.c",
     "${examples_plat_dir}/init_rt582Platform.cpp",
+    "${examples_plat_dir}/projcrt_peripheral/light_switch_app/init_light_switch_app_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "src/AppTask.cpp",

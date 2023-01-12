@@ -53,6 +53,7 @@
 #include "util_log.h"
 #include "cm3_mcu.h"
 #include "init_rt582Platform.h"
+#include "init_lighting_rt582Platform.h"
 #include "bsp.h"
 #include "bsp_button.h"
 

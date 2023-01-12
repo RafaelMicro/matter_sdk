@@ -52,11 +52,10 @@
 #include "uart.h"
 #include "util_log.h"
 #include "cm3_mcu.h"
-
+#include "init_rt582Platform.h"
+#include "init_light_switch_app_rt582Platform.h"
 #include "bsp.h"
 #include "bsp_button.h"
-#include "bsp_led.h"
-
 
 using namespace chip;
 using namespace chip::TLV;
@@ -75,6 +74,7 @@ bool sIsThreadBLEAdvertising = false;
 bool sIsThreadProvisioned = false;
 bool sIsThreadEnabled     = false;
 bool sHaveBLEConnections  = false;
+bool sSwitchState         = false;
 bool sCommissioned        = false;  
 static TaskHandle_t sAppTaskHandle;
 static QueueHandle_t sAppEventQueue;
@@ -185,6 +185,58 @@ void AppTask::ActionCompleted(AppTask::Action_t aAction)
     }
 }
 
+void AppTask::UpdateStatusLED()
+{
+    if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
+    {
+        init_rt582_led_flash(20, 250, 150);
+    }
+    else if (sIsThreadProvisioned && sIsThreadEnabled)
+    {
+        init_rt582_led_flash(20, 850, 150);
+    }
+    else if (sHaveBLEConnections)
+    {
+        init_rt582_led_flash(20, 150, 50);
+    }
+    if(sCommissioned)
+    {
+        //gpio_pin_clear(21);
+    }
+}
+
+void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
+{
+    ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
+    switch (aEvent->Type)
+    {
+    case DeviceEventType::kCHIPoBLEAdvertisingChange:
+
+        sIsThreadBLEAdvertising = true;
+        UpdateStatusLED();   
+        break;
+    case DeviceEventType::kThreadStateChange:
+        sIsThreadProvisioned = ConnectivityMgr().IsThreadProvisioned();
+        sIsThreadEnabled     = ConnectivityMgr().IsThreadEnabled();
+        UpdateStatusLED();    
+        break;
+    case DeviceEventType::kThreadConnectivityChange:
+        break;
+
+    case DeviceEventType::kCHIPoBLEConnectionEstablished:
+        sHaveBLEConnections = true;
+        UpdateStatusLED(); 
+        break;
+
+    case DeviceEventType::kCommissioningComplete:
+        sCommissioned = true;
+        UpdateStatusLED();
+        break;
+    default:
+        break;
+    }
+}
+
 void AppTask::InitServer(intptr_t arg)
 {
     CHIP_ERROR err;
@@ -217,9 +269,42 @@ CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err;
     ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
+    
+    err = ThreadStackMgr().InitThreadStack();
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+    }
 
+    //err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
+    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
+    }
+
+    err = ThreadStackMgr().StartThreadTask();
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+    }
+
+    if (PlatformMgr().StartEventLoopTask() != CHIP_NO_ERROR)
+    {
+       ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
+    }
+
+    PlatformMgr().ScheduleWork(InitServer, 0);
+    PlatformMgr().AddEventHandler(ChipEventHandler, 0);
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR AppTask::StartAppTask()
+{
+    CHIP_ERROR err;
+    int error;
+    
     bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
-    bsp_led_init(NULL);
     // Setup light
     err = InitBindingHandler();
     if (err != CHIP_NO_ERROR)
@@ -228,11 +313,6 @@ CHIP_ERROR AppTask::Init()
         return err;
     }
 
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR AppTask::StartAppTask()
-{
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
     if (sAppEventQueue == nullptr)
@@ -257,7 +337,6 @@ CHIP_ERROR AppTask::StartAppTask()
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
 
-    PlatformMgr().ScheduleWork(InitServer, 0);
     return CHIP_NO_ERROR;
 }
 
@@ -398,10 +477,12 @@ void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
 {
     if (aEvent->Type == AppEvent::kEventType_Button)
     {
+        sSwitchState ^= 1;
+        ChipLogProgress(NotSpecified, "SwitchState: %s", sSwitchState?"ON":"OFF");
+        init_rt582_led_toggle(21);
         BindingCommandData * data = chip::Platform::New<BindingCommandData>();
         data->commandId           = chip::app::Clusters::OnOff::Commands::Toggle::Id;
         data->clusterId           = chip::app::Clusters::OnOff::Id;
-        bsp_led_toggle(BSP_LED_0);
         PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
     }
 }

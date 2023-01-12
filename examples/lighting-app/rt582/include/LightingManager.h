@@ -29,6 +29,7 @@
 #include "timers.h" // provides FreeRTOS timer support
 
 #include "init_rt582Platform.h"
+#include "init_lighting_rt582Platform.h"  
 #include <lib/core/CHIPError.h>
 
 class LightingManager

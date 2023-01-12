@@ -24,7 +24,10 @@
 extern "C" {
 #endif
 
-void init_rt582Platform(void);
+void init_lighting_app_rt582Platform(void);
+void init_rt582_led_flash(uint32_t pin, uint32_t onTimeMs, uint32_t offTimeMs);
+void rt582_led_level_ctl(uint32_t id, uint8_t current_lv);
+
 #ifdef __cplusplus
 }
 #endif

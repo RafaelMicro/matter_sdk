@@ -263,6 +263,11 @@ void AppTask::InitServer(intptr_t arg)
         PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
         xTaskResumeAll();
     }
+    err = InitBindingHandler();
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "InitBindingHandler() failed");
+    }
 }
 
 CHIP_ERROR AppTask::Init()
@@ -306,12 +311,6 @@ CHIP_ERROR AppTask::StartAppTask()
     
     bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
     // Setup light
-    err = InitBindingHandler();
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "InitBindingHandler() failed");
-        return err;
-    }
 
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);

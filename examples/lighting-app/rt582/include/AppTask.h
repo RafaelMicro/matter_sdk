@@ -64,7 +64,6 @@ public:
 
     void PostLightActionRequest(int32_t aActor, LightingManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
-    void UpdateClusterState();
 
 private:
     friend AppTask & GetAppTask(void);
@@ -77,6 +76,7 @@ private:
     static void ActionInitiated(LightingManager::Action_t aAction);
     static void ActionCompleted(LightingManager::Action_t aAction);
     static void UpdateStatusLED();
+    static void UpdateClusterState(intptr_t arg);
     void DispatchEvent(AppEvent * event);
 
     static void ButtonEventHandler(bsp_event_t event);
@@ -93,12 +93,14 @@ private:
     {
         kFunction_NoneSelected   = 0,
         kFunction_FactoryReset   = 1,
+        kFunction_Switch_1       = 2,
 
         kFunction_Invalid
     } Function;
 
     Function_t mFunction;
     bool mFunctionTimerActive;
+    bool mFunctionSwitchActive;
     bool mSyncClusterToButtonAction;
 
     static AppTask sAppTask;   

@@ -174,7 +174,7 @@ void AppTask::OpenCommissioning(intptr_t arg)
 /**
  * Update cluster status after application level changes
  */
-void AppTask::UpdateClusterState(void)
+void AppTask::UpdateClusterState(intptr_t arg)
 {
     ChipLogProgress(NotSpecified, "UpdateClusterState");
 
@@ -197,6 +197,12 @@ void AppTask::ActionInitiated(LightingManager::Action_t aAction)
     else if (aAction == LightingManager::OFF_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light goes off ");
+    }
+
+    if (sAppTask.mSyncClusterToButtonAction)
+    {
+        PlatformMgr().ScheduleWork(UpdateClusterState, 0);
+        sAppTask.mSyncClusterToButtonAction = false;
     }
 }
 
@@ -223,11 +229,11 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
         rt582_led_level_ctl(4, 0); 
     }
 
-    if (sAppTask.mSyncClusterToButtonAction)
-    {
-        sAppTask.UpdateClusterState();
-        sAppTask.mSyncClusterToButtonAction = false;
-    }
+    // if (sAppTask.mSyncClusterToButtonAction)
+    // {
+    //     chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState(), reinterpret_cast<intptr_t>(nullptr));
+    //     sAppTask.mSyncClusterToButtonAction = false;
+    // }
 }
 void AppTask::LightActionEventHandler(AppEvent * aEvent)
 {
@@ -240,20 +246,6 @@ void AppTask::LightActionEventHandler(AppEvent * aEvent)
     {
         action = static_cast<LightingManager::Action_t>(aEvent->LightEvent.Action);
         actor  = aEvent->LightEvent.Actor;
-    }
-    else if (aEvent->Type == AppEvent::kEventType_Button)
-    {
-        action = (LightMgr().IsTurnedOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
-        actor  = AppEvent::kEventType_Button;
-    }
-    else
-    {
-        err = APP_ERROR_UNHANDLED_EVENT;
-    }
-
-    if (err == CHIP_NO_ERROR)
-    {
-
         // Toggle Dimming of light between 2 fixed levels
         uint8_t val = 0x0;
         val         = LightMgr().GetLevel() == 0x7f ? 0x1 : 0x7f;
@@ -264,6 +256,23 @@ void AppTask::LightActionEventHandler(AppEvent * aEvent)
         {
             ChipLogProgress(NotSpecified, "Action is already in progress or active.");
         }
+    }
+    else if (aEvent->Type == AppEvent::kEventType_Button)
+    {
+        action = (LightMgr().IsTurnedOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
+        actor  = AppEvent::kEventType_Button;
+        // Toggle Dimming of light between 2 fixed levels
+        uint8_t val = (action == LightingManager::ON_ACTION) ? 0x7f : 0x1;
+        initiated = LightMgr().InitiateAction(action, 0, 1, &val);
+
+        if (!initiated)
+        {
+            ChipLogProgress(NotSpecified, "Action is already in progress or active.");
+        }
+    }
+    else
+    {
+        err = APP_ERROR_UNHANDLED_EVENT;
     }
 }
 
@@ -519,46 +528,95 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
 
 void AppTask::FunctionHandler(AppEvent * aEvent)
 {
-    if (aEvent->ButtonEvent.Action == true)
+    switch (aEvent->ButtonEvent.ButtonIdx)
     {
-        if (!sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_NoneSelected)
+    case (AppEvent::AppActionTypes::kActionTypes_FactoryReset):
+        if (aEvent->ButtonEvent.Action == true)
         {
-            ChipLogProgress(NotSpecified, "[BTN] Hold to select function:");
-            ChipLogProgress(NotSpecified, "[BTN] - Factory Reset (>6s)");
+            if (!sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                ChipLogProgress(NotSpecified, "[BTN] Hold to select function:");
+                ChipLogProgress(NotSpecified, "[BTN] - Factory Reset (>6s)");
 
-            sAppTask.StartTimer(FACTORY_RESET_TRIGGER_TIMEOUT);
+                sAppTask.StartTimer(FACTORY_RESET_TRIGGER_TIMEOUT);
 
-            sAppTask.mFunction = kFunction_FactoryReset;
+                sAppTask.mFunction = kFunction_FactoryReset;
+            }
         }
-    }
-    else
-    {
-        if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+        else
         {
-            sAppTask.CancelTimer();
+            if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+            {
+                sAppTask.CancelTimer();
 
-            // Change the function to none selected since factory reset has been
-            // canceled.
-            sAppTask.mFunction = kFunction_NoneSelected;
+                // Change the function to none selected since factory reset has been
+                // canceled.
+                sAppTask.mFunction = kFunction_NoneSelected;
 
-            ChipLogProgress(NotSpecified, "[BTN] Factory Reset has been Canceled");
+                ChipLogProgress(NotSpecified, "[BTN] Factory Reset has been Canceled");
+            }
         }
+    
+    case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            if (!sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.mFunction = kFunction_Switch_1;
+                sAppTask.mFunctionSwitchActive = true;
+            }
+        }
+        else
+        {
+            if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
+            {
+                sAppTask.mSyncClusterToButtonAction = true;
+                AppEvent event;
+                event.Type               = AppEvent::kEventType_Button;
+                event.Handler            = LightActionEventHandler;
+                sAppTask.PostEvent(&event);
+
+                sAppTask.mFunction = kFunction_NoneSelected;
+                sAppTask.mFunctionSwitchActive = false;
+            }
+        }
+        break;
+    
+    default:
+        break;
     }
 }
 
-
 void AppTask::ButtonEventHandler(bsp_event_t event)
 {
-    //ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event-5), bsp_button_state_get(event-5));
-
-    AppEvent button_event              = {};
-    button_event.Type                  = AppEvent::kEventType_Button;
-    button_event.ButtonEvent.ButtonIdx = event-5;
-    button_event.ButtonEvent.Action    = bsp_button_state_get(event-5)?0:1;
-    // Hand off to Functionality handler - depends on duration of press
-    button_event.Handler = FunctionHandler;
-
-    xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+    // ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event), bsp_button_state_get(event-5));
+    switch (event)
+    {
+    case (BSP_EVENT_BUTTONS_0):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_FactoryReset;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_EVENT_BUTTONS_0-5)?0:1;
+            // Hand off to Functionality handler - depends on duration of press
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;
+    
+    case (BSP_EVENT_BUTTONS_1):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_1;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_EVENT_BUTTONS_1-5)?0:1;
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 

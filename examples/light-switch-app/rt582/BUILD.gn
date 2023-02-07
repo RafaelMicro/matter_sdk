@@ -31,7 +31,7 @@ if (chip_enable_pw_rpc) {
 
 assert(current_os == "freertos")
 
-rt582_project_dir = "${chip_root}/examples/lighting-app/rt582"
+rt582_project_dir = "${chip_root}/examples/light-switch-app/rt582"
 examples_plat_dir = "${chip_root}/examples/platform/rt582"
 # _freertos_root = "${chip_root}/third_party/rafael/sdk/Portable/freertos/repo"
 

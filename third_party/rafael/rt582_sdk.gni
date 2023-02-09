@@ -25,10 +25,12 @@ declare_args() {
   rt582_static_sdk_root = "${chip_root}/third_party/rafael/rt58x_sdk"
   sdk_support_root = "${chip_root}/third_party/rafael/matter_support"
 
-  use_static_sdk_lib =  true
+  use_static_sdk_lib =  false #true # false
   # Build openthread with prebuilt rafael lib
-  use_rafael_thread_lib = true
+  use_rafael_thread_lib = false
   enable_openthread_cli = true
+
+  kvs_max_entries = 75
   use_external_flash = false
 }
 
@@ -61,54 +63,22 @@ template("rt582_sdk") {
       "${chip_root}/examples/platform/rt582/config/",
       "${chip_root}/third_party/rafael",
     ]
-    if(use_static_sdk_lib)
-    {
-      _include_dirs += [
-        "${rt582_static_sdk_root}/Include",
-      ]
-    }
-    else
-    {
-      _include_dirs += [
-        "${rt582_sdk_root}",
-        "${rt582_sdk_root}/CMSIS/Include",
-        "${rt582_sdk_root}/Driver/Include",
-        "${rt582_sdk_root}/Driver/Peripheral/Include",
-        "${rt582_sdk_root}/Driver/PHY/include",
-        "${rt582_sdk_root}/Driver/PHY/rt569mp/include",
-        "${rt582_sdk_root}/Portable/bsp/Include",
-        "${rt582_sdk_root}/Portable/System/Include",
-        "${rt582_sdk_root}/Portable/Utility/include",
-        "${rt582_sdk_root}/Utility/include",
-        "${rt582_sdk_root}/RFB/include",
-        "${rt582_sdk_root}/RUCI/include",
-        "${rt582_sdk_root}/MemoryMgmt/Include",
-        "${rt582_sdk_root}/Portable/freertos/repo/include",
-        "${rt582_sdk_root}/Portable/freertos/repo/portable/GCC/ARM_CM3",
 
-        "${rt582_sdk_root}/BLE/BLE_Host/Include",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/Include",
-        "${rt582_sdk_root}/BLE/BLE_Service/BLE_Service_Common/Include",
-        "${rt582_sdk_root}/BLE/BLE_Service/GAPS/Include",
-        "${rt582_sdk_root}/BLE/BLE_Service/GATTS/Include",
-        "${rt582_sdk_root}/BLE/BLE_Service/DIS/Include",
-        "${rt582_sdk_root}/BLE/BLE_Service/Matter/Include",
-        "${rt582_sdk_root}/BLE/HCI/Include",
-        "${rt582_sdk_root}/BLE/Portable/Include",
-
-        "${rt582_sdk_root}/BLE_App_Profile/Include",
-
-        "${rt582_sdk_root}/RF_FW_Control_Task/Include",
-        "${rt582_sdk_root}/RF_FW_Control_Task/Internal/Include",
-
-        "${rt582_sdk_root}/FOTA/Include",
-
-        #Hardware Crypto Engine Inclide Dirs
-        "${chip_root}/third_party/mbedtls/repo/include/mbedtls",
-        "${chip_root}/third_party/mbedtls/repo/library",
-        "${rt582_sdk_root}/Crypto/Include",
-      ]
-    }
+    _include_dirs += [
+      "${rt582_sdk_root}",
+      "${rt582_sdk_root}/CMSIS/Include",
+      "${rt582_sdk_root}/Driver/Include",
+      "${rt582_sdk_root}/Library/Include",
+      "${rt582_sdk_root}/Driver/Peripheral/Include",
+      "${rt582_sdk_root}/Portable/bsp/Include",
+      "${rt582_sdk_root}/Portable/System/Include",
+      "${rt582_sdk_root}/Portable/Utility/include",
+      "${rt582_sdk_root}/Portable/freertos/repo/include",
+      "${rt582_sdk_root}/Portable/freertos/repo/portable/GCC/ARM_CM3",
+      #Hardware Crypto Engine Inclide Dirs
+      "${chip_root}/third_party/mbedtls/repo/include/mbedtls",
+      "${chip_root}/third_party/mbedtls/repo/library",
+    ]
 
     # Note that we're setting the mbedTLS and PSA configuration files through a
     # define. This means the build system by default does not pick up changes in
@@ -171,118 +141,33 @@ template("rt582_sdk") {
     }
     public_configs = [ ":${sdk_target_name}_config" ]
 
-    if(use_static_sdk_lib)
-    { 
-      libs=["${chip_root}/third_party/rafael/rt58x_sdk/librt582sdk.a"] 
-    }
-    else
-    {
-      output_name = "librt582sdk"
-      output_dir = "${root_out_dir}/lib"
+    sources += [
+      "${rt582_sdk_root}/Driver/Peripheral/dma.c",
+      "${rt582_sdk_root}/Driver/Peripheral/flashctl.c",
+      "${rt582_sdk_root}/Driver/Peripheral/flashds.c",
+      "${rt582_sdk_root}/Driver/Peripheral/Include/flashctl.h",
+      "${rt582_sdk_root}/Driver/Peripheral/gpio.c",
+      "${rt582_sdk_root}/Driver/Peripheral/mp_sector.c",
+      "${rt582_sdk_root}/Driver/Peripheral/sysctrl.c",
+      "${rt582_sdk_root}/Driver/Peripheral/sysfun.c",
+      "${rt582_sdk_root}/Driver/Peripheral/timer.c",
+      "${rt582_sdk_root}/Driver/Peripheral/uart_retarget.c",
+      "${rt582_sdk_root}/Driver/Peripheral/wdt.c",
+      "${rt582_sdk_root}/Driver/Peripheral/lpm.c",
+      "${rt582_sdk_root}/Driver/Peripheral/pwm.c",
+      "${rt582_sdk_root}/Portable/Utility/util.c",
+      "${rt582_sdk_root}/Portable/Utility/util_log.c",
+      "${rt582_sdk_root}/Portable/Utility/util_printf.c",
+      "${rt582_sdk_root}/Portable/Utility/util_string.c",
+      "${rt582_sdk_root}/Portable/Utility/util_queue.c",
+      "${rt582_sdk_root}/Portable/bsp/bsp.c",
+      "${rt582_sdk_root}/Portable/bsp/bsp_button.c",
+      "${rt582_sdk_root}/Portable/bsp/bsp_led.c",
+      "${rt582_sdk_root}/Portable/bsp/bsp_uart.c",
+      "${rt582_sdk_root}/Portable/bsp/bsp_uart_drv.c",
+      "${rt582_sdk_root}/Portable/System/sys_taskdbg.c",
+    ]
 
-      sources += [
-        "${rt582_sdk_root}/Driver/Device/GCC/gcc_startup_cm3_mcu.S",
-        "${rt582_sdk_root}/Driver/Device/system_cm3_mcu.c",
-
-        "${rt582_sdk_root}/Driver/PHY/comm_subsystem_drv.c",
-        "${rt582_sdk_root}/Driver/PHY/rf_common_init.c",
-        "${rt582_sdk_root}/Driver/PHY/rf_mcu.c",
-        "${rt582_sdk_root}/Driver/PHY/rf_mcu_ahb.c",
-        "${rt582_sdk_root}/Driver/PHY/rt569mp/rt569mp_fw.c",
-        "${rt582_sdk_root}/Driver/PHY/rt569mp/rt569mp_init.c",
-        "${rt582_sdk_root}/Driver/Peripheral/dma.c",
-        "${rt582_sdk_root}/Driver/Peripheral/flashctl.c",
-        "${rt582_sdk_root}/Driver/Peripheral/flashds.c",
-        "${rt582_sdk_root}/Driver/Peripheral/Include/flashctl.h",
-        "${rt582_sdk_root}/Driver/Peripheral/gpio.c",
-        "${rt582_sdk_root}/Driver/Peripheral/mp_sector.c",
-        "${rt582_sdk_root}/Driver/Peripheral/sysctrl.c",
-        "${rt582_sdk_root}/Driver/Peripheral/sysfun.c",
-        "${rt582_sdk_root}/Driver/Peripheral/timer.c",
-        "${rt582_sdk_root}/Driver/Peripheral/uart_retarget.c",
-        "${rt582_sdk_root}/Driver/Peripheral/wdt.c",
-        "${rt582_sdk_root}/Driver/Peripheral/lpm.c",
-        "${rt582_sdk_root}/Portable/Utility/util.c",
-        "${rt582_sdk_root}/Portable/Utility/util_log.c",
-        "${rt582_sdk_root}/Portable/Utility/util_printf.c",
-        "${rt582_sdk_root}/Portable/Utility/util_string.c",
-        "${rt582_sdk_root}/Portable/bsp/bsp.c",
-        "${rt582_sdk_root}/Portable/bsp/bsp_button.c",
-        "${rt582_sdk_root}/Portable/bsp/bsp_led.c",
-        "${rt582_sdk_root}/Portable/bsp/bsp_uart_drv.c",
-        "${rt582_sdk_root}/RFB/rfb.c",
-        "${rt582_sdk_root}/RFB/rfb_comm_15p4Mac.c",
-        "${rt582_sdk_root}/RFB/rfb_comm_common.c",
-        "${rt582_sdk_root}/RFB/rfb_comm_isr.c",
-        "${rt582_sdk_root}/RFB/rfb_port.c",
-        
-        #BLE 
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_host_ref.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_advertising.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_att_gatt.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_common.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_gap.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_scan.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_security_manager.c",
-        "${rt582_sdk_root}/BLE/BLE_Host/ble_cmd_privacy.c",
-
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/att.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_advertising_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_api_handler.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_att_gatt_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_bonding_storage.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_common_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_event_app.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_event_module.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_gap_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_scan_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_security_manager_api.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/host_management.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/l2cap.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/smp.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_privacy.c",
-        "${rt582_sdk_root}/BLE/BLE_Host_Internal/ble_memory.c",
-
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_vendor.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_controller.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_advertising.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_scan.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_security.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_connect.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_connect_cte.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_cmd_privacy.c",
-        "${rt582_sdk_root}/BLE/HCI/hci_event.c",
-
-        "${rt582_sdk_root}/BLE/BLE_Service/BLE_Service_Common/ble_service_common.c",
-        "${rt582_sdk_root}/BLE/BLE_Service/GAPS/ble_service_gaps.c",
-        "${rt582_sdk_root}/BLE/BLE_Service/GATTS/ble_service_gatts.c",
-        "${rt582_sdk_root}/BLE/BLE_Service/DIS/ble_service_dis.c",
-        "${rt582_sdk_root}/BLE/BLE_Service/Matter/ble_service_matter.c",
-
-        "${rt582_sdk_root}/BLE/Portable/task_ble_app.c",
-        "${rt582_sdk_root}/BLE/Portable/task_host.c",
-
-        "${rt582_sdk_root}/RF_FW_Control_Task/Internal/rf_fw_ctrl_init.c",
-        "${rt582_sdk_root}/RF_FW_Control_Task/Internal/rf_fw_ctrl_rx.c",
-        "${rt582_sdk_root}/RF_FW_Control_Task/Internal/rf_fw_ctrl_tx.c",
-
-        "${rt582_sdk_root}/BLE_App_Profile/ble_profile_app.c",
-        "${rt582_sdk_root}/BLE_App_Profile/ble_profile_def.c",
-
-        "${rt582_sdk_root}/Portable/System/sys_arch.c",
-
-        #Crypto Engine
-        "${rt582_sdk_root}/Crypto/crypto.c",
-        "${rt582_sdk_root}/Crypto/crypto_util.c",
-        "${rt582_sdk_root}/Crypto/sha256.c",
-        "${rt582_sdk_root}/Crypto/aes.c",
-        "${rt582_sdk_root}/Crypto/hw_ecdh.c",
-        "${rt582_sdk_root}/Crypto/hw_ecdsa.c",
-        "${rt582_sdk_root}/Crypto/test/tst_ecdh.c",
-        "${rt582_sdk_root}/Crypto/test/tst_sha256.c",
-        "${rt582_sdk_root}/Crypto/test/tst_ecdsa.c",
-      ]
-    }
+    libs=["${rt582_sdk_root}/Library/librt582sdk.a"]
   }
 }

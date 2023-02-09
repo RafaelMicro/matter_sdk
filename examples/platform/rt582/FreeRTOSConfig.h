@@ -49,6 +49,9 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* FreeRTOS MPU specific definitions. */
 #define configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS (0)
 
+
+//#define configUSE_TICKLESS_IDLE 1
+
 extern uint32_t SystemCoreClock;
 #define configCPU_CLOCK_HZ (SystemCoreClock)
 #define configUSE_PREEMPTION (1)

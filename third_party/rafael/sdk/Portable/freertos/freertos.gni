@@ -19,14 +19,15 @@ template("freertos_target") {
   freertos_target_name = target_name
 
   _freertos_root = "${chip_root}/third_party/rafael/sdk/Portable/freertos/repo"
-  rt582_sdk_root = "${chip_root}/third_party/rafael/rt58x_sdk"
+  rt582_sdk_root = "${chip_root}/third_party/rafael/sdk"
 
   config("${freertos_target_name}_config") {
     include_dirs = [ 
       "${_freertos_root}/include",
       "${_freertos_root}/portable/GCC/ARM_CM3",
       "${chip_root}/examples/platform/rt582",
-      "${rt582_sdk_root}/Include",
+      "${rt582_sdk_root}/Library/Include",
+      "${rt582_sdk_root}/Portable/System/Include",
       "${chip_root}/third_party/rafael",
     ]
   }
@@ -47,7 +48,6 @@ template("freertos_target") {
       "${_freertos_root}/tasks.c",
       "${_freertos_root}/timers.c",
       "${_freertos_root}/portable/GCC/ARM_CM3/port.c",
-      "../System/sys_taskdbg.c",
     ]
 
     if (!defined(configs)) {

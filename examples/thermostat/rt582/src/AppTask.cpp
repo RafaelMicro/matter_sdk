@@ -64,6 +64,7 @@
 #include "init_thermostat_rt582Platform.h"
 #include "bsp.h"
 #include "bsp_button.h"
+#include "bsp_uart.h"
 
 
 using namespace chip;
@@ -309,6 +310,7 @@ CHIP_ERROR AppTask::StartAppTask()
 {
     CHIP_ERROR err;
     bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
+    bsp_init(BSP_INIT_UART, NULL);
 
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
@@ -482,6 +484,9 @@ void AppTask::UpdateThermoStatUI()
     uart_report_data[13] = (TempMgr().GetCoolingSetPoint() >> 8) & 0xFF;
 
     uart_report_data[14] = _data_checksum_calc(&uart_report_data[4], 10);
+
+
+    bsp_uart_send(uart_report_data, 15);
     
     for(int i=0;i<15;i++)
     {

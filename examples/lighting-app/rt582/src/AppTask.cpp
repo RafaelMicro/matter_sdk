@@ -400,8 +400,11 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    //err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
-    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
+#if CHIP_DEVICE_CONFIG_ENABLE_SED
+    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
+#else
+    //err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
+#endif
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
@@ -633,7 +636,7 @@ void AppTask::AppTaskMain(void * pvParameter)
 
     while (true)
     {       
-        BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, pdMS_TO_TICKS(10));
+        BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
        
         while (eventReceived == pdTRUE)
         {

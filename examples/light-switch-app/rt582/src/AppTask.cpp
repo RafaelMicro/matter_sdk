@@ -197,23 +197,23 @@ void AppTask::UpdateStatusLED()
     }
     else if (sHaveBLEConnections)
     {
-        init_rt582_led_flash(20, 150, 50);
-    }
-    if(sCommissioned)
-    {
-        //gpio_pin_clear(21);
+        init_rt582_led_flash(20, 50, 50);
     }
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
 {
-    ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
+    //ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
     switch (aEvent->Type)
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
-
         sIsThreadBLEAdvertising = true;
         UpdateStatusLED();   
+        break;
+    case DeviceEventType::kCHIPoBLEConnectionClosed:
+    case DeviceEventType::kFailSafeTimerExpired:
+        sHaveBLEConnections = false;
+        UpdateStatusLED();
         break;
     case DeviceEventType::kThreadStateChange:
         sIsThreadProvisioned = ConnectivityMgr().IsThreadProvisioned();
@@ -236,6 +236,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         break;
     }
 }
+
 
 void AppTask::InitServer(intptr_t arg)
 {

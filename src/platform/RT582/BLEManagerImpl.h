@@ -42,6 +42,7 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
     // the implementation methods provided by this class.
     friend BLEManager;
 
+private:
     // ===== Members that implement the BLEManager internal interface.
     CHIP_ERROR _Init(void);
     void _Shutdown() {}
@@ -85,10 +86,6 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
     friend BLEManager & BLEMgr(void);
     friend BLEManagerImpl & BLEMgrImpl(void);
 
-    static BLEManagerImpl sInstance;
-
-    // ===== Private members reserved for use by this class only.
-private:
     enum class Flags : uint16_t
     {
         kAdvertisingEnabled     = 0x0001,
@@ -120,26 +117,31 @@ private:
     CHIP_ERROR ConfigureAdvertising(void);
     CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
+    CHIP_ERROR ConfigureAdvertisingData(void);
+
+
     static void ble_evt_task(void * arg);
     static void ble_evt_indication_cb(uint32_t data_len);
     static void ble_evt_handler(void *p_param);
-
     static void ble_svcs_matter_evt_handler(void *p_matter_evt_param);
+
     static int server_profile_init(uint8_t host_id);
     static int ble_init(void);
-    static bool app_request_set(uint8_t host_id, uint32_t request, bool from_isr);
-    static void app_evt_handler(void *p_param);
     static int adv_init(void);
     static int adv_enable(uint8_t host_id);
+    static bool app_request_set(uint8_t host_id, uint32_t request, bool from_isr);
+    static void app_evt_handler(void *p_param);
 
     static void DriveBLEState(intptr_t arg);
-    CHIP_ERROR ConfigureAdvertisingData(void);
-    static void CancelBleAdvTimeoutTimer(void);
-    static void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
+    
+    void CancelBleAdvTimeoutTimer(void);
+    void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();
 #endif
+
+    static BLEManagerImpl sInstance;
 };
 
 /**

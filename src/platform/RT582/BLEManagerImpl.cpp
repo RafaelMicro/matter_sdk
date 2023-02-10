@@ -363,7 +363,7 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         {
             ble_active = true;
             ble_app_link_info[p_conn_param->host_id].state = STATE_CONNECTED;
-            ChipLogDetail(DeviceLayer, "Connected, ID=%d, Connected to %02x:%02x:%02x:%02x:%02x:%02x",
+            ChipLogProgress(DeviceLayer, "Connected, ID=%d, Connected to %02x:%02x:%02x:%02x:%02x:%02x",
                        p_conn_param->host_id,
                        p_conn_param->peer_addr.addr[5],
                        p_conn_param->peer_addr.addr[4],
@@ -453,25 +453,12 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         }
         else
         {
-            #if 0
-            ble_app_link_info[p_disconn_param->host_id].state = STATE_STANDBY;
+            ChipLogProgress(DeviceLayer, "Disconnect, ID:%d, Reason:0x%02x", p_disconn_param->host_id, p_disconn_param->reason);
+        }        
+        /* Send Connection close event */
+        disconnectEvent.Type = DeviceEventType::kCHIPoBLEConnectionClosed;
+        PlatformMgr().PostEvent(&disconnectEvent);
 
-            // re-start adv
-            if (app_request_set(p_disconn_param->host_id, APP_REQUEST_ADV_START, false) == false)
-            {
-                // No Application queue buffer. Error.
-            }
-            #endif
-
-            ChipLogDetail(DeviceLayer, "Disconnect, ID:%d, Reason:0x%02x", p_disconn_param->host_id, p_disconn_param->reason);
-        }
-
-        if(p_disconn_param->reason == 0x16)
-        {
-            /* Send Connection close event */
-            disconnectEvent.Type = DeviceEventType::kCHIPoBLEConnectionClosed;
-            PlatformMgr().PostEvent(&disconnectEvent);
-        }
     }
     break;
 
@@ -902,8 +889,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
     }    
 #endif
     mFlags.Set(Flags::kRTBLEStackInitialized);
-    // mFlags.Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART ? true : false);
-    mFlags.Set(Flags::kFastAdvertisingEnabled);
+    //mFlags.Set(Flags::kFastAdvertisingEnabled);
 exit:
     return err;
 }
@@ -922,7 +908,7 @@ CHIP_ERROR BLEManagerImpl::_SetAdvertisingEnabled(bool val)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
 
-    if (mFlags.Has(Flags::kAdvertisingEnabled) != val)
+    //if (mFlags.Has(Flags::kAdvertisingEnabled) != val)
     {
         mFlags.Set(Flags::kAdvertisingEnabled, val);
         PlatformMgr().ScheduleWork(DriveBLEState, 0);
@@ -1131,7 +1117,6 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
     }
 
     err = ConfigureAdvertisingData();
-
     if (err == CHIP_NO_ERROR)
     /* schedule NFC emulation stop */
     {
@@ -1178,17 +1163,16 @@ CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
 void BLEManagerImpl::DriveBLEState(void)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
-
     // Check if BLE stack is initialized
     // VerifyOrExit(mFlags.Has(Flags::kRTBLEStackInitialized), /* */);
-
     // Start advertising if needed...
-    if (mServiceMode == ConnectivityManager::kCHIPoBLEServiceMode_Enabled && mFlags.Has(Flags::kAdvertisingEnabled))
+    if (mFlags.Has(Flags::kAdvertisingEnabled))
     {
         // Start/re-start advertising if not already started, or if there is a pending change
         // to the advertising configuration.
         if (!mFlags.Has(Flags::kAdvertising) || mFlags.Has(Flags::kRestartAdvertising))
         {
+            ChipLogProgress(DeviceLayer, "Start Advertising");
             err = StartAdvertising();
             SuccessOrExit(err);
         }
@@ -1254,7 +1238,8 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
     break;
 
     case DeviceEventType::kCHIPoBLEConnectionClosed:
-
+        mFlags.Set(Flags::kRestartAdvertising);
+        //_SetAdvertisingEnabled(true);
         break;
 
     case DeviceEventType::kThreadStateChange:

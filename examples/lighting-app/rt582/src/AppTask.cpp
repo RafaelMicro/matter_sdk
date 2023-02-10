@@ -350,10 +350,6 @@ void AppTask::UpdateStatusLED()
     {
         init_rt582_led_flash(20, 150, 50);
     }
-    if(sCommissioned)
-    {
-        //gpio_pin_clear(21);
-    }
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)

@@ -24,30 +24,35 @@
 #include <FreeRTOS.h>
 #include <app/clusters/on-off-server/on-off-server.h>
 
+#include <app-common/zap-generated/af-structs.h>
+#include <app-common/zap-generated/attributes/Accessors.h>
+
 // initialization values for Blue in XY color space
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
 // initialization values for Blue in HSV color space
-constexpr HsvColor_t kHSV = { 60, 0, 255 };
-
-// default initialization value for the light level after start
-constexpr uint8_t kDefaultLevel = 254;
+constexpr HsvColor_t kHSV = { 60, 0, 254 };
 
 using namespace chip;
-using namespace ::chip::DeviceLayer;
+using namespace chip::DeviceLayer;
+using namespace chip::app::Clusters::LevelControl;
 
 LightingManager LightingManager::sLight;
 
 CHIP_ERROR LightingManager::Init()
 {
     bool currentLedState;
+    app::DataModel::Nullable<uint8_t> nullableCurrentLevel;
     // read current on/off value on endpoint one.
-    //chip::DeviceLayer::PlatformMgr().LockChipStack();
+
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
-    //chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-    mLevel = kDefaultLevel;
+    Attributes::CurrentLevel::Get(1, nullableCurrentLevel);
+
+
+    mLevel = nullableCurrentLevel.Value();
     mXY    = kBlueXY;
     mHSV   = kHSV;
+    mHSV.v = mLevel;
     mRGB   = HsvToRgb(mHSV);
     mState = currentLedState ? kState_On : kState_Off;
 

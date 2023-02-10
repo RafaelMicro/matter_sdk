@@ -69,10 +69,7 @@ using namespace ::chip::DeviceLayer;
 #define APP_EVENT_QUEUE_SIZE 10
 #define LIGHT_ENDPOINT_ID (1)
 
-
-
 namespace {
-
 bool sIsThreadBLEAdvertising = false;
 bool sIsThreadProvisioned = false;
 bool sIsThreadEnabled     = false;
@@ -88,67 +85,20 @@ static StaticQueue_t sAppEventQueueStruct;
 static StackType_t appStack[APP_TASK_STACK_SIZE / sizeof(StackType_t)];
 static StaticTask_t appTaskStruct;
 
-// NOTE! This key is for test/certification only and should not be available in production devices!
-// If CONFIG_CHIP_FACTORY_DATA is enabled, this value is read from the factory data.
-static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLength] 
-                = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-                    0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
-
-static EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
 static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
+
+Identify gIdentify = {
+    LIGHT_ENDPOINT_ID,
+    AppTask::IdentifyStartHandler,
+    AppTask::IdentifyStopHandler,
+    EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LIGHT,
+};
+
+} //namespace
 /**********************************************************
  * Identify Callbacks
  *********************************************************/
 
-namespace {
-void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
-{
-    ChipLogProgress(Zcl, "Trigger Identify Complete");
-    sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
-}
-} // namespace
-
-void OnTriggerIdentifyEffect(Identify * identify)
-{
-    sIdentifyEffect = identify->mCurrentEffectIdentifier;
-
-    if (identify->mCurrentEffectIdentifier == EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE)
-    {
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE - Not supported, use effect variant %d",
-                        identify->mEffectVariant);
-        sIdentifyEffect = static_cast<EmberAfIdentifyEffectIdentifier>(identify->mEffectVariant);
-    }
-
-    switch (sIdentifyEffect)
-    {
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK:
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE:
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY:
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(5), OnTriggerIdentifyEffectCompleted,
-                                                           identify);
-        break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT:
-        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted,
-                                                           identify);
-        break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT:
-        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
-        sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
-        break;
-    default:
-        ChipLogProgress(Zcl, "No identifier effect");
-    }
-}
-Identify gIdentify = {
-    chip::EndpointId{ 1 },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStop"); },
-    EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LED,
-    OnTriggerIdentifyEffect,
-};
-
-} // namespace
 
 constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;
 using namespace chip::TLV;
@@ -164,11 +114,58 @@ void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
 }
-void AppTask::OpenCommissioning(intptr_t arg)
+
+void AppTask::IdentifyStartHandler(Identify *)
 {
-    // Enable BLE advertisements
-    chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow();
-    ChipLogProgress(NotSpecified, "BLE advertising started. Waiting for Pairing.");
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Start;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);
+}
+
+void AppTask::IdentifyStopHandler(Identify *)
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Stop;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);
+}
+
+void AppTask::PostAppIdentify()
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Identify;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);    
+}
+
+void AppTask::IdentifyHandleOp(AppEvent * aEvent)
+{
+    static uint32_t identifyState = 0;
+
+    if (aEvent->Type == AppEvent::kEventType_Identify_Start)
+    {
+        identifyState = 1;
+        ChipLogProgress(NotSpecified, "identify start");
+    }
+
+    else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
+    {
+        rt582_led_level_ctl(2, 254);
+        rt582_led_level_ctl(3, 254);
+        rt582_led_level_ctl(4, 254);
+
+        ChipLogProgress(NotSpecified, "identify");
+    }
+
+    else if (aEvent->Type == AppEvent::kEventType_Identify_Stop)
+    {
+        identifyState = 0;
+        rt582_led_level_ctl(2, 0);
+        rt582_led_level_ctl(3, 0);
+        rt582_led_level_ctl(4, 0);
+        ChipLogProgress(NotSpecified, "identify stop");
+    }
 }
 
 /**

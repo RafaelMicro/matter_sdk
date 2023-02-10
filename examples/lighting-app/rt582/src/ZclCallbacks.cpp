@@ -21,6 +21,7 @@
  */
 
 #include "AppConfig.h"
+#include "AppTask.h"
 #include "LightingManager.h"
 #include "init_rt582Platform.h"
 #include "init_lighting_rt582Platform.h"
@@ -144,6 +145,10 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             ChipLogProgress(Zcl, "Unknown attribute ID: " ChipLogFormatMEI, ChipLogValueMEI(attributeId));
             return;
         }
+    }
+    else if (clusterId == Identify::Id)
+    {
+        GetAppTask().PostAppIdentify();
     }
 }
 /** @brief OnOff Cluster Init

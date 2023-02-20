@@ -35,6 +35,7 @@ public:
 
     // ===== Private members reserved for use by this class only.
     static void DoFactoryReset(intptr_t arg);
+
     
 private:
     // ===== Members that implement the ConfigurationManager public interface.
@@ -45,6 +46,8 @@ private:
     void InitiateFactoryReset(void) override;
     CHIP_ERROR ReadPersistedStorageValue(::chip::Platform::PersistedStorage::Key key, uint32_t & value) override;
     CHIP_ERROR WritePersistedStorageValue(::chip::Platform::PersistedStorage::Key key, uint32_t value) override;
+    CHIP_ERROR GetRebootCount(uint32_t & rebootCount) override;
+    CHIP_ERROR StoreRebootCount(uint32_t rebootCount) override;
 
     // NOTE: Other public interface methods are implemented by GenericConfigurationManagerImpl<>.
 

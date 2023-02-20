@@ -97,6 +97,16 @@ exit:
     return err;
 }
 
+CHIP_ERROR ConfigurationManagerImpl::GetRebootCount(uint32_t & rebootCount)
+{
+    return ReadConfigValue(RT582Config::kConfigKey_RebootCount, rebootCount);
+}
+
+CHIP_ERROR ConfigurationManagerImpl::StoreRebootCount(uint32_t rebootCount)
+{
+    return WriteConfigValue(RT582Config::kConfigKey_RebootCount, rebootCount);
+}
+
 CHIP_ERROR ConfigurationManagerImpl::ReadConfigValue(Key key, bool & val)
 {
     return RT582Config::ReadConfigValue(key, val);

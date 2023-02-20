@@ -107,6 +107,8 @@ public:
     static CHIP_ERROR WriteConfigValueBin(Key key, const void * data, size_t dataLen);
     static CHIP_ERROR ClearConfigValue(Key key);
     static bool ConfigValueExists(Key key);
+    template <typename T>
+    static bool ConfigValueExists(Key key, T & val);
     static CHIP_ERROR FactoryResetConfig(void);
     static void RunConfigUnitTest(void);
 

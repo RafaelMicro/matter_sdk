@@ -240,6 +240,14 @@ CHIP_ERROR RT582Config::Init()
         ChipLogError(DeviceLayer, "ds_initial fail %d", ds_ret);
         while(1);
     }
+
+    CHIP_ERROR err;
+    uint32_t testval;
+    if (!RT582Config::ConfigValueExists(RT582Config::kConfigKey_RebootCount, testval))
+    {
+        err = chip::DeviceLayer::ConfigurationMgr().StoreRebootCount(0);
+    }
+
 #endif
     
     return ChipError(0);
@@ -324,6 +332,11 @@ bool RT582Config::ConfigValueExists(Key key)
     return ChipError::IsSuccess(ReadConfigValue(key, val));
 }
 
+template <typename T>
+bool RT582Config::ConfigValueExists(Key key, T & val)
+{
+    return ChipError::IsSuccess(ReadConfigValue(key, val));
+}
 
 CHIP_ERROR RT582Config::FactoryResetConfig(void)
 {

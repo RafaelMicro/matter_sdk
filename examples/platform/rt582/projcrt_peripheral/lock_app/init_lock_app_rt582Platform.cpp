@@ -41,10 +41,18 @@ static flash_info_t flash_table[32];
 
 static void init_lock_app_pin_mux(void)
 {
-    gpio_cfg_output(20);
-    gpio_cfg_output(21);
-    gpio_pin_set(20);
-    gpio_pin_set(21);
+    pin_set_mode(22, MODE_GPIO);
+    pin_set_mode(23, MODE_GPIO);
+    pin_set_mode(24, MODE_GPIO);
+    
+    gpio_cfg_output(22);
+    gpio_pin_set(22);
+
+    gpio_cfg_output(23);
+    gpio_pin_set(23);
+
+    gpio_cfg_output(24);
+    gpio_pin_set(24);    
     return;
 }
 

@@ -75,7 +75,7 @@
  * {MAJOR_VERSION}.0d{MINOR_VERSION}
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING
-#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING "0.1ALPHA"
+#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING "1.0"
 #endif
 
 /**
@@ -134,11 +134,13 @@
 // #define CHIP_DEVICE_CONFIG_SUPPORTS_CONCURRENT_CONNECTION 0
 
 #define CHIP_PROGRESS_LOGGING 1
+
 #define CHIP_DETAIL_LOGGING 0
 
 // #define CHIP_DEVICE_CONFIG_THREAD_FTD 0
 
-#define CHIP_CONFIG_MAX_FABRICS 4
+#define CHIP_CONFIG_MAX_FABRICS 5
+
 // #define CHIP_DEVICE_CONFIG_ENABLE_SED 0
 
 #define CHIP_DEVICE_CONFIG_DEVICE_TYPE 0x0051
@@ -150,3 +152,17 @@
 #ifndef CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL
 #define CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL 50_ms32
 #endif
+
+
+/**
+ *  @def CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL
+ *
+ *  @brief
+ *    Active retransmit interval, or time to wait before retransmission after
+ *    subsequent failures in milliseconds.
+ *
+ *  This is the default value, that might be adjusted by end device depending on its
+ *  needs (e.g. sleeping period) using Service Discovery TXT record CRA key.
+ *
+ */
+// #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (2000_ms32)

@@ -25,6 +25,7 @@ extern "C" {
 #endif
 
 void init_rt582Platform(void);
+void kvs_init(void);
 #ifdef __cplusplus
 }
 #endif

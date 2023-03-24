@@ -25,6 +25,7 @@
 #include <type_traits>
 
 #include <mbedtls/bignum.h>
+#include <mbedtls/aes.h>
 #include <mbedtls/ccm.h>
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/ecdh.h>

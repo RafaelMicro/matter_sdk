@@ -20,15 +20,19 @@
 #include <app/clusters/ota-requestor/OTADownloader.h>
 #include <app/clusters/ota-requestor/OTARequestorInterface.h>
 
-extern "C" {
-#include "platform/bootloader/api/btl_interface.h"
-#include "platform/emlib/inc/em_bus.h" // For CORE_CRITICAL_SECTION
-}
+// extern "C" {
+// #include "platform/bootloader/api/btl_interface.h"
+// #include "platform/emlib/inc/em_bus.h" // For CORE_CRITICAL_SECTION
+// }
 
-#include "EFR32Config.h"
+// #include "EFR32Config.h"
+#include <platform/RT582/RT582Config.h>
+#include "cm3_mcu.h"
 
 /// No error, operation OK
 #define SL_BOOTLOADER_OK 0L
+
+using namespace ::chip::DeviceLayer::Internal;
 
 namespace chip {
 
@@ -37,6 +41,8 @@ uint8_t OTAImageProcessorImpl::mSlotId                                          
 uint32_t OTAImageProcessorImpl::mWriteOffset                                            = 0;
 uint16_t OTAImageProcessorImpl::writeBufOffset                                          = 0;
 uint8_t OTAImageProcessorImpl::writeBuffer[kAlignmentBytes] __attribute__((aligned(4))) = { 0 };
+
+uint32_t OTAImageProcessorImpl::otaNewVersion                                           = 0;
 
 CHIP_ERROR OTAImageProcessorImpl::PrepareDownload()
 {
@@ -100,6 +106,7 @@ CHIP_ERROR OTAImageProcessorImpl::ConfirmCurrentImage()
 
     uint32_t currentVersion;
     uint32_t targetVersion = requestor->GetTargetVersion();
+
     ReturnErrorOnFailure(DeviceLayer::ConfigurationMgr().GetSoftwareVersion(currentVersion));
     if (currentVersion != targetVersion)
     {
@@ -129,7 +136,7 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
-    CORE_CRITICAL_SECTION(bootloader_init();)
+    // CORE_CRITICAL_SECTION(bootloader_init();)
     mSlotId                                 = 0; // Single slot until we support multiple images
     writeBufOffset                          = 0;
     mWriteOffset                            = 0;
@@ -163,7 +170,7 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
             writeBufOffset++;
         }
 
-        CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
+        // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
         if (err)
         {
             ChipLogError(SoftwareUpdate, "ERROR: In HandleFinalize bootloader_eraseWriteStorage() error %ld", err);
@@ -184,9 +191,10 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     ChipLogProgress(SoftwareUpdate, "OTAImageProcessorImpl::HandleApply()");
 
     // Force KVS to store pending keys such as data from StoreCurrentUpdateInfo()
-    chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().ForceKeyMapSave();
+    // chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().ForceKeyMapSave();
+    chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(otaNewVersion);
 
-    CORE_CRITICAL_SECTION(err = bootloader_verifyImage(mSlotId, NULL);)
+    // CORE_CRITICAL_SECTION(err = bootloader_verifyImage(mSlotId, NULL);)
     if (err != SL_BOOTLOADER_OK)
     {
         ChipLogError(SoftwareUpdate, "ERROR: bootloader_verifyImage() error %ld", err);
@@ -194,7 +202,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
         return;
     }
 
-    CORE_CRITICAL_SECTION(err = bootloader_setImageToBootload(mSlotId);)
+    // CORE_CRITICAL_SECTION(err = bootloader_setImageToBootload(mSlotId);)
     if (err != SL_BOOTLOADER_OK)
     {
         ChipLogError(SoftwareUpdate, "ERROR: bootloader_setImageToBootload() error %ld", err);
@@ -203,7 +211,13 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     }
 
     // This reboots the device
-    CORE_CRITICAL_SECTION(bootloader_rebootAndInstall();)
+    ChipLogProgress(SoftwareUpdate, "System restarting...");
+    chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(10 * 1000), HandleRestart, nullptr);
+}
+
+void OTAImageProcessorImpl::HandleRestart(chip::System::Layer * systemLayer, void * appState)
+{
+    Sys_Software_Reset();
 }
 
 void OTAImageProcessorImpl::HandleAbort(intptr_t context)
@@ -222,6 +236,7 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
 {
     uint32_t err          = SL_BOOTLOADER_OK;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
+
     if (imageProcessor == nullptr)
     {
         ChipLogError(SoftwareUpdate, "ImageProcessor context is null");
@@ -255,7 +270,7 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
         {
             writeBufOffset = 0;
 
-            CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
+            // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
             if (err)
             {
                 ChipLogError(SoftwareUpdate, "ERROR: In HandleProcessBlock bootloader_eraseWriteStorage() error %ld", err);
@@ -284,6 +299,8 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessHeader(ByteSpan & block)
         // SL TODO -- store version somewhere
         ChipLogProgress(SoftwareUpdate, "Image Header software version: %ld payload size: %lu", header.mSoftwareVersion,
                         (long unsigned int) header.mPayloadSize);
+        chip::OTAImageProcessorImpl::otaNewVersion = header.mSoftwareVersion;
+        ChipLogProgress(SoftwareUpdate, "==========> software version: %ld", chip::OTAImageProcessorImpl::otaNewVersion);
         mParams.totalFileBytes = header.mPayloadSize;
         mHeaderParser.Clear();
     }

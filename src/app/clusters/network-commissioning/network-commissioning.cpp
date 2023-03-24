@@ -789,7 +789,7 @@ bool NullNetworkDriver::GetEnabled()
 uint8_t NullNetworkDriver::GetMaxNetworks()
 {
     // The minimal value of MaxNetworks should be 1 per spec.
-    return 1;
+    return 2;
 }
 
 DeviceLayer::NetworkCommissioning::NetworkIterator * NullNetworkDriver::GetNetworks()

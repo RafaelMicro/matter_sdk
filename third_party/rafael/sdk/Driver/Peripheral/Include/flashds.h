@@ -35,7 +35,7 @@ extern "C"
 
 
 #define DS_VAILD_TYPE_SEARCH					0
-#define DS_READ_TYPE_FLAG							1
+#define DS_READ_TYPE_FLAG						1
 #define DS_READ_TYPE_SEARCH						1
 #define DS_READ_TYPE_DELETE						2
 
@@ -96,18 +96,18 @@ typedef enum
 */
 typedef struct __attribute__((packed))
 {	
-	uint8_t  page_number;												/*!< page_number to indicate data set number 											*/
-	uint8_t  page_mode;													/*!< page_mode to indicate data set one or tow page mode					*/
-	uint8_t  invaild;														/*!< invaild to indicate data set  																*/
-	uint8_t  type_max;                          /*!< type_max to indicate data set type max number 								*/
+	uint8_t  page_number;											/*!< page_number to indicate data set number 											*/
+	uint8_t  page_mode;												/*!< page_mode to indicate data set one or tow page mode					*/
+	uint8_t  invaild;												/*!< invaild to indicate data set  																*/
+	uint8_t  type_max;                                              /*!< type_max to indicate data set type max number 								*/
 	uint8_t  current_page;											/*!< current_page to indicate operation page 											*/
-	uint16_t current_sn;												/*!< current_page to indicate operation serial number 						*/
+	uint16_t current_sn;											/*!< current_page to indicate operation serial number 						*/
 	uint32_t current_offset;										/*!< current_offset to indicate operation address offset poistion */
 	uint32_t current_address;										/*!< current_address to indicate operation address poistion 			*/
-	uint32_t migration_address;									/*!< migration_address to indicate update migration address 			*/
+	uint32_t migration_address;									    /*!< migration_address to indicate update migration address 			*/
 	uint32_t start_address;											/*!< start_address to indicate page start address 								*/
 	uint32_t middle_address;										/*!< middle_address to indicate data set middle address 					*/
-	uint32_t end_address;												/*!< end_address to indicate page end address 										*/
+	uint32_t end_address;											/*!< end_address to indicate page end address 										*/
 }ds_info_t;
 /**
  * @brief data set package struct
@@ -119,10 +119,11 @@ typedef struct __attribute__((packed))
 {	
 		uint8_t   type;														/*!< type to indicate data set package type 						*/
 		uint16_t  len;														/*!< len to indicate  data set package data len 				*/
-		uint32_t 	sn;															/*!< sn to indicate data set package serial number			*/
-		uint32_t  buf_addr;												/*!< buf_addr to indicate data set data buffer					*/
+		uint32_t  sn;														/*!< sn to indicate data set package serial number			*/
+		uint32_t  buf_addr;												    /*!< buf_addr to indicate data set data buffer					*/
 		uint8_t   crc;														/*!< cyclic redundancy check														*/
-		uint16_t 	magic;													/*!< magic to spilt data set format 										*/	
+		uint16_t  magic;													/*!< magic to spilt data set format 										*/	
+		uint32_t  location;
 } ds_t;
 /**
  * @brief data set read/write struct
@@ -133,7 +134,7 @@ typedef struct __attribute__((packed))
 typedef struct __attribute__((packed))
 {
 	uint8_t	 		ds_page_mode;											/*!< ds_page_mode to indicate data set page onepage mode or two page mode	*/
-	uint32_t 		start_address;										/*!< start_address to indicate page start address 												*/
+	uint32_t 		start_address;										    /*!< start_address to indicate page start address 												*/
 	uint32_t 		end_address;											/*!< end_address to indicate page end address 														*/
 	uint32_t 		page_size;												/*!< page_size to indicate one page size 																	*/
 }ds_config_t;
@@ -145,7 +146,7 @@ typedef struct __attribute__((packed))
  */
 typedef struct __attribute__((packed))
 {
-		uint8_t  		type;														/*!< type to indicate search data set package type								*/					
+		uint8_t  	type;														/*!< type to indicate search data set package type								*/					
 		uint16_t    flag;														/*!< flag to indicate search data set package flag								*/
 		uint32_t   	offset;													/*!< offset to indicate search data set package offset						*/
 		uint32_t   	address;												/*!< address to indicate search data set package start address		*/
@@ -159,9 +160,10 @@ typedef struct __attribute__((packed))
  */
 typedef struct __attribute__((packed))
 {
-		uint8_t  		type;												/*!< type to indicate read/write data set package type	*/
+		uint8_t  	type;												/*!< type to indicate read/write data set package type	*/
 		uint16_t   	len;												/*!< len to indicate read/write data set package length	*/
-		uint32_t   	address;										/*!< address to indicate read/write data set package address	*/
+		uint32_t   	address;				     						/*!< address to indicate read/write data set package address	*/
+		uint32_t    location;
 } ds_rw_t;
 /**************************************************************************************************
  *    GLOBAL PROTOTYPES

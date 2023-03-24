@@ -50,6 +50,7 @@ private:
     static void HandleAbort(intptr_t context);
     static void HandleProcessBlock(intptr_t context);
     CHIP_ERROR ProcessHeader(ByteSpan & block);
+    static void HandleRestart(chip::System::Layer * systemLayer, void * appState); 
 
     /**
      * Called to allocate memory for mBlock if necessary and set it to block
@@ -75,6 +76,7 @@ private:
     static uint8_t writeBuffer[kAlignmentBytes] __attribute__((aligned(4)));
     // Offset indicates how far the write buffer has been filled
     static uint16_t writeBufOffset;
+    static uint32_t otaNewVersion;
 };
 
 } // namespace chip

@@ -18,7 +18,7 @@ import("${chip_root}/src/platform/RT582/args.gni")
 
 rt582_sdk_target = get_label_info(":sdk", "label_no_toolchain")
 
-chip_enable_ota_requestor = false
+chip_enable_ota_requestor = true
 chip_build_libshell = true
 
 

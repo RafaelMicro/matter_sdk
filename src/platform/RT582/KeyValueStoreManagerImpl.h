@@ -40,6 +40,7 @@ public:
     CHIP_ERROR _Delete(const char * key);
 
     //static constexpr size_t kMaxEntries = KVS_MAX_ENTRIES;
+    // KeyValueStoreManagerImpl();
 
 
 private:

@@ -21,6 +21,8 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 
+#include <OTAConfig.h>
+
 #include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/cluster-id.h>
@@ -87,18 +89,151 @@ static StaticTask_t appTaskStruct;
 
 static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 
+// Identify gIdentify = {
+//     LIGHT_ENDPOINT_ID,
+//     AppTask::IdentifyStartHandler,
+//     AppTask::IdentifyStopHandler,
+//     EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LIGHT,
+// };
+
+
+EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+
+/**********************************************************
+ * Identify Callbacks
+ *********************************************************/
+
+void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
+{
+    ChipLogProgress(Zcl, "Trigger Identify Complete");
+    sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+
+// #if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+//     AppTask::GetAppTask().StopStatusLEDTimer();
+// #endif
+
+    rt582_led_level_ctl(2, 0);
+    rt582_led_level_ctl(3, 0);
+    rt582_led_level_ctl(4, 0);
+}
+
+void OnTriggerIdentifyEffectBlink(chip::System::Layer * systemLayer, void * appState)
+{
+    uint32_t i = 0;
+
+    for (uint32_t cnt = 0; cnt < 1; cnt++) {
+
+        rt582_led_level_ctl(2, 254);
+        rt582_led_level_ctl(3, 254);
+        rt582_led_level_ctl(4, 254);
+        vTaskDelay(500);
+        rt582_led_level_ctl(2, 0);
+        rt582_led_level_ctl(3, 0);
+        rt582_led_level_ctl(4, 0);
+        vTaskDelay(500);
+    }
+}
+
+void OnTriggerIdentifyEffectBreathe(chip::System::Layer * systemLayer, void * appState)
+{
+    uint32_t i = 0;
+
+    for (uint32_t cnt = 0; cnt < 15; cnt++) {
+
+        rt582_led_level_ctl(2, 254);
+        rt582_led_level_ctl(3, 254);
+        rt582_led_level_ctl(4, 254);
+        vTaskDelay(50);
+        rt582_led_level_ctl(2, 0);
+        rt582_led_level_ctl(3, 0);
+        rt582_led_level_ctl(4, 0);
+        vTaskDelay(50);
+    }
+}
+
+void OnTriggerIdentifyEffectOk(chip::System::Layer * systemLayer, void * appState)
+{
+    uint32_t i = 0;
+
+    for (uint32_t cnt = 0; cnt < 2; cnt++) {
+
+        rt582_led_level_ctl(2, 254);
+        rt582_led_level_ctl(3, 254);
+        rt582_led_level_ctl(4, 254);
+        vTaskDelay(250);
+        rt582_led_level_ctl(2, 0);
+        rt582_led_level_ctl(3, 0);
+        rt582_led_level_ctl(4, 0);
+        vTaskDelay(250);
+    }
+}
+
+void OnTriggerIdentifyEffectChannel(chip::System::Layer * systemLayer, void * appState)
+{
+    uint32_t i = 0;
+
+    for (uint32_t cnt = 0; cnt < 1; cnt++) {
+
+        rt582_led_level_ctl(2, 254);
+        rt582_led_level_ctl(3, 254);
+        rt582_led_level_ctl(4, 254);
+        vTaskDelay(500);
+        rt582_led_level_ctl(2, 20);
+        rt582_led_level_ctl(3, 20);
+        rt582_led_level_ctl(4, 20);
+        vTaskDelay(1500);
+    }
+}
+
+void OnTriggerIdentifyEffect(Identify * identify)
+{
+    sIdentifyEffect = identify->mCurrentEffectIdentifier;
+
+// #if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+//     AppTask::GetAppTask().StartStatusLEDTimer();
+// #endif
+
+    switch (sIdentifyEffect)
+    {
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK");
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBlink, identify);
+        break;
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE");
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBreathe, identify);
+        break;
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY");
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectOk, identify);
+        break;
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT");
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted, identify);
+        break;
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE");
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectChannel, identify);
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(2), OnTriggerIdentifyEffectCompleted, identify);
+        break;
+    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT:
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT");
+        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
+        break;    
+    default:
+        ChipLogProgress(Zcl, "No identifier effect");
+    }
+}
+
 Identify gIdentify = {
     LIGHT_ENDPOINT_ID,
     AppTask::IdentifyStartHandler,
     AppTask::IdentifyStopHandler,
     EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LIGHT,
+    OnTriggerIdentifyEffect,
 };
 
 } //namespace
-/**********************************************************
- * Identify Callbacks
- *********************************************************/
-
 
 constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;
 using namespace chip::TLV;
@@ -142,6 +277,8 @@ void AppTask::PostAppIdentify()
 void AppTask::IdentifyHandleOp(AppEvent * aEvent)
 {
     static uint32_t identifyState = 0;
+
+    // ChipLogProgress(NotSpecified, "identify effect = %x", aEvent->Type);
 
     if (aEvent->Type == AppEvent::kEventType_Identify_Start)
     {
@@ -289,7 +426,7 @@ void AppTask::InitServer(intptr_t arg)
     initParams.endpointNativeParams    = static_cast<void *>(&nativeParams);
 
     err = chip::Server::GetInstance().Init(initParams);
-    if(err != CHIP_NO_ERROR)
+    if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
     }
@@ -317,7 +454,7 @@ void AppTask::InitServer(intptr_t arg)
     uint8_t current_level = 0;
     RgbColor_t RGB;
 
-    if(LightMgr().IsTurnedOn())
+    if (LightMgr().IsTurnedOn())
     {
         current_level = LightMgr().GetLevel();
         RGB = LightMgr().GetRgb();
@@ -331,6 +468,9 @@ void AppTask::InitServer(intptr_t arg)
         rt582_led_level_ctl(3, 0); 
         rt582_led_level_ctl(4, 0);      
     }
+
+    OTAConfig::Init();
+
 
     // reboot count usage demo
     // uint32_t rebootCount = -1;
@@ -397,12 +537,13 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     }
 }
 
-
 CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err;
-    ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
+    // ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
     
+    // chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
     {
@@ -433,12 +574,14 @@ CHIP_ERROR AppTask::Init()
     }
     PlatformMgr().ScheduleWork(InitServer, 0);
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
+
     return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR AppTask::StartAppTask()
 {
     CHIP_ERROR err;
+
     bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
 
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 

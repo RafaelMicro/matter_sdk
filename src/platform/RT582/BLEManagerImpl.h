@@ -132,6 +132,7 @@ private:
     static bool app_request_set(uint8_t host_id, uint32_t request, bool from_isr);
     static void app_evt_handler(void *p_param);
 
+    static void BleAdvTimeoutHandler(TimerHandle_t xTimer);
     static void DriveBLEState(intptr_t arg);
     
     void CancelBleAdvTimeoutTimer(void);

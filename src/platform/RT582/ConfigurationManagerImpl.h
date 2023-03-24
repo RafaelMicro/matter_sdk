@@ -38,7 +38,7 @@ public:
 
     
 private:
-    // ===== Members that implement the ConfigurationManager public interface.
+    // ===== Members that implement the ConfigurationManager public interface.WriteConfigValue
 
     CHIP_ERROR Init(void) override;
     CHIP_ERROR GetPrimaryWiFiMACAddress(uint8_t * buf) override;
@@ -48,6 +48,8 @@ private:
     CHIP_ERROR WritePersistedStorageValue(::chip::Platform::PersistedStorage::Key key, uint32_t value) override;
     CHIP_ERROR GetRebootCount(uint32_t & rebootCount) override;
     CHIP_ERROR StoreRebootCount(uint32_t rebootCount) override;
+    CHIP_ERROR GetSoftwareVersion(uint32_t & softwareVer) override;
+    CHIP_ERROR StoreSoftwareVersion(uint32_t softwareVer) override;
 
     // NOTE: Other public interface methods are implemented by GenericConfigurationManagerImpl<>.
 

@@ -83,7 +83,16 @@ void init_rt582Platform(void)
     uartConsoleInit();
     crypto_lib_init();
     //otSysInit(0, NULL); 
+    // kvs_init();
 }
+
+// void kvs_init(void)
+// {
+//     for (uint16_t keyValueMappingTalbePageIndex = 0xFB000; keyValueMappingTalbePageIndex < 0xFB800; keyValueMappingTalbePageIndex++) {
+//         flash_write_byte(keyValueMappingTalbePageIndex, 0);
+//         while (flash_check_busy()) {}
+//     }
+// }
 
 #ifdef __cplusplus
 }

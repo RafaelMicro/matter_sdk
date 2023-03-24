@@ -888,10 +888,31 @@ CHIP_ERROR BLEManagerImpl::_Init()
         return CHIP_ERROR_NO_MEMORY;
     }    
 #endif
+
+    // Create FreeRTOS sw timer for BLE timeouts and interval change.
+    sbleAdvTimeoutTimer = xTimerCreate("BleAdvTimer",       // Just a text name, not used by the RTOS kernel
+                                       1,                   // == default timer period (mS)
+                                       false,               // no timer reload (==one-shot)
+                                       (void *) this,       // init timer id = ble obj context
+                                       BleAdvTimeoutHandler // timer callback handler
+    );
     mFlags.Set(Flags::kRTBLEStackInitialized);
-    //mFlags.Set(Flags::kFastAdvertisingEnabled);
+    mFlags.Set(Flags::kFastAdvertisingEnabled);
+    PlatformMgr().ScheduleWork(DriveBLEState, 0);
 exit:
     return err;
+}
+
+void BLEManagerImpl::BleAdvTimeoutHandler(TimerHandle_t xTimer)
+{
+    if (BLEMgrImpl().mFlags.Has(Flags::kFastAdvertisingEnabled))
+    {
+        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Start slow advertisment");
+        
+        ChipLogProgress(DeviceLayer, "bleAdv Timeout : Start slow advertisment");
+        BLEMgrImpl().StopAdvertising();
+        BLEMgrImpl()._SetAdvertisingMode(BLEAdvertisingMode::kSlowAdvertising);
+    }
 }
 
 uint16_t BLEManagerImpl::_NumConnections(void)
@@ -928,7 +949,7 @@ CHIP_ERROR BLEManagerImpl::_SetAdvertisingMode(BLEAdvertisingMode mode)
         break;
     case BLEAdvertisingMode::kSlowAdvertising:
         mFlags.Set(Flags::kFastAdvertisingEnabled, false);
-        g_use_slow_adv_interval = true;        
+        g_use_slow_adv_interval = true;    
         break;
     default:
         return CHIP_ERROR_INVALID_ARGUMENT;
@@ -1113,6 +1134,7 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
 
     if (mFlags.Has(Flags::kFastAdvertisingEnabled))
     {
+        ChipLogProgress(DeviceLayer, "Start Slow Advertisment Timer");
         StartBleAdvTimeoutTimer(CHIP_DEVICE_CONFIG_BLE_ADVERTISING_INTERVAL_CHANGE_TIME);
     }
 
@@ -1407,28 +1429,27 @@ exit:
 
 void BLEManagerImpl::CancelBleAdvTimeoutTimer(void)
 {
-    ///, 0) == pdFAIL)
-    //{
-    //    ChipLogError(DeviceLayer, "Failed to stop BledAdv timeout timer");
-    //}
+    if (xTimerStop(sbleAdvTimeoutTimer, 0) == pdFAIL)
+    {
+        ChipLogError(DeviceLayer, "Failed to stop BledAdv timeout timer");
+    }
 }
 
 void BLEManagerImpl::StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs)
 {
-    //if (xTimerIsTimerActive(sbleAdvTimeoutTimer))
-    //{
-    //    CancelBleAdvTimeoutTimer();
-    //}
+    if (xTimerIsTimerActive(sbleAdvTimeoutTimer))
+    {
+       CancelBleAdvTimeoutTimer();
+    }
 
     // timer is not active, change its period to required value (== restart).
     // FreeRTOS- Block for a maximum of 100 ticks if the change period command
     // cannot immediately be sent to the timer command queue.
-    //if (xTimerChangePeriod(sbleAdvTimeoutTimer, aTimeoutInMs / portTICK_PERIOD_MS, 100) != pdPASS)
-    //{
-    //    ChipLogError(DeviceLayer, "Failed to start BledAdv timeout timer");
-    //}
+    if (xTimerChangePeriod(sbleAdvTimeoutTimer, aTimeoutInMs / portTICK_PERIOD_MS, 100) != pdPASS)
+    {
+       ChipLogError(DeviceLayer, "Failed to start BledAdv timeout timer");
+    }
 }
-
 
 
 } // namespace Internal

@@ -51,6 +51,22 @@ exit:
     return err;
 }
 
+CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
+{
+    RT582Config::ReadConfigValue(RT582Config::kConfigKey_SoftwareVersion, softwareVer);
+    ChipLogProgress(SoftwareUpdate, "ConfigurationManagerImpl::GetSoftwareVersion = %d", softwareVer);
+    // softwareVer = CHIP_CONFIG_SOFTWARE_VERSION_NUMBER;
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ConfigurationManagerImpl::StoreSoftwareVersion(uint32_t softwareVer)
+{
+    RT582Config::WriteConfigValue(RT582Config::kConfigKey_SoftwareVersion, softwareVer);
+    ChipLogProgress(SoftwareUpdate, "ConfigurationManagerImpl::StoreSoftwareVersion = %d", softwareVer);
+    // softwareVer = CHIP_CONFIG_SOFTWARE_VERSION_NUMBER;
+    return CHIP_NO_ERROR;
+}
+
 bool ConfigurationManagerImpl::CanFactoryReset()
 {
     // TODO: query the application to determine if factory reset is allowed.

@@ -881,6 +881,12 @@
     "NH6Rmzw=="
 #endif
 
+/*
+#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
+    "3CvibQGwGgzNG5uZ/w8sBP3Jf6hitoyLk5d3sBZJ7T8ExDvEGJUdT5GL4JDdhBb6GhekImBb0M8ZGKWiq2SiXk+SPsJqpMjhlngqDbkuYcECP8+J5Kv+MUwlGUa5KgX2nQ==" 
+#endif
+*/
+
 #else
 
 #undef CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE

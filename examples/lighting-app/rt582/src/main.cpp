@@ -30,6 +30,8 @@
 
 #include <lib/core/CHIPError.h>
 
+#include <mbedtls/aes.h>
+
 #if CONFIG_ENABLE_CHIP_SHELL
 #include "matter_shell.h"
 #endif
@@ -44,6 +46,7 @@ using namespace ::chip::DeviceLayer::Internal;
 // ================================================================================
 // Main Code
 // ================================================================================
+
 int main(void)
 {
     CHIP_ERROR err;
@@ -58,12 +61,13 @@ int main(void)
         return 0; 
     }
 
-#if ENABLE_CHIP_SHELL
+#if CONFIG_ENABLE_CHIP_SHELL
     startShellTask();
 #endif
-    info( "==================================================\n");
+
+    info( "==================================================\r\n");
     info( "chip-rt582-lighting-example starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
-    info( "==================================================\n\n");
+    info( "==================================================\r\n");
 
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)

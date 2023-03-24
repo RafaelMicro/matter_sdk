@@ -144,7 +144,9 @@
         "freertosconfig.h": "c",
         "chipprojectconfig.h": "c",
         "chip_define.h": "c",
-        "prg_multi_mpb_asic_fw.h": "c"
+        "prg_multi_mpb_asic_fw.h": "c",
+        "variant": "c",
+        "codeutils.h": "c"
     },
     // Configure paths or glob patterns to exclude from file watching.
     "files.watcherExclude": {
@@ -198,5 +200,6 @@
     "C_Cpp.default.cppStandard": "gnu++14",
     "C_Cpp.default.cStandard": "gnu11",
     "cmake.configureOnOpen": false,
-    "cmake.sourceDirectory": "${workspaceFolder}/config/telink/chip-module"
+    "cmake.sourceDirectory": "${workspaceFolder}/config/telink/chip-module",
+    "C_Cpp.dimInactiveRegions": false
 }

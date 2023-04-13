@@ -55,12 +55,14 @@ static_library("openthread-rt582-platform") {
    ]
 
   if (chip_openthread_ftd) {
-    public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+    #public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+    libs=["${openthread_rt582_root}/openthread/libopenthread-ftd.a"]
   } else {
-    public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+    #public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+    libs=["${openthread_rt582_root}/openthread/libopenthread-mtd.a"]
   }
   
-  libs=["${chip_root}/third_party/rafael/sdk/Library/libotrt582platform.a"] 
+  libs+=["${chip_root}/third_party/rafael/sdk/Library/libotrt582platform.a"] 
 }
 
 static_library("openthread-rt582-root") {
@@ -75,10 +77,12 @@ static_library("openthread-rt582-root") {
    ]
 
   if (chip_openthread_ftd) {
-    public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+    #public_configs = [ "${openthread_rt582_root}/openthread:openthread_ftd_config" ]
+    libs=["${openthread_rt582_root}/openthread/libopenthread-ftd.a"]
   } else {
-    public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+    #public_configs = [ "${openthread_rt582_root}/openthread:openthread_mtd_config" ]
+    libs=["${openthread_rt582_root}/openthread/libopenthread-mtd.a"]
   }
 
-  libs=["${chip_root}/third_party/rafael/sdk/Library/libotrt582.a"] 
+  #libs=["${chip_root}/third_party/rafael/sdk/Library/libotrt582.a"] 
 }

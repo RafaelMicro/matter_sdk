@@ -830,7 +830,8 @@ group("libopenthread_platform") {
 }
 
 static_library("libopenthread-ftd") {
-  sources = openthread_core_sources
+  #sources = openthread_core_sources
+  libs=["../../libopenthread-ftd.a"]
   public_deps = [ ":libopenthread_platform" ]
   public_configs = [ "../..:openthread_ftd_config" ]
 }

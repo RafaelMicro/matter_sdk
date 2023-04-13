@@ -25,13 +25,11 @@ declare_args() {
   rt582_static_sdk_root = "${chip_root}/third_party/rafael/rt58x_sdk"
   sdk_support_root = "${chip_root}/third_party/rafael/matter_support"
 
-  use_static_sdk_lib =  false #true # false
   # Build openthread with prebuilt rafael lib
   use_rafael_thread_lib = false
-  enable_openthread_cli = true
+  enable_openthread_cli = false
 
   kvs_max_entries = 75
-  use_external_flash = false
 }
 
 assert(rt582_sdk_root != "", "rt582_sdk_root must be specified")
@@ -96,13 +94,12 @@ template("rt582_sdk") {
     if (chip_build_libshell) {  # matter shell
       defines += [
         "ENABLE_CHIP_SHELL",
-        "OPENTHREAD_CONFIG_CLI_TRANSPORT=OT_CLI_TRANSPORT_CONSOLE",
-        "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1",
       ]
     } else {
-      if (enable_openthread_cli) {  # ot-cli only
-        defines += [ "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1" ]
-      }
+
+      #if (enable_openthread_cli) {  # ot-cli only
+      #  defines += [ "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1" ]
+      #}
     }
 
     cflags = []

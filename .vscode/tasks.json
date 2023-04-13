@@ -65,7 +65,8 @@
                 "lighting-app",
                 "light-switch-app",
                 "lock-app",
-                "thermostat"
+                "thermostat",
+                "smart-plug-app"
             ],
             "default": ""
         },

@@ -146,7 +146,9 @@
         "chip_define.h": "c",
         "prg_multi_mpb_asic_fw.h": "c",
         "variant": "c",
-        "codeutils.h": "c"
+        "codeutils.h": "c",
+        "__assert": "cpp",
+        "__bits": "cpp"
     },
     // Configure paths or glob patterns to exclude from file watching.
     "files.watcherExclude": {

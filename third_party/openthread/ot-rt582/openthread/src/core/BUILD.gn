@@ -755,7 +755,7 @@ header_pattern = [
 ]
 
 openthread_core_headers = filter_include(openthread_core_files, header_pattern)
-openthread_core_sources = filter_exclude(openthread_core_files, header_pattern)
+#openthread_core_sources = filter_exclude(openthread_core_files, header_pattern)
 
 source_set("libopenthread_core_config") {
   public = [
@@ -837,7 +837,8 @@ static_library("libopenthread-ftd") {
 }
 
 static_library("libopenthread-mtd") {
-  sources = openthread_core_sources
+  #sources = openthread_core_sources
+  libs=["../../libopenthread-mtd.a"]
   public_deps = [ ":libopenthread_platform" ]
   public_configs = [ "../..:openthread_mtd_config" ]
 }

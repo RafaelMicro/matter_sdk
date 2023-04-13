@@ -84,5 +84,5 @@ static_library("openthread-rt582-root") {
     libs=["${openthread_rt582_root}/openthread/libopenthread-mtd.a"]
   }
 
-  #libs=["${chip_root}/third_party/rafael/sdk/Library/libotrt582.a"] 
+  libs+=["${chip_root}/third_party/rafael/sdk/Library/libotrt582.a"] 
 }

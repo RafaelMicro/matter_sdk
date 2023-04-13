@@ -91,15 +91,17 @@ template("rt582_sdk") {
       }
     }
 
+
     if (chip_build_libshell) {  # matter shell
       defines += [
         "ENABLE_CHIP_SHELL",
+        "OPENTHREAD_CONFIG_CLI_TRANSPORT=OT_CLI_TRANSPORT_CONSOLE",
+        "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1",
       ]
     } else {
-
-      #if (enable_openthread_cli) {  # ot-cli only
-      #  defines += [ "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1" ]
-      #}
+      if (enable_openthread_cli) {  # ot-cli only
+        defines += [ "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1" ]
+      }
     }
 
     cflags = []

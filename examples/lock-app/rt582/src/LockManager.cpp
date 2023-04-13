@@ -131,6 +131,7 @@ bool LockManager::IsValidHolidayScheduleIndex(uint8_t scheduleIndex)
 bool LockManager::ReadConfigValues()
 {
     size_t outLen;
+    #if 0
     RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_LockUser, reinterpret_cast<uint8_t *>(&mLockUsers),
                                     sizeof(EmberAfPluginDoorLockUserInfo) * ArraySize(mLockUsers), outLen);
 
@@ -159,7 +160,7 @@ bool LockManager::ReadConfigValues()
 
     RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_HolidaySchedules, reinterpret_cast<uint8_t *>(&(mHolidaySchedule)),
                                     sizeof(EmberAfPluginDoorLockHolidaySchedule) * LockParams.numberOfHolidaySchedules, outLen);
-
+    #endif
     return true;
 }
 
@@ -384,6 +385,7 @@ bool LockManager::SetUser(chip::EndpointId endpointId, uint16_t userIndex, chip:
     userInStorage.credentials = chip::Span<const DlCredential>(mCredentials[userIndex], totalCredentials);
 
     // Save user information in NVM flash
+    #if 0
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_LockUser, reinterpret_cast<const uint8_t *>(&mLockUsers),
                                      sizeof(EmberAfPluginDoorLockUserInfo) * LockParams.numberOfUsers);
 
@@ -392,7 +394,7 @@ bool LockManager::SetUser(chip::EndpointId endpointId, uint16_t userIndex, chip:
 
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_LockUserName, reinterpret_cast<const uint8_t *>(mUserNames),
                                      sizeof(mUserNames));
-
+    #endif 
     ChipLogProgress(Zcl, "Successfully set the user [mEndpointId=%d,index=%d]", endpointId, userIndex);
 
     return true;
@@ -469,14 +471,14 @@ bool LockManager::SetCredential(chip::EndpointId endpointId, uint16_t credential
 
     memcpy(mCredentialData[credentialIndex], credentialData.data(), credentialData.size());
     credentialInStorage.credentialData = chip::ByteSpan{ mCredentialData[credentialIndex], credentialData.size() };
-
+#if 0
     // Save credential information in NVM flash
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_Credential, reinterpret_cast<const uint8_t *>(&mLockCredentials),
                                      sizeof(EmberAfPluginDoorLockCredentialInfo) * LockParams.numberOfCredentialsPerUser);
 
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_CredentialData, reinterpret_cast<const uint8_t *>(&mCredentialData),
                                      sizeof(mCredentialData));
-
+#endif
     ChipLogProgress(Zcl, "Successfully set the credential [credentialType=%u]", to_underlying(credentialType));
 
     return true;
@@ -579,9 +581,11 @@ DlStatus LockManager::SetYeardaySchedule(chip::EndpointId endpointId, uint8_t ye
     scheduleInStorage.status                  = status;
 
     // Save schedule information in NVM flash
+    #if 0
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_YearDaySchedules, reinterpret_cast<const uint8_t *>(mYeardaySchedule),
                                      sizeof(EmberAfPluginDoorLockYearDaySchedule) * LockParams.numberOfYeardaySchedulesPerUser *
                                          LockParams.numberOfUsers);
+    #endif
 
     return DlStatus::kSuccess;
 }
@@ -622,11 +626,12 @@ DlStatus LockManager::SetHolidaySchedule(chip::EndpointId endpointId, uint8_t ho
     scheduleInStorage.schedule.operatingMode  = operatingMode;
     scheduleInStorage.status                  = status;
 
+#if 0
     // Save schedule information in NVM flash
     RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_HolidaySchedules,
                                      reinterpret_cast<const uint8_t *>(&(mHolidaySchedule)),
                                      sizeof(EmberAfPluginDoorLockHolidaySchedule) * LockParams.numberOfHolidaySchedules);
-
+#endif
     return DlStatus::kSuccess;
 }
 

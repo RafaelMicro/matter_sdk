@@ -1,1 +1,0 @@
-../../all-clusters-app/esp32/README.md

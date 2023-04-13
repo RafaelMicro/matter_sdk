@@ -34,24 +34,29 @@
 #include "util_string.h"
 #include "util_log.h"
 
+#include "sys_arch.h"
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int tst_ecdh(void);
-extern int tst_sha256(void);
-extern int tst_ecdsa(void);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-
-
 using namespace chip;
 using namespace chip::Shell;
 using namespace chip::Logging;
+
+CHIP_ERROR cmd_mem(int argc, char ** argv)
+{
+    sys_malloc_info_printf();
+
+     return CHIP_NO_ERROR;
+}
 
 CHIP_ERROR cmd_rd(int argc, char ** argv)
 {
@@ -92,34 +97,10 @@ CHIP_ERROR cmd_rd(int argc, char ** argv)
     return CHIP_NO_ERROR;
 }
 
-CHIP_ERROR cmd_test_ecdh(int argc, char ** argv)
-{
-    tst_ecdh();
-
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR cmd_test_sha256(int argc, char ** argv)
-{
-    tst_sha256();
-
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR cmd_test_ecdsa(int argc, char ** argv)
-{
-    tst_ecdsa();
-
-    return CHIP_NO_ERROR;
-}
-
 static shell_command_t cmds_rafael[] = {
     { &cmd_rd, "rd", "Read memory" },
-    { &cmd_test_ecdh, "tecdh", "Test ECDH"},
-    { &cmd_test_sha256, "tsha256", "Test SHA256"},
-    { &cmd_test_ecdsa, "tecdsa", "Test ECDSA"},
+    { &cmd_mem, "mem", "Show memory usage" },
 };
-
 void cmd_rafael_init()
 {
     Engine::Root().RegisterCommands(cmds_rafael, ArraySize(cmds_rafael));

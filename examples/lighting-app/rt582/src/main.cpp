@@ -23,6 +23,8 @@
 #include "init_rt582Platform.h"
 #include "init_lighting_rt582Platform.h"
 #include <DeviceInfoProviderImpl.h>
+#include <crypto/CHIPCryptoPAL.h>
+#include <lib/support/CHIPPlatformMemory.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
@@ -31,6 +33,7 @@
 #include <lib/core/CHIPError.h>
 
 #include <mbedtls/aes.h>
+#include <mbedtls/platform.h>
 
 #if CONFIG_ENABLE_CHIP_SHELL
 #include "matter_shell.h"
@@ -46,13 +49,15 @@ using namespace ::chip::DeviceLayer::Internal;
 // ================================================================================
 // Main Code
 // ================================================================================
-
+extern void cmd_rafael_init();
 int main(void)
 {
     CHIP_ERROR err;
 
     init_rt582Platform();
     init_lighting_app_rt582Platform();
+
+    //mbedtls_platform_set_calloc_free(CHIPPlatformMemoryCalloc, CHIPPlatformMemoryFree);
 
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
@@ -63,12 +68,12 @@ int main(void)
 
 #if CONFIG_ENABLE_CHIP_SHELL
     startShellTask();
+    cmd_rafael_init();
 #endif
 
     info( "==================================================\r\n");
     info( "chip-rt582-lighting-example starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "==================================================\r\n");
-
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
     {

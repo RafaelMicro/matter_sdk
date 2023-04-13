@@ -166,6 +166,7 @@ template("rt582_sdk") {
       "${rt582_sdk_root}/Portable/bsp/bsp_uart.c",
       "${rt582_sdk_root}/Portable/bsp/bsp_uart_drv.c",
       "${rt582_sdk_root}/Portable/System/sys_taskdbg.c",
+      "${rt582_sdk_root}/Portable/System/sys_arch.c",
     ]
 
     libs=["${rt582_sdk_root}/Library/librt582sdk.a"]

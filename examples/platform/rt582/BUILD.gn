@@ -62,8 +62,7 @@ source_set("rt582-matter-shell") {
   if (chip_build_libshell) {
     defines = [ "ENABLE_CHIP_SHELL" ]
 
-    sources = [ "matter_shell.cpp",
-                "cmd_rafael.cpp" ]
+    sources = [ "matter_shell.cpp" ]
     include_dirs = [ "." ]
 
     public_deps = [

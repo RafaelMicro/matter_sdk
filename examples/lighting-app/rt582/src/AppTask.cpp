@@ -468,8 +468,9 @@ void AppTask::InitServer(intptr_t arg)
         rt582_led_level_ctl(3, 0); 
         rt582_led_level_ctl(4, 0);      
     }
-
+#if RT582_OTA_ENABLED
     OTAConfig::Init();
+#endif
 
 
     // reboot count usage demo
@@ -503,7 +504,7 @@ void AppTask::UpdateStatusLED()
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
 {
-    //ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
+    ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
     switch (aEvent->Type)
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
@@ -550,8 +551,8 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-
     ChipLogError(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
+
 #if CHIP_DEVICE_CONFIG_ENABLE_SED
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
 #else
@@ -562,6 +563,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
     }
 
+    ChipLogError(NotSpecified, "Start Thread Task\n");
     err = ThreadStackMgr().StartThreadTask();
     if (err != CHIP_NO_ERROR)
     {
@@ -780,8 +782,6 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;
-    //QueueHandle_t sAppEventQueue = *(static_cast<QueueHandle_t *>(pvParameter));
-
     CHIP_ERROR err = sAppTask.Init();
     if (err != CHIP_NO_ERROR)
     {
@@ -793,7 +793,7 @@ void AppTask::AppTaskMain(void * pvParameter)
         BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
        
         while (eventReceived == pdTRUE)
-        {
+        {;
             sAppTask.DispatchEvent(&event);
             eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
         }

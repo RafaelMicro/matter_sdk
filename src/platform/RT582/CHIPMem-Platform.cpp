@@ -46,6 +46,7 @@
 
 #include "heap_4_rt582.h"
 #include "task.h"
+#include "sys_arch.h"
 
 #include <atomic>
 #include <cstdio>
@@ -108,7 +109,7 @@ void * MemoryAlloc(size_t size)
 {
     void * ptr;
     VERIFY_INITIALIZED();
-    ptr = pvPortMalloc(size);
+    ptr = sys_malloc(size);
     trackAlloc(ptr, size);
     return ptr;
 }
@@ -117,7 +118,7 @@ void * MemoryAlloc(size_t size, bool isLongTermAlloc)
 {
     void * ptr;
     VERIFY_INITIALIZED();
-    ptr = pvPortMalloc(size);
+    ptr = sys_malloc(size);
     trackAlloc(ptr, size);
     return ptr;
 }
@@ -125,7 +126,6 @@ void * MemoryAlloc(size_t size, bool isLongTermAlloc)
 void * MemoryCalloc(size_t num, size_t size)
 {
     VERIFY_INITIALIZED();
-
     void * ptr = pvPortCalloc(num, size);
     trackAlloc(ptr, size * num);
     return ptr;
@@ -143,7 +143,7 @@ void MemoryFree(void * p)
 {
     VERIFY_INITIALIZED();
     trackFree(p, 0);
-    vPortFree(p);
+    sys_free(p);
 }
 
 bool MemoryInternalCheckPointer(const void * p, size_t min_size)

@@ -23,13 +23,11 @@ import("${chip_root}/src/crypto/crypto.gni")
 arm_platform_config = "${rt582_sdk_build_root}/rt582_arm.gni"
 
 mbedtls_target = "${chip_root}/third_party/rafael:mbedtls"
-# mbedtls_target = "${chip_root}/third_party/openthread/ot-rt582/openthread/third_party/mbedtls:mbedtls"
-# mbedtls_target = ""
-# openthread_external_mbedtls = mbedtls_target
+openthread_external_mbedtls = mbedtls_target
 
 # default to platform crypto implementation but allow commandline override
 if (chip_crypto == "") {
-  # chip_crypto = "platform"
+  #chip_crypto = "platform"
   chip_crypto = "mbedtls"
 }
 
@@ -43,6 +41,7 @@ chip_inet_config_enable_tcp_endpoint = false
 chip_inet_config_enable_udp_endpoint = true
 chip_system_config_use_open_thread_inet_endpoints = true
 chip_with_lwip = false
+optimize_debug_level = "s"
 
 chip_build_tests = false
 

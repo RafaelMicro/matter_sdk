@@ -1,3 +1,0 @@
-{{~#if hasExpectedValue}}
-    {{~>valueEquals actual=(asPropertyValue dontUnwrapValue=true) label=(asLowerCamelCase name) expected=expectedValue depth=0~}}
-{{~/if~}}

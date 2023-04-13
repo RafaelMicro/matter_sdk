@@ -27,8 +27,8 @@ if (chip_use_pw_logging) {
 }
 
 if (chip_enable_openthread) {
-  import("//build_overrides/openthread.gni")
-  import("//build_overrides/ot_br_posix.gni")
+  #import("//build_overrides/openthread.gni")
+  #import("//build_overrides/ot_br_posix.gni")
 }
 
 if (chip_mdns == "platform") {

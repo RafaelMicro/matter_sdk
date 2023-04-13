@@ -53,6 +53,7 @@
 #define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
 
 #include "mbedtls/check_config.h"
+#include "sys_arch.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 // <h> TLS/DTLS configuration
@@ -92,7 +93,6 @@
 #define MBEDTLS_X509_CREATE_C
 #define MBEDTLS_X509_CSR_WRITE_C
 #endif
-
 // <q SL_MBEDTLS_SSL_MAX_FRAGMENT_LENGTH> Enable support for RFC 6066
 // max_fragment_length extension in SSL. <i> Default: 1 <i> Enable support for
 // RFC 6066 max_fragment_length extension in SSL.

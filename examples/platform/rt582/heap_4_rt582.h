@@ -44,6 +44,8 @@ void * pvPortRealloc(void * pv, size_t size);
 
 void xPortResetHeapMinimumEverFreeHeapSize(void);
 
+// #define __wrap__malloc_r(REENT, len) sys_malloc_fn(len, __FUNCTION__, __LINE__)
+
 #ifdef __cplusplus
 }
 #endif

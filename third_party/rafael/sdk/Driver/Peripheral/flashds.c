@@ -9,9 +9,9 @@
 #if 1
 
 #include "cm3_mcu.h"
+#include "util_log.h"
 #include <stdio.h>
 #include <string.h>
-#include "util_log.h"
 
 static ds_info_t dsinfo;
 
@@ -336,7 +336,6 @@ uint32_t ds_vaild(ds_search_t * dssearch, ds_t * ds_get_vaild)
 
     dspack = (*(ds_t *) (dssearch->address + dssearch->offset));
 
-
     if (dspack.type == DS_VAILD_TYPE)
     {
         if (dssearch->flag == DS_VAILD_TYPE_SEARCH)
@@ -405,9 +404,9 @@ uint32_t ds_vaild(ds_search_t * dssearch, ds_t * ds_get_vaild)
         address += sizeof(uint8_t);
         location |= flash_read_byte(address) << 24;
 
-        ds_get_vaild->crc   = crc;
-        ds_get_vaild->magic = magic;
-        ds_get_vaild->location  = location;
+        ds_get_vaild->crc      = crc;
+        ds_get_vaild->magic    = magic;
+        ds_get_vaild->location = location;
 
         if (dssearch->type == dspack.type)
         {
@@ -567,9 +566,9 @@ uint32_t ds_write(ds_rw_t * ds_write)
     {
         dsmaxaddress = dsinfo.end_address;
     }
-    
+
     // if (ds_write->location == 0) {
-        dswraddress = dsinfo.current_address + DS_HEADER_OFFSET + ds_write->len + DS_TAIL_OFFSET + 4;
+    dswraddress = dsinfo.current_address + DS_HEADER_OFFSET + ds_write->len + DS_TAIL_OFFSET + 4;
     // }
     // else {
     //     dswraddress = ds_write->location + DS_HEADER_OFFSET + ds_write->len + DS_TAIL_OFFSET + 4;
@@ -619,18 +618,19 @@ uint32_t ds_write(ds_rw_t * ds_write)
             return STATUS_INVALID_REQUEST;
         }
     }
-    else {
+    else
+    {
         location = dswraddress = dsinfo.current_address;
     }
 
     // if (ds_write->location == 0) {
-        // location = dswraddress = dsinfo.current_address;
+    // location = dswraddress = dsinfo.current_address;
     // }
     // else {
     //     uint32_t sectorNumber = 0;
     //     uint32_t pageNumber = 0;
     //     uint8_t sectorBackup[0x1000];
-        
+
     //     location = dswraddress = ds_write->location;
     //     pageNumber = dswraddress - (dswraddress % 0x100);
     //     sectorNumber = dswraddress - (dswraddress % 0x1000);
@@ -653,19 +653,22 @@ uint32_t ds_write(ds_rw_t * ds_write)
 
     // ChipLogDetail(DeviceLayer, "===> write flash begin address: 0x%08x\r\n", dswraddress);
     // info("===> write flash begin address: 0x%08x\r\n", location);
-    
+
     ds_update_type(ds_write->type);
 
     flash_write_byte(dswraddress, ds_write->type);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->len);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->len >> 8);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
 
@@ -675,19 +678,23 @@ uint32_t ds_write(ds_rw_t * ds_write)
     }
 
     flash_write_byte(dswraddress, dsinfo.current_sn);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, dsinfo.current_sn >> 8);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, dsinfo.current_sn >> 16);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, dsinfo.current_sn >> 24);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
 
@@ -695,50 +702,58 @@ uint32_t ds_write(ds_rw_t * ds_write)
     {
         temp = (*(uint32_t *) (ds_write->address + i));
         flash_write_byte(dswraddress, temp);
-        while (flash_check_busy()) {}
+        while (flash_check_busy())
+        {}
 
         dswraddress += 1;
     }
 
     crc_result = ds_cal_crc(ds_write, dsinfo.current_sn);
     flash_write_byte(dswraddress, crc_result);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     magic_number = DS_MAGIC_NUMBER;
     flash_write_byte(dswraddress, magic_number);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, magic_number >> 8);
-    while (flash_check_busy()) {}
-    
+    while (flash_check_busy())
+    {}
+
     dswraddress += 1;
     flash_write_byte(dswraddress, location);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, location >> 8);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, location >> 16);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, location >> 24);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     // ChipLogDetail(DeviceLayer, "===> write flash end address: 0x%08x\r\n", dswraddress);
     // info("===> write flash end address: 0x%08x\r\n", dswraddress);
 
     // if (ds_write->location == 0) {
-        dswraddress += 1;
-        dsinfo.current_address = dswraddress;
-        dsinfo.current_offset  = dswraddress;
-        // dsinfo.current_address = (dswraddress / 0x100 + 1) * 0x100;
-        // dsinfo.current_offset  = (dswraddress / 0x100 + 1) * 0x100;
-        dsinfo.current_sn += 1;
+    dswraddress += 1;
+    dsinfo.current_address = dswraddress;
+    dsinfo.current_offset  = dswraddress;
+    // dsinfo.current_address = (dswraddress / 0x100 + 1) * 0x100;
+    // dsinfo.current_offset  = (dswraddress / 0x100 + 1) * 0x100;
+    dsinfo.current_sn += 1;
     // }
 
     return STATUS_SUCCESS;
@@ -853,11 +868,11 @@ uint32_t ds_migration_write(ds_page_t page, ds_rw_t * ds_write)
         return STATUS_INVALID_REQUEST;
     }
 
-    dswraddress = dsinfo.migration_address;
+    dswraddress        = dsinfo.migration_address;
     ds_write->location = dswraddress;
 
     // ChipLogDetail(DeviceLayer, "===> key[%02x] migration write begin: %08x\r\n", ds_write->type, dswraddress);
-    info("===> key[%02x] migration write begin: %08x\r\n", ds_write->type, dswraddress);
+    // info("===> key[%02x] migration write begin: %08x\r\n", ds_write->type, dswraddress);
 
     flash_write_byte(dswraddress, ds_write->type);
     while (flash_check_busy())
@@ -942,19 +957,23 @@ uint32_t ds_migration_write(ds_page_t page, ds_rw_t * ds_write)
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->location);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->location >> 8);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->location >> 16);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     dswraddress += 1;
     flash_write_byte(dswraddress, ds_write->location >> 24);
-    while (flash_check_busy()) {}
+    while (flash_check_busy())
+    {}
 
     // ChipLogDetail(DeviceLayer, "===> key[%02x] migration write end: %08x\r\n", ds_write->type, dswraddress);
     // info("===> key[%02x] migration write end: %08x\r\n", ds_write->type, dswraddress);
@@ -1107,8 +1126,7 @@ uint32_t ds_update_crrent_sn(uint32_t serial_number)
     return STATUS_SUCCESS;
 }
 
-
-#else 
+#else
 
 #include "cm3_mcu.h"
 #include <stdio.h>
@@ -1592,13 +1610,13 @@ uint32_t ds_read(ds_rw_t * ds_read)
 
     // if (ds_get_current_page() == DS_PAGE_0)
     // {
-        start_address = dsinfo.start_address;
+    start_address = dsinfo.start_address;
     //     end_address   = dsinfo.middle_address;
     // }
     // else
     // {
     //     start_address = dsinfo.middle_address;
-        end_address   = dsinfo.end_address;
+    end_address = dsinfo.end_address;
     // }
 
     dssearch.flag        = DS_READ_TYPE_SEARCH;

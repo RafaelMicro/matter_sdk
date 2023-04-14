@@ -22,7 +22,7 @@
 //=============================================================================
 typedef struct MALLOC_DEBUG_LOG_ENTRY
 {
-    char *func;
+    char * func;
     uint32_t file_line : 16;  // max 0xFFFF = 65535
     uint32_t malloc_len : 16; // max 0xFFFF = 65535
 
@@ -34,7 +34,7 @@ typedef struct MALLOC_DEBUG_LOG_ENTRY
 
 typedef struct MALLOC_DEBUG_LOG
 {
-    char *task_name_ptr[MALLOC_DEBUG_INFO_TASK_SIZE];
+    char * task_name_ptr[MALLOC_DEBUG_INFO_TASK_SIZE];
     uint32_t malloc_base_addr;
     malloc_log_entry_t entry[MALLOC_DEBUG_INFO_SIZE];
 } malloc_log_t;
@@ -68,7 +68,7 @@ extern unsigned int _set_interrupt_priority(unsigned int);
  * @param mutex Pointer to the mutex to create
  * @return a new mutex
  */
-err_t sys_mutex_new(sys_mutex_t *p_mutex)
+err_t sys_mutex_new(sys_mutex_t * p_mutex)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -95,7 +95,7 @@ err_t sys_mutex_new(sys_mutex_t *p_mutex)
 /** Delete a semaphore
  * @param p_mutex the mutex to delete
  */
-void sys_mutex_free(sys_mutex_t *p_mutex)
+void sys_mutex_free(sys_mutex_t * p_mutex)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -119,7 +119,7 @@ void sys_mutex_free(sys_mutex_t *p_mutex)
 /** Lock a mutex
  * @param p_mutex The mutex to lock
  */
-void sys_mutex_lock(sys_mutex_t *p_mutex)
+void sys_mutex_lock(sys_mutex_t * p_mutex)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -141,7 +141,7 @@ void sys_mutex_lock(sys_mutex_t *p_mutex)
  * @param p_mutex The mutex to lock
  * @return ERR_OK is success, and ERR_MEM is fail
  */
-err_t sys_mutex_trylock(sys_mutex_t *p_mutex)
+err_t sys_mutex_trylock(sys_mutex_t * p_mutex)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -166,7 +166,7 @@ err_t sys_mutex_trylock(sys_mutex_t *p_mutex)
 /** Unlock a mutex
  * @param p_mutex the mutex to unlock
  */
-void sys_mutex_unlock(sys_mutex_t *p_mutex)
+void sys_mutex_unlock(sys_mutex_t * p_mutex)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -191,7 +191,7 @@ void sys_mutex_unlock(sys_mutex_t *p_mutex)
  * @param count initial count of the semaphore
  * @return ERR_OK if successful, another err_t otherwise
  */
-err_t sys_sem_new(sys_sem_t *sem, uint8_t u8_count_max, uint8_t u8_count_init)
+err_t sys_sem_new(sys_sem_t * sem, uint8_t u8_count_max, uint8_t u8_count_init)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -220,7 +220,7 @@ err_t sys_sem_new(sys_sem_t *sem, uint8_t u8_count_max, uint8_t u8_count_init)
  * @param count initial count of the semaphore
  * @return ERR_OK if successful, another err_t otherwise
  */
-err_t sys_binary_sem_new(sys_sem_t *sem)
+err_t sys_binary_sem_new(sys_sem_t * sem)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -247,7 +247,7 @@ err_t sys_binary_sem_new(sys_sem_t *sem)
 /** Delete a semaphore
  * @param sem semaphore to delete
  */
-void sys_sem_free(sys_sem_t *sem)
+void sys_sem_free(sys_sem_t * sem)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -271,7 +271,7 @@ void sys_sem_free(sys_sem_t *sem)
 /** Signals a semaphore
  * @param sem the semaphore to signal
  */
-void sys_sem_signal(sys_sem_t *sem)
+void sys_sem_signal(sys_sem_t * sem)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -291,7 +291,7 @@ void sys_sem_signal(sys_sem_t *sem)
 /** Signals a semaphore (from ISR)
  * @param sem the semaphore to signal
  */
-void sys_sem_signal_isr(sys_sem_t *sem)
+void sys_sem_signal_isr(sys_sem_t * sem)
 {
     BaseType_t context_switch = pdFALSE;
     /*-----------------------------------*/
@@ -322,7 +322,7 @@ void sys_sem_signal_isr(sys_sem_t *sem)
  *         If the thread didn't have to wait for the semaphore(i.e.,
  *         it was already signaled), the function may return zero.
  */
-uint32_t sys_sem_wait(sys_sem_t *sem, uint32_t u32_timeout)
+uint32_t sys_sem_wait(sys_sem_t * sem, uint32_t u32_timeout)
 {
     sys_tick_t StartTime, EndTime, Elapsed;
     uint32_t u32_return;
@@ -386,7 +386,7 @@ uint32_t sys_sem_wait(sys_sem_t *sem, uint32_t u32_timeout)
  * @param mbox The mbox handle
  * @param size the length of mbox
  */
-err_t sys_mbox_new(sys_mbox_t *mbox, uint32_t size)
+err_t sys_mbox_new(sys_mbox_t * mbox, uint32_t size)
 {
     err_t t_return = ERR_MEM;
     /*-----------------------------------*/
@@ -415,7 +415,7 @@ err_t sys_mbox_new(sys_mbox_t *mbox, uint32_t size)
  *  programming error and the developer should be notified.
  * @param mbox The mbox handle
  */
-void sys_mbox_free(sys_mbox_t *mbox)
+void sys_mbox_free(sys_mbox_t * mbox)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -436,7 +436,7 @@ void sys_mbox_free(sys_mbox_t *mbox)
  * @param mbox The mbox handle
  * @param msg The pointer of the msg
  */
-void sys_mbox_post(sys_mbox_t *mbox, void *msg)
+void sys_mbox_post(sys_mbox_t * mbox, void * msg)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -459,7 +459,7 @@ void sys_mbox_post(sys_mbox_t *mbox, void *msg)
  * @param msg The pointer of the msg
  * @param u32_timeout millisecond timer
  */
-err_t sys_mbox_post_with_timeout(sys_mbox_t *mbox, void *msg, uint32_t u32_timeout)
+err_t sys_mbox_post_with_timeout(sys_mbox_t * mbox, void * msg, uint32_t u32_timeout)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -485,7 +485,7 @@ err_t sys_mbox_post_with_timeout(sys_mbox_t *mbox, void *msg, uint32_t u32_timeo
  * @param mbox The mbox handle
  * @param msg The pointer of the msg
  */
-err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
+err_t sys_mbox_trypost(sys_mbox_t * mbox, void * msg)
 {
     err_t t_return = ERR_MEM;
 
@@ -497,7 +497,7 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
     /*-----------------------------------*/
     /* B. Main Functionality             */
     /*-----------------------------------*/
-    if (xQueueSend(*mbox, &msg, (portTickType)0) == pdPASS)
+    if (xQueueSend(*mbox, &msg, (portTickType) 0) == pdPASS)
     {
         t_return = ERR_OK;
     }
@@ -520,7 +520,7 @@ err_t sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
  *         function: Number of milliseconds spent waiting or
  *         SYS_ARCH_TIMEOUT if there was a timeout.
  */
-uint32_t sys_mbox_fetch(sys_mbox_t *mbox, void **msg, uint32_t u32_timeout)
+uint32_t sys_mbox_fetch(sys_mbox_t * mbox, void ** msg, uint32_t u32_timeout)
 {
     portTickType StartTime, EndTime, Elapsed;
     uint32_t u32_Return;
@@ -553,7 +553,7 @@ uint32_t sys_mbox_fetch(sys_mbox_t *mbox, void **msg, uint32_t u32_timeout)
         else
         {
             // timed out blocking for message
-            *msg = NULL;
+            *msg       = NULL;
             u32_Return = SYS_ARCH_TIMEOUT;
         }
     }
@@ -580,7 +580,7 @@ uint32_t sys_mbox_fetch(sys_mbox_t *mbox, void **msg, uint32_t u32_timeout)
     return u32_Return; // return time blocked TBD test
 }
 
-uint32_t sys_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
+uint32_t sys_mbox_tryfetch(sys_mbox_t * mbox, void ** msg)
 {
     uint32_t u32_Return = SYS_ARCH_TIMEOUT;
 
@@ -607,7 +607,7 @@ uint32_t sys_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
 /** Get the number of free spaces in a queue.
  * @param queue The queue handle
  */
-uint32_t sys_mbox_remaining_size(sys_mbox_t *mbox)
+uint32_t sys_mbox_remaining_size(sys_mbox_t * mbox)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -621,7 +621,7 @@ uint32_t sys_mbox_remaining_size(sys_mbox_t *mbox)
     /*-----------------------------------*/
     /* C. Result & Return                */
     /*-----------------------------------*/
-    return (uint32_t)uxQueueSpacesAvailable(*mbox);
+    return (uint32_t) uxQueueSpacesAvailable(*mbox);
 }
 
 //==================================
@@ -632,7 +632,7 @@ uint32_t sys_mbox_remaining_size(sys_mbox_t *mbox)
  * @param queue_length the length of queue
  * @param item_size the size of item of queue
  */
-err_t sys_queue_new(sys_queue_t *queue, uint32_t queue_length, uint32_t item_size)
+err_t sys_queue_new(sys_queue_t * queue, uint32_t queue_length, uint32_t item_size)
 {
     err_t t_return = ERR_MEM;
     /*-----------------------------------*/
@@ -661,7 +661,7 @@ err_t sys_queue_new(sys_queue_t *queue, uint32_t queue_length, uint32_t item_siz
  *  programming error and the developer should be notified.
  * @param queue The queue handle
  */
-void sys_queue_free(sys_queue_t *queue)
+void sys_queue_free(sys_queue_t * queue)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -682,7 +682,7 @@ void sys_queue_free(sys_queue_t *queue)
  * @param queue The queue handle
  * @param msg The pointer of the msg
  */
-void sys_queue_send(sys_queue_t *queue, void *msg)
+void sys_queue_send(sys_queue_t * queue, void * msg)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -700,7 +700,7 @@ void sys_queue_send(sys_queue_t *queue, void *msg)
     /*-----------------------------------*/
 }
 
-void sys_queue_send_from_isr(sys_queue_t *queue, void *msg)
+void sys_queue_send_from_isr(sys_queue_t * queue, void * msg)
 {
     BaseType_t context_switch = pdFALSE;
     /*-----------------------------------*/
@@ -724,7 +724,7 @@ void sys_queue_send_from_isr(sys_queue_t *queue, void *msg)
  * @param msg The pointer of the msg
  * @param u32_timeout millisecond timer
  */
-err_t sys_queue_send_with_timeout(sys_queue_t *queue, void *msg, uint32_t u32_timeout)
+err_t sys_queue_send_with_timeout(sys_queue_t * queue, void * msg, uint32_t u32_timeout)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -745,7 +745,7 @@ err_t sys_queue_send_with_timeout(sys_queue_t *queue, void *msg, uint32_t u32_ti
     /*-----------------------------------*/
     return t_return;
 }
-void sys_queue_sendtofront(sys_queue_t *queue, void *msg)
+void sys_queue_sendtofront(sys_queue_t * queue, void * msg)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -763,7 +763,7 @@ void sys_queue_sendtofront(sys_queue_t *queue, void *msg)
     /*-----------------------------------*/
 }
 
-void sys_queue_sendtofront_from_isr(sys_queue_t *queue, void *msg)
+void sys_queue_sendtofront_from_isr(sys_queue_t * queue, void * msg)
 {
     BaseType_t context_switch = pdFALSE;
     /*-----------------------------------*/
@@ -787,7 +787,7 @@ void sys_queue_sendtofront_from_isr(sys_queue_t *queue, void *msg)
  * @param msg The pointer of the msg
  * @param u32_timeout millisecond timer
  */
-err_t sys_queue_sendtofront_with_timeout(sys_queue_t *queue, void *msg, uint32_t u32_timeout)
+err_t sys_queue_sendtofront_with_timeout(sys_queue_t * queue, void * msg, uint32_t u32_timeout)
 {
     err_t t_return = ERR_OK;
     /*-----------------------------------*/
@@ -812,7 +812,7 @@ err_t sys_queue_sendtofront_with_timeout(sys_queue_t *queue, void *msg, uint32_t
  * @param queue The queue handle
  * @param msg The pointer of the msg
  */
-err_t sys_queue_trysend(sys_queue_t *queue, void *msg)
+err_t sys_queue_trysend(sys_queue_t * queue, void * msg)
 {
     err_t t_return = ERR_MEM;
 
@@ -824,7 +824,7 @@ err_t sys_queue_trysend(sys_queue_t *queue, void *msg)
     /*-----------------------------------*/
     /* B. Main Functionality             */
     /*-----------------------------------*/
-    if (xQueueSend(*queue, msg, (portTickType)0) == pdPASS)
+    if (xQueueSend(*queue, msg, (portTickType) 0) == pdPASS)
     {
         t_return = ERR_OK;
     }
@@ -847,7 +847,7 @@ err_t sys_queue_trysend(sys_queue_t *queue, void *msg)
  *         function: Number of milliseconds spent waiting or
  *         SYS_ARCH_TIMEOUT if there was a timeout.
  */
-uint32_t sys_queue_recv(sys_queue_t *queue, void *msg, uint32_t u32_timeout)
+uint32_t sys_queue_recv(sys_queue_t * queue, void * msg, uint32_t u32_timeout)
 {
     portTickType StartTime, EndTime, Elapsed;
     uint32_t u32_Return;
@@ -909,7 +909,7 @@ uint32_t sys_queue_recv(sys_queue_t *queue, void *msg, uint32_t u32_timeout)
 /** Get the number of free spaces in a queue.
  * @param queue The queue handle
  */
-uint32_t sys_queue_remaining_size(sys_queue_t *queue)
+uint32_t sys_queue_remaining_size(sys_queue_t * queue)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -923,10 +923,10 @@ uint32_t sys_queue_remaining_size(sys_queue_t *queue)
     /*-----------------------------------*/
     /* C. Result & Return                */
     /*-----------------------------------*/
-    return (uint32_t)uxQueueSpacesAvailable(*queue);
+    return (uint32_t) uxQueueSpacesAvailable(*queue);
 }
 
-uint32_t sys_arch_queue_tryrecv(sys_queue_t *queue, void *msg)
+uint32_t sys_arch_queue_tryrecv(sys_queue_t * queue, void * msg)
 {
     uint32_t u32_Return = SYS_ARCH_TIMEOUT;
 
@@ -962,11 +962,7 @@ uint32_t sys_arch_queue_tryrecv(sys_queue_t *queue, void *msg)
  * @param u32_priority The priority at which the thread should run.
  *     It must less than CONFIG_FREERTOS_MAX_PRIORITIES
  */
-sys_task_t sys_task_new(const char *name,
-                        sys_thread_fn thread,
-                        void *arg,
-                        uint32_t u32_stacksize,
-                        uint32_t u32_priority)
+sys_task_t sys_task_new(const char * name, sys_thread_fn thread, void * arg, uint32_t u32_stacksize, uint32_t u32_priority)
 {
     sys_task_t t_thread = NULL;
 
@@ -981,7 +977,7 @@ sys_task_t sys_task_new(const char *name,
     /*-----------------------------------*/
     /* B. Main Functionality             */
     /*-----------------------------------*/
-    xTaskCreate(thread, (const char *)name, u32_stacksize, arg, u32_priority, &t_thread);
+    xTaskCreate(thread, (const char *) name, u32_stacksize, arg, u32_priority, &t_thread);
 
     /*-----------------------------------*/
     /* C. Result & Return                */
@@ -992,7 +988,7 @@ sys_task_t sys_task_new(const char *name,
 /** get a descriptive name for the thread
  * @return thread name
  */
-char *sys_current_thread_name(void)
+char * sys_current_thread_name(void)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
@@ -1042,7 +1038,7 @@ void sys_thread_priority_set(sys_task_t thread_handle, uint32_t u32_priority)
     /*-----------------------------------*/
     /* B. Main Functionality             */
     /*-----------------------------------*/
-    vTaskPrioritySet(thread_handle, (UBaseType_t)u32_priority);
+    vTaskPrioritySet(thread_handle, (UBaseType_t) u32_priority);
 
     /*-----------------------------------*/
     /* C. Result & Return                */
@@ -1129,7 +1125,7 @@ void sys_msleep(uint32_t u32_ms) /* only has a (close to) 1 jiffy resolution. */
  */
 static uint8_t search_current_task_name_index(void)
 {
-    char *current_task_name = sys_current_thread_name();
+    char * current_task_name = sys_current_thread_name();
     uint32_t u32_idx;
 
     for (u32_idx = 0; u32_idx < MALLOC_DEBUG_INFO_TASK_SIZE; u32_idx++)
@@ -1155,35 +1151,35 @@ static uint8_t search_current_task_name_index(void)
     }
 }
 
-static void malloc_info_insert(void *p_mptr, uint32_t u32_msize, char *pc_func_ptr, uint32_t u32_line)
+static void malloc_info_insert(void * p_mptr, uint32_t u32_msize, char * pc_func_ptr, uint32_t u32_line)
 {
     uint32_t u32_idx;
 
     if (g_malloc_log.malloc_base_addr == 0)
     {
-        g_malloc_log.malloc_base_addr = (uint32_t)p_mptr & 0xFFF00000;
+        g_malloc_log.malloc_base_addr = (uint32_t) p_mptr & 0xFFF00000;
     }
 
     for (u32_idx = 0; u32_idx < MALLOC_DEBUG_INFO_SIZE; u32_idx++)
     {
         if (g_malloc_log.entry[u32_idx].valid == 0)
         {
-            g_malloc_log.entry[u32_idx].func = pc_func_ptr;
-            g_malloc_log.entry[u32_idx].file_line = u32_line & 0xFFFF;
-            g_malloc_log.entry[u32_idx].malloc_len = u32_msize & 0xFFFF;
-            g_malloc_log.entry[u32_idx].malloc_offset = (uint32_t)p_mptr & 0x7FFFF; // max 512k
-            g_malloc_log.entry[u32_idx].task_index = search_current_task_name_index();
+            g_malloc_log.entry[u32_idx].func          = pc_func_ptr;
+            g_malloc_log.entry[u32_idx].file_line     = u32_line & 0xFFFF;
+            g_malloc_log.entry[u32_idx].malloc_len    = u32_msize & 0xFFFF;
+            g_malloc_log.entry[u32_idx].malloc_offset = (uint32_t) p_mptr & 0x7FFFF; // max 512k
+            // g_malloc_log.entry[u32_idx].task_index = search_current_task_name_index();
             g_malloc_log.entry[u32_idx].valid = 1;
             break;
         }
     }
 }
 
-static void malloc_info_delete(void *p_mptr)
+static void malloc_info_delete(void * p_mptr)
 {
     uint32_t u32_idx, malloc_offset;
 
-    malloc_offset = (uint32_t)p_mptr & 0xFFFFF;
+    malloc_offset = (uint32_t) p_mptr & 0xFFFFF;
 
     for (u32_idx = 0; u32_idx < MALLOC_DEBUG_INFO_SIZE; u32_idx++)
     {
@@ -1208,24 +1204,21 @@ void sys_malloc_info_printf(void)
     {
         if (g_malloc_log.entry[u32_idx].valid)
         {
-            info("| 0x%08X | %05u | %s-%d(%s)\n",
-                 g_malloc_log.malloc_base_addr | g_malloc_log.entry[u32_idx].malloc_offset,
-                 g_malloc_log.entry[u32_idx].malloc_len,
-                 g_malloc_log.entry[u32_idx].func,
-                 g_malloc_log.entry[u32_idx].file_line,
+            info("| 0x%08X | %05u | %s-%d(%s)\n", g_malloc_log.malloc_base_addr | g_malloc_log.entry[u32_idx].malloc_offset,
+                 g_malloc_log.entry[u32_idx].malloc_len, g_malloc_log.entry[u32_idx].func, g_malloc_log.entry[u32_idx].file_line,
                  g_malloc_log.task_name_ptr[g_malloc_log.entry[u32_idx].task_index]);
         }
     }
     info("+------------+-------+---------------------------\n");
-    info("   Free Size : 0x%06X(%d), Min 0x%06X(%d)\n", sys_get_free_size(), sys_get_free_size(),
-         xPortGetMinimumEverFreeHeapSize(), xPortGetMinimumEverFreeHeapSize());
+    info("   Free Size : 0x%06X(%d), Min 0x%06X(%d)\n", sys_get_free_size(), sys_get_free_size(), xPortGetMinimumEverFreeHeapSize(),
+         xPortGetMinimumEverFreeHeapSize());
 }
 /** Memory allocation
  * @param u32_size sleep time in milliseconds
  */
-void *sys_malloc_fn(uint32_t u32_size, const char *pc_func_ptr, uint32_t u32_line)
+void * sys_malloc_fn(uint32_t u32_size, const char * pc_func_ptr, uint32_t u32_line)
 {
-    void *ptr;
+    void * ptr;
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
     /*-----------------------------------*/
@@ -1248,7 +1241,7 @@ void *sys_malloc_fn(uint32_t u32_size, const char *pc_func_ptr, uint32_t u32_lin
     if (ptr)
     {
         vTaskSuspendAll();
-        malloc_info_insert(ptr, u32_size, (char *)pc_func_ptr, u32_line);
+        malloc_info_insert(ptr, u32_size, (char *) pc_func_ptr, u32_line);
         xTaskResumeAll();
     }
     /*-----------------------------------*/
@@ -1260,15 +1253,14 @@ void *sys_malloc_fn(uint32_t u32_size, const char *pc_func_ptr, uint32_t u32_lin
 /** Memory free
  * @param p_pointer
  */
-void sys_free_fn(void *p_pointer, const char *pc_func_ptr, uint32_t u32_line)
+void sys_free_fn(void * p_pointer, const char * pc_func_ptr, uint32_t u32_line)
 {
     /*-----------------------------------*/
     /* A.Input Parameter Range Check     */
     /*-----------------------------------*/
     if (p_pointer == NULL)
     {
-        err("free null pointer\n",
-            pc_func_ptr, u32_line, sys_current_thread_name());
+        err("free null pointer\n", pc_func_ptr, u32_line, sys_current_thread_name());
     }
     configASSERT(p_pointer != NULL);
 
@@ -1301,5 +1293,5 @@ uint32_t sys_get_free_size(void)
     /*-----------------------------------*/
     /* C. Result & Return                */
     /*-----------------------------------*/
-    return (uint32_t)xPortGetFreeHeapSize();
+    return (uint32_t) xPortGetFreeHeapSize();
 }

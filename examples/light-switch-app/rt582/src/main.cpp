@@ -89,13 +89,6 @@ int main(void)
         ChipLogError(NotSpecified, "PlatformMgr().InitChipStack() failed");
         goto exit;
     }
-    
-    err = PlatformMgr().InitChipStack();
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "PlatformMgr().InitChipStack() failed");
-        goto exit;
-    }
 
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)

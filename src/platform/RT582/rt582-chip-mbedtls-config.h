@@ -38,6 +38,13 @@
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_TLS_C
 
+#define MBEDTLS_X509_CREATE_C
+#define MBEDTLS_X509_CSR_WRITE_C
+#define MBEDTLS_X509_CRL_PARSE_C
+#define MBEDTLS_X509_CRT_PARSE_C
+#define MBEDTLS_X509_CSR_PARSE_C
+#define MBEDTLS_X509_USE_C
+
 /* For tests using ssl-opt.sh */
 // #define MBEDTLS_NET_C
 // #define MBEDTLS_TIMING_C

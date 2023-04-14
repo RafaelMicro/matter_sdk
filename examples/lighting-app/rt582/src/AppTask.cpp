@@ -49,7 +49,6 @@
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
 #include <lib/core/CHIPError.h>
-#include <lib/core/CHIPError.h>
 
 #include "uart.h"
 #include "util_log.h"
@@ -604,8 +603,8 @@ CHIP_ERROR AppTask::StartAppTask()
 
 #if CONFIG_CHIP_FACTORY_DATA
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
-    SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
-    SetCommissionableDataProvider(&mFactoryDataProvider);
+    // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
+    // SetCommissionableDataProvider(&mFactoryDataProvider);
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
@@ -789,11 +788,11 @@ void AppTask::AppTaskMain(void * pvParameter)
     }
 
     while (true)
-    {       
+    {
         BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
        
         while (eventReceived == pdTRUE)
-        {;
+        {
             sAppTask.DispatchEvent(&event);
             eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
         }

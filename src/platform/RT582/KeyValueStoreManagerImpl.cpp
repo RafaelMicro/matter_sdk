@@ -31,7 +31,7 @@
 #include <platform/KeyValueStoreManager.h>
 #include <stdio.h>
 #include <string.h>
-#include "util_log.h"
+// #include "util_log.h"
 #include "cm3_mcu.h"
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 #include <lib/support/CHIPMem.h>

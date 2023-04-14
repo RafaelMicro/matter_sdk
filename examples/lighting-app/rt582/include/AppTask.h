@@ -38,6 +38,8 @@
 #include <platform/CHIPDeviceLayer.h>
 
 #include "bsp.h"
+#include "FactoryDataProvider.h"
+
 
 /**********************************************************
  * Defines

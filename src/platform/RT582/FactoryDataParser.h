@@ -25,6 +25,12 @@
 extern "C" {
 #endif
 
+struct FactoryDataCert
+{
+    uint8_t data[640];
+    size_t len;
+};
+
 struct FactoryDataString
 {
     void * data;
@@ -39,33 +45,33 @@ struct rtcbor_string
 
 struct FactoryData
 {
-    uint16_t version;
-    struct FactoryDataString sn;
-    uint16_t date_year;
-    uint8_t date_month;
-    uint8_t date_day;
-    uint16_t vendor_id;
-    uint16_t product_id;
-    struct FactoryDataString vendor_name;
-    struct FactoryDataString product_name;
-    uint16_t hw_ver;
-    struct FactoryDataString hw_ver_str;
-    struct FactoryDataString rd_uid;
-    struct FactoryDataString dac_cert;
-    struct FactoryDataString dac_priv_key;
-    struct FactoryDataString pai_cert;
-    uint32_t spake2_it;
-    struct FactoryDataString spake2_salt;
-    struct FactoryDataString spake2_verifier;
-    uint16_t discriminator;
-    uint32_t passcode;
-    struct FactoryDataString enable_key;
-    struct FactoryDataString user;
+    // uint16_t version;
+    // struct FactoryDataString sn;
+    // uint16_t date_year;
+    // uint8_t date_month;
+    // uint8_t date_day;
+    // uint16_t vendor_id;
+    // uint16_t product_id;
+    // struct FactoryDataString vendor_name;
+    // struct FactoryDataString product_name;
+    // uint16_t hw_ver;
+    // struct FactoryDataString hw_ver_str;
+    // struct FactoryDataString rd_uid;
+    struct FactoryDataCert dac_cert;
+    struct FactoryDataCert dac_privkey;
+    struct FactoryDataCert pai_cert;
+    // uint32_t spake2_it;
+    // struct FactoryDataString spake2_salt;
+    // struct FactoryDataString spake2_verifier;
+    // uint16_t discriminator;
+    // uint32_t passcode;
+    // struct FactoryDataString enable_key;
+    // struct FactoryDataString user;
 
-    bool vendorIdPresent;
-    bool productIdPresent;
-    bool hwVerPresent;
-    bool discriminatorPresent;
+    // bool vendorIdPresent;
+    // bool productIdPresent;
+    // bool hwVerPresent;
+    // bool discriminatorPresent;
 };
 
 /**

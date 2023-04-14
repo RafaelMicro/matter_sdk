@@ -413,7 +413,7 @@ void RT582Config::RunConfigUnitTest()
 #include "cm3_mcu.h"
 
 #define RT582CONFIG_BASE_ADDR       0xF3000
-#define RT582CONFIG_END_ADDR        0xF9000
+#define RT582CONFIG_END_ADDR        0xFB000
 #define RT582CONFIG_ID_PER_SIZE     0x100
 #define RT582CONFIG_FLASH_PAGE_SIZE 0x100
 #define RT582CONFIG_SECTOR_SIZE     0x1000

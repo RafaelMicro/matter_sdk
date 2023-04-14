@@ -42,10 +42,10 @@ static inline bool uint16_decode(uint16_t * states, uint16_t * value)
 
 bool ParseFactoryData(uint8_t * buffer, uint16_t bufferSize, struct FactoryData * factoryData)
 {
-    factoryData->discriminatorPresent = true;
-    factoryData->vendorIdPresent      = true;
-    factoryData->productIdPresent     = true;
-    return true;
+    // factoryData->discriminatorPresent = true;
+    // factoryData->vendorIdPresent      = true;
+    // factoryData->productIdPresent     = true;
+    // return true;
 
     // memset(factoryData, 0, sizeof(*factoryData));
 

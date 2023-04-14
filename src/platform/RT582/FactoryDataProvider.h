@@ -26,13 +26,89 @@
 // #include <pm_config.h>
 #include <system/SystemError.h>
 
+#include "mbedtls/aes.h"
+#include "mbedtls/sha256.h"
 #include "FactoryDataParser.h"
+#include "util_log.h"
+
+#define PAI_CERT_ADDR    0x1f4010
+#define DAC_CERT_ADDR    0x1f4290
+#define DAC_PRIVKEY_ADDR 0x1f4590
+#define DAC_PUBKEY_ADDR  0x1f4510
 
 namespace chip {
 namespace DeviceLayer {
 
+// size_t GetDecryptionCertification(uint8_t *Encrypt, uint8_t *Decrypt, uint8_t *key, uint32_t length);
+
 struct InternalFlashFactoryData
 {
+    size_t GetDecryptionCertification(struct FactoryDataCert *enc, uint8_t *dec, uint8_t *key)
+    {
+        mbedtls_aes_context aes_ctx;
+
+        unsigned int blockNumber = 0;
+        unsigned int blockIndex  = 0;
+        unsigned int blockSize   = 16;
+
+        mbedtls_aes_init(&aes_ctx);
+        mbedtls_aes_setkey_dec(&aes_ctx, key, blockSize * 8);
+        blockNumber = enc->len / blockSize;
+        for (blockIndex = 0; blockIndex < blockNumber; blockIndex++) {
+            mbedtls_aes_crypt_ecb(&aes_ctx, 
+                                MBEDTLS_AES_DECRYPT, 
+                                &enc->data[blockIndex * blockSize], 
+                                &dec[blockIndex * blockSize]);
+        }
+        mbedtls_aes_free(&aes_ctx);
+        return (enc->len - dec[enc->len - 1]);
+    }
+
+    CHIP_ERROR GetFactoryDataCertificates(struct FactoryData * mFactoryData)
+    {
+        // data     = reinterpret_cast<uint8_t *>(PM_FACTORY_DATA_ADDRESS);
+        // dataSize = PM_FACTORY_DATA_SIZE;
+        
+        uint8_t sha256[4] = {0xef, 0x37, 0x92, 0xf8};
+        uint8_t key[16] = {0};
+
+        struct FactoryData mFlasData;
+
+        mbedtls_sha256(sha256, 4, key, 0);
+
+        mFlasData.pai_cert.len = flash_read_byte(PAI_CERT_ADDR);
+        mFlasData.pai_cert.len |= flash_read_byte(PAI_CERT_ADDR + 1) << 8;
+
+        for (uint32_t i = 0; i < mFlasData.pai_cert.len; i++) {
+            mFlasData.pai_cert.data[i] = flash_read_byte(PAI_CERT_ADDR + 2 + i);
+        }
+
+        mFactoryData->pai_cert.len = GetDecryptionCertification(&mFlasData.pai_cert, mFactoryData->pai_cert.data, key);
+
+        mFlasData.dac_cert.len = flash_read_byte(DAC_CERT_ADDR);
+        mFlasData.dac_cert.len |= flash_read_byte(DAC_CERT_ADDR + 1) << 8;
+
+        for (uint32_t i = 0; i < mFlasData.dac_cert.len; i++) {
+            mFlasData.dac_cert.data[i] = flash_read_byte(DAC_CERT_ADDR + 2 + i);
+        }
+
+        mFactoryData->dac_cert.len = GetDecryptionCertification(&mFlasData.dac_cert, mFactoryData->dac_cert.data, key);
+
+        // ENC_DAC_PubKey_Len = flash_read_byte(DAC_PUBKEY_ADDR);
+        // ENC_DAC_PubKey_Len |= flash_read_byte(DAC_PUBKEY_ADDR+1) << 8;
+
+        mFlasData.dac_privkey.len = flash_read_byte(DAC_PRIVKEY_ADDR);
+        mFlasData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_ADDR + 1) << 8;
+
+        for (uint32_t i = 0; i < mFlasData.dac_privkey.len; i++) {
+            mFlasData.dac_privkey.data[i] = flash_read_byte(DAC_PRIVKEY_ADDR + 2 + i);
+        }
+
+        mFactoryData->dac_privkey.len = GetDecryptionCertification(&mFlasData.dac_privkey, mFactoryData->dac_privkey.data, key);
+
+        return CHIP_NO_ERROR;
+    }
+
     CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
     {
         // data     = reinterpret_cast<uint8_t *>(PM_FACTORY_DATA_ADDRESS);
@@ -50,6 +126,16 @@ struct InternalFlashFactoryData
 
 struct ExternalFlashFactoryData
 {
+    size_t GetDecryptionCertification(uint8_t *Encrypt, uint8_t *Decrypt, uint8_t *key, uint32_t length)
+    {
+        return 0;
+    }
+
+    CHIP_ERROR GetFactoryDataCertificates(struct FactoryData * mFactoryData)
+    {
+        return CHIP_NO_ERROR;
+    }
+
     CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
     {
         // int ret = flash_read(mFlashDevice, PM_FACTORY_DATA_ADDRESS, mFactoryDataBuffer, PM_FACTORY_DATA_SIZE);
@@ -71,10 +157,12 @@ struct ExternalFlashFactoryData
     uint8_t mFactoryDataBuffer[2]; //PM_FACTORY_DATA_SIZE
 };
 
+// template <class FlashFactoryData>
+// class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider,
+//                             public CommissionableDataProvider,
+//                             public DeviceInstanceInfoProvider
 template <class FlashFactoryData>
-class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider,
-                            public CommissionableDataProvider,
-                            public DeviceInstanceInfoProvider
+class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider
 {
 public:
     CHIP_ERROR Init();
@@ -87,31 +175,31 @@ public:
     CHIP_ERROR SignWithDeviceAttestationKey(const ByteSpan & messageToSign, MutableByteSpan & outSignBuffer) override;
 
     // ===== Members functions that implement the CommissionableDataProvider
-    CHIP_ERROR GetSetupDiscriminator(uint16_t & setupDiscriminator) override;
-    CHIP_ERROR SetSetupDiscriminator(uint16_t setupDiscriminator) override;
-    CHIP_ERROR GetSpake2pIterationCount(uint32_t & iterationCount) override;
-    CHIP_ERROR GetSpake2pSalt(MutableByteSpan & saltBuf) override;
-    CHIP_ERROR GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen) override;
-    CHIP_ERROR GetSetupPasscode(uint32_t & setupPasscode) override;
-    CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
+    // CHIP_ERROR GetSetupDiscriminator(uint16_t & setupDiscriminator) override;
+    // CHIP_ERROR SetSetupDiscriminator(uint16_t setupDiscriminator) override;
+    // CHIP_ERROR GetSpake2pIterationCount(uint32_t & iterationCount) override;
+    // CHIP_ERROR GetSpake2pSalt(MutableByteSpan & saltBuf) override;
+    // CHIP_ERROR GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen) override;
+    // CHIP_ERROR GetSetupPasscode(uint32_t & setupPasscode) override;
+    // CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
 
     // ===== Members functions that implement the DeviceInstanceInfoProvider
-    CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;
-    CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
-    CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
-    CHIP_ERROR GetProductId(uint16_t & productId) override;
-    CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
-    CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
-    CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
-    CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
-    CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
+    // CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;
+    // CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
+    // CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
+    // CHIP_ERROR GetProductId(uint16_t & productId) override;
+    // CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
+    // CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
+    // CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
+    // CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
+    // CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
 
     // ===== Members functions that are platform-specific
-    CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
+    // CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
 
 private:
     static constexpr uint16_t kFactoryDataPartitionSize    = 100; // PM_FACTORY_DATA_SIZE
-    static constexpr uint32_t kFactoryDataPartitionAddress = 100; //PM_FACTORY_DATA_ADDRESS
+    static constexpr uint32_t kFactoryDataPartitionAddress = 100; // PM_FACTORY_DATA_ADDRESS
     static constexpr uint8_t kDACPrivateKeyLength          = 32;
     static constexpr uint8_t kDACPublicKeyLength           = 65;
 

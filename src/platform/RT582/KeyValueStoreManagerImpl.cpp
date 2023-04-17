@@ -131,7 +131,7 @@ CHIP_ERROR KeyValueStoreManagerImpl::_Get(const char * key, void * value, size_t
     //         info("%02x", *(char *)value + i);
     //     }
     //     info("\r\n");
-    // }
+    }
 
 exit:
     ConvertError(err);
@@ -333,7 +333,7 @@ namespace chip {
 namespace DeviceLayer {
 namespace PersistedStorage {
 
-constexpr size_t kMaxNumberOfKeys  = 0x3b;
+constexpr size_t kMaxNumberOfKeys  = 0x69;
 constexpr size_t kMaxKeyValueBytes = 255;
 
 KeyValueStoreManagerImpl KeyValueStoreManagerImpl::sInstance;

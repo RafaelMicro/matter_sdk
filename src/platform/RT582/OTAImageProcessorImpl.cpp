@@ -28,6 +28,7 @@
 // #include "EFR32Config.h"
 #include <platform/RT582/RT582Config.h>
 #include "cm3_mcu.h"
+// #include "util_log.h"
 
 /// No error, operation OK
 #define SL_BOOTLOADER_OK 0L
@@ -270,13 +271,13 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
         {
             writeBufOffset = 0;
 
-            // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
-            if (err)
-            {
-                ChipLogError(SoftwareUpdate, "ERROR: In HandleProcessBlock bootloader_eraseWriteStorage() error %ld", err);
-                imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
-                return;
-            }
+        //     CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
+        //     if (err)
+        //     {
+        //         ChipLogError(SoftwareUpdate, "ERROR: In HandleProcessBlock bootloader_eraseWriteStorage() error %ld", err);
+        //         imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
+        //         return;
+        //     }
             mWriteOffset += kAlignmentBytes;
             imageProcessor->mParams.downloadedBytes += kAlignmentBytes;
         }

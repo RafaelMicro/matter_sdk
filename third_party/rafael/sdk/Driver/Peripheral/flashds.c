@@ -1610,13 +1610,13 @@ uint32_t ds_read(ds_rw_t * ds_read)
 
     // if (ds_get_current_page() == DS_PAGE_0)
     // {
-    start_address = dsinfo.start_address;
+        start_address = dsinfo.start_address;
     //     end_address   = dsinfo.middle_address;
     // }
     // else
     // {
     //     start_address = dsinfo.middle_address;
-    end_address = dsinfo.end_address;
+        end_address   = dsinfo.end_address;
     // }
 
     dssearch.flag        = DS_READ_TYPE_SEARCH;

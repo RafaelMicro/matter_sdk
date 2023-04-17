@@ -43,7 +43,7 @@ namespace DeviceLayer {
 
 struct InternalFlashFactoryData
 {
-    size_t GetDecryptionCertification(struct FactoryDataCert *enc, uint8_t *dec, uint8_t *key)
+    CHIP_ERROR GetDecryptionCertification(struct FactoryDataCert *enc, struct FactoryDataCert *dec, uint8_t *key)
     {
         mbedtls_aes_context aes_ctx;
 
@@ -58,10 +58,17 @@ struct InternalFlashFactoryData
             mbedtls_aes_crypt_ecb(&aes_ctx, 
                                 MBEDTLS_AES_DECRYPT, 
                                 &enc->data[blockIndex * blockSize], 
-                                &dec[blockIndex * blockSize]);
+                                &dec->data[blockIndex * blockSize]);
         }
         mbedtls_aes_free(&aes_ctx);
-        return (enc->len - dec[enc->len - 1]);
+
+        dec->len = enc->len - dec->data[enc->len - 1];
+        // info("===> len: %d\r\n", dec->len);
+        // for (int i = 0; i < dec->len; i++) {
+        //     info("%02x ", dec->data[i]);
+        // }
+        // info("\r\n");
+        return CHIP_NO_ERROR;
     }
 
     CHIP_ERROR GetFactoryDataCertificates(struct FactoryData * mFactoryData)
@@ -72,39 +79,39 @@ struct InternalFlashFactoryData
         uint8_t sha256[4] = {0xef, 0x37, 0x92, 0xf8};
         uint8_t key[16] = {0};
 
-        struct FactoryData mFlasData;
+        struct FactoryData mFlashData;
 
         mbedtls_sha256(sha256, 4, key, 0);
 
-        mFlasData.pai_cert.len = flash_read_byte(PAI_CERT_ADDR);
-        mFlasData.pai_cert.len |= flash_read_byte(PAI_CERT_ADDR + 1) << 8;
+        mFlashData.pai_cert.len = flash_read_byte(PAI_CERT_ADDR);
+        mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_ADDR + 1) << 8;
 
-        for (uint32_t i = 0; i < mFlasData.pai_cert.len; i++) {
-            mFlasData.pai_cert.data[i] = flash_read_byte(PAI_CERT_ADDR + 2 + i);
+        for (uint32_t i = 0; i < mFlashData.pai_cert.len; i++) {
+            mFlashData.pai_cert.data[i] = flash_read_byte(PAI_CERT_ADDR + 2 + i);
         }
 
-        mFactoryData->pai_cert.len = GetDecryptionCertification(&mFlasData.pai_cert, mFactoryData->pai_cert.data, key);
+        GetDecryptionCertification(&mFlashData.pai_cert, &mFactoryData->pai_cert, key);
 
-        mFlasData.dac_cert.len = flash_read_byte(DAC_CERT_ADDR);
-        mFlasData.dac_cert.len |= flash_read_byte(DAC_CERT_ADDR + 1) << 8;
+        mFlashData.dac_cert.len = flash_read_byte(DAC_CERT_ADDR);
+        mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_ADDR + 1) << 8;
 
-        for (uint32_t i = 0; i < mFlasData.dac_cert.len; i++) {
-            mFlasData.dac_cert.data[i] = flash_read_byte(DAC_CERT_ADDR + 2 + i);
+        for (uint32_t i = 0; i < mFlashData.dac_cert.len; i++) {
+            mFlashData.dac_cert.data[i] = flash_read_byte(DAC_CERT_ADDR + 2 + i);
         }
 
-        mFactoryData->dac_cert.len = GetDecryptionCertification(&mFlasData.dac_cert, mFactoryData->dac_cert.data, key);
+        GetDecryptionCertification(&mFlashData.dac_cert, &mFactoryData->dac_cert, key);
 
         // ENC_DAC_PubKey_Len = flash_read_byte(DAC_PUBKEY_ADDR);
         // ENC_DAC_PubKey_Len |= flash_read_byte(DAC_PUBKEY_ADDR+1) << 8;
 
-        mFlasData.dac_privkey.len = flash_read_byte(DAC_PRIVKEY_ADDR);
-        mFlasData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_ADDR + 1) << 8;
+        mFlashData.dac_privkey.len = flash_read_byte(DAC_PRIVKEY_ADDR);
+        mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_ADDR + 1) << 8;
 
-        for (uint32_t i = 0; i < mFlasData.dac_privkey.len; i++) {
-            mFlasData.dac_privkey.data[i] = flash_read_byte(DAC_PRIVKEY_ADDR + 2 + i);
+        for (uint32_t i = 0; i < mFlashData.dac_privkey.len; i++) {
+            mFlashData.dac_privkey.data[i] = flash_read_byte(DAC_PRIVKEY_ADDR + 2 + i);
         }
 
-        mFactoryData->dac_privkey.len = GetDecryptionCertification(&mFlasData.dac_privkey, mFactoryData->dac_privkey.data, key);
+        GetDecryptionCertification(&mFlashData.dac_privkey, &mFactoryData->dac_privkey, key);
 
         return CHIP_NO_ERROR;
     }

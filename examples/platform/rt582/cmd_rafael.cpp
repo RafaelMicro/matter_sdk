@@ -35,6 +35,7 @@
 #include "util_log.h"
 
 #include "sys_arch.h"
+#include "mib_counters.h"
 
 
 #ifdef __cplusplus
@@ -55,8 +56,16 @@ CHIP_ERROR cmd_mem(int argc, char ** argv)
 {
     sys_malloc_info_printf();
 
-     return CHIP_NO_ERROR;
+    return CHIP_NO_ERROR;
 }
+
+CHIP_ERROR cmd_mib(int argc, char ** argv)
+{
+    mib_counter_printf();
+
+    return CHIP_NO_ERROR;
+}
+
 
 CHIP_ERROR cmd_rd(int argc, char ** argv)
 {
@@ -100,6 +109,7 @@ CHIP_ERROR cmd_rd(int argc, char ** argv)
 static shell_command_t cmds_rafael[] = {
     { &cmd_rd, "rd", "Read memory" },
     { &cmd_mem, "mem", "Show memory usage" },
+    { &cmd_mib, "mib", "Show mib counters" },
 };
 void cmd_rafael_init()
 {

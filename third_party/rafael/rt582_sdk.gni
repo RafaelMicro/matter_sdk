@@ -60,6 +60,7 @@ template("rt582_sdk") {
       "${chip_root}/third_party/openthread/ot-rt582/openthread/third_party/mbedtls/repo/include",
       "${chip_root}/examples/platform/rt582/config/",
       "${chip_root}/third_party/rafael",
+      "${chip_root}/third_party/rafael/sdk/Portable/mib/",
     ]
 
     _include_dirs += [
@@ -166,6 +167,7 @@ template("rt582_sdk") {
       "${rt582_sdk_root}/Portable/bsp/bsp_uart_drv.c",
       "${rt582_sdk_root}/Portable/System/sys_taskdbg.c",
       "${rt582_sdk_root}/Portable/System/sys_arch.c",
+      "${rt582_sdk_root}/Portable/mib/mib_counters.c",
     ]
 
     libs=["${rt582_sdk_root}/Library/librt582sdk.a"]

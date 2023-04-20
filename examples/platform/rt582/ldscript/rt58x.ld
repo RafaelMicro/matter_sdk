@@ -10,10 +10,21 @@
 /* Library configurations */
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
+__STACK_SIZE = DEFINED(__STACK_SIZE) ? __STACK_SIZE : 0x200;
+__HEAP_SIZE = DEFINED(__HEAP_SIZE) ? __HEAP_SIZE : 32K;
+
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x8000,     LENGTH = 0xE8000  /* 512KB */
-  RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 0x24000  /* 144KB */
+	/* LMA regions */
+	LMA_BOOT	(rx) : ORIGIN = 0x00000000, LENGTH = 32K
+	LMA_CORE	(rx) : ORIGIN = 0x00008000, LENGTH = 928K
+	LMA_USER	(rx) : ORIGIN = 0x000F0000, LENGTH = 32K
+	LMA_MP		(rx) : ORIGIN = 0x000F0800, LENGTH = 32K
+
+	/* VMA regions */
+	VMA_DATA	(rwx) : ORIGIN = 0x20000000, LENGTH = 144K - __HEAP_SIZE - __STACK_SIZE
+	VMA_HEAP	(rwx) : ORIGIN = 0x20024000 - __STACK_SIZE - __HEAP_SIZE, LENGTH = __HEAP_SIZE
+	VMA_STACK	(rwx) : ORIGIN = 0x20024000 - __STACK_SIZE, LENGTH = __STACK_SIZE
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -71,18 +82,18 @@ SECTIONS
 		*(.rodata*)
 
 		KEEP(*(.eh_frame*))
-	} > FLASH
+	} > LMA_CORE
 
 	.ARM.extab :
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
-	} > FLASH
+	} > LMA_CORE
 
 	__exidx_start = .;
 	.ARM.exidx :
 	{
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} > FLASH
+	} > LMA_CORE
 	__exidx_end = .;
 
 	__etext = .;
@@ -90,10 +101,14 @@ SECTIONS
 	.data : AT (__etext)
 	{
 		__data_start__ = .;
+		
 		*(vtable)
 		*(.data*)
 
-		. = ALIGN(4);
+		__reloc_vma_start__ = ALIGN(4);
+		KEEP(*(reloc_text*))
+		KEEP(*(reloc_data*))
+		__reloc_vma_end__ = ALIGN(4);			
 		/* preinit data */
 		PROVIDE_HIDDEN (__preinit_array_start = .);
 		KEEP(*(.preinit_array))
@@ -118,8 +133,7 @@ SECTIONS
 		. = ALIGN(4);
 		/* All data end */
 		__data_end__ = .;
-
-	} > RAM
+	} > VMA_DATA
 
 	.bss :
 	{
@@ -129,15 +143,15 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		__bss_end__ = .;
-	} > RAM
+	} > VMA_DATA
 
-	.heap (COPY):
+	.heap (COPY) :
 	{
 		__end__ = .;
 		end = __end__;
-		*(.heap*)
-		__HeapLimit = .;
-	} > RAM
+		KEEP(*(reloc_heap*))
+		__heap_end__ = .;
+	} > VMA_HEAP
 
 	/* .stack_dummy section doesn't contains any symbols. It is only
 	 * used for linker to calculate size of stack sections, and assign
@@ -145,11 +159,10 @@ SECTIONS
 	.stack_dummy (COPY):
 	{
 		*(.stack*)
-	} > RAM
+	} > VMA_STACK
 
 	/* Set stack top to end of RAM, and stack limit move down by
 	 * size of stack_dummy section */
-	__StackTop = ORIGIN(RAM) + LENGTH(RAM);
 	__StackLimit = __StackTop - SIZEOF(.stack_dummy);
 	PROVIDE(__stack = __StackTop);
 

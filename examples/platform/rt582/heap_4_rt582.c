@@ -81,7 +81,8 @@ task.h is included from an application file. */
 heap - probably so it can be placed in a special segment or address. */
 extern uint8_t ucHeap[configTOTAL_HEAP_SIZE];
 #else
-static uint8_t ucHeap[configTOTAL_HEAP_SIZE];
+#define __reloc_heap __attribute__((used, section("reloc_heap")))
+static uint8_t ucHeap[configTOTAL_HEAP_SIZE] __reloc_heap;
 #endif /* configAPPLICATION_ALLOCATED_HEAP */
 
 /* Define the linked list structure.  This is used to link free blocks in order

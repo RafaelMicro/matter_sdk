@@ -27,6 +27,8 @@ struct AppEvent
     enum AppEventTypes
     {
         kEventType_Button = 0,
+        kEventType_Button_ON,
+        kEventType_Button_OFF,
         kEventType_Timer,
         kEventType_Light,
         kEventType_Install,
@@ -36,6 +38,7 @@ struct AppEvent
     {
         kActionTypes_FactoryReset = 0,
         kActionTypes_Switch_1,
+        kActionTypes_Switch_2,
     };
 
     uint16_t Type;

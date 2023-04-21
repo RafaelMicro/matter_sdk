@@ -465,7 +465,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
             {
                 AppEvent event;
-                event.Type               = AppEvent::kEventType_Button;
+                event.Type               = AppEvent::kEventType_Button_ON;
                 event.ButtonEvent.Action = kButtonPushEvent;
                 event.Handler            = SwitchActionEventHandler;
                 sAppTask.PostEvent(&event);
@@ -475,6 +475,31 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;
+
+    case (AppEvent::AppActionTypes::kActionTypes_Switch_2):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            if (!sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.mFunction = kFunction_Switch_1;
+                sAppTask.mFunctionSwitchActive = true;
+            }
+        }
+        else
+        {
+            if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
+            {
+                AppEvent event;
+                event.Type               = AppEvent::kEventType_Button_OFF;
+                event.ButtonEvent.Action = kButtonPushEvent;
+                event.Handler            = SwitchActionEventHandler;
+                sAppTask.PostEvent(&event);
+
+                sAppTask.mFunction = kFunction_NoneSelected;
+                sAppTask.mFunctionSwitchActive = false;
+            }
+        }
+        break;        
     
     default:
         break;
@@ -483,13 +508,22 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
 
 void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
 {
-    if (aEvent->Type == AppEvent::kEventType_Button)
+    if (aEvent->Type == AppEvent::kEventType_Button_ON)
     {
-        sSwitchState ^= 1;
-        ChipLogProgress(NotSpecified, "SwitchState: %s", sSwitchState?"ON":"OFF");
-        init_rt582_led_toggle(21);
+        ChipLogProgress(NotSpecified, "SwitchState: ON");
+        gpio_pin_clear(21);
         BindingCommandData * data = chip::Platform::New<BindingCommandData>();
-        data->commandId           = chip::app::Clusters::OnOff::Commands::Toggle::Id;
+        data->commandId           = chip::app::Clusters::OnOff::Commands::On::Id;
+        data->clusterId           = chip::app::Clusters::OnOff::Id;
+        PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+    }
+
+    else if (aEvent->Type == AppEvent::kEventType_Button_OFF)
+    {
+        ChipLogProgress(NotSpecified, "SwitchState: OFF");
+        gpio_pin_clear(21);
+        BindingCommandData * data = chip::Platform::New<BindingCommandData>();
+        data->commandId           = chip::app::Clusters::OnOff::Commands::Off::Id;
         data->clusterId           = chip::app::Clusters::OnOff::Id;
         PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
     }
@@ -522,6 +556,16 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
         break;
+    case (BSP_EVENT_BUTTONS_2):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_2;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_EVENT_BUTTONS_2-5)?0:1;
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;        
     default:
         break;
     }

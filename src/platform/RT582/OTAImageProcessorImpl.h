@@ -66,11 +66,12 @@ private:
     // If that changes then the use of static members and functions must be revisited
     static uint32_t mWriteOffset; // End of last written block
     static uint8_t mSlotId;       // Bootloader storage slot
+    static uint32_t mPageNo;
     MutableByteSpan mBlock;
     OTADownloader * mDownloader;
     OTAImageHeaderParser mHeaderParser;
     const char * mImageFile                 = nullptr;
-    static constexpr size_t kAlignmentBytes = 64;
+    static constexpr size_t kAlignmentBytes = 256;
     // Intermediate, word-aligned buffer for writing to the bootloader storage.
     // Bootloader storage API requires the buffer size to be a multiple of 4.
     static uint8_t writeBuffer[kAlignmentBytes] __attribute__((aligned(4)));

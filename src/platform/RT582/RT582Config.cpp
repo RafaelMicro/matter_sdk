@@ -412,8 +412,13 @@ void RT582Config::RunConfigUnitTest()
 // #include "util_log.h"
 #include "cm3_mcu.h"
 
+#if (PLATFORM_CONFIG == RAFAEL_RT582_1M)
 #define RT582CONFIG_BASE_ADDR       0xF3000
 #define RT582CONFIG_END_ADDR        0xFB000
+#elif (PLATFORM_CONFIG == RAFAEL_RT583_2M)
+#define RT582CONFIG_BASE_ADDR       0x1E3000
+#define RT582CONFIG_END_ADDR        0x1EB000
+#endif
 #define RT582CONFIG_ID_PER_SIZE     0x100
 #define RT582CONFIG_FLASH_PAGE_SIZE 0x100
 #define RT582CONFIG_SECTOR_SIZE     0x1000
@@ -614,6 +619,7 @@ CHIP_ERROR RT582Config::Init()
     ds_init_cfg.end_address = RT582CONFIG_END_ADDR;	
     ds_init_cfg.ds_page_mode = DS_ONE_PAGE_MODE;	
     ds_init_cfg.page_size = DATA_ONE_PAGE_SIZE;
+    // info("===> start: %x, end: %x\r\n", RT582CONFIG_BASE_ADDR, RT582CONFIG_END_ADDR);
     ds_ret = ds_initinal(ds_init_cfg);
 
     if (ds_ret != STATUS_SUCCESS)
@@ -737,7 +743,7 @@ CHIP_ERROR RT582Config::FactoryResetConfig(void)
     // flash_erase(FLASH_ERASE_SECTOR, 0xFB000);
     // while (flash_check_busy());
 
-    for (int address = 0xF3000; address < 0xFC000; address += 0x1000 ) {
+    for (int address = RT582CONFIG_BASE_ADDR; address <= RT582CONFIG_END_ADDR; address += RT582CONFIG_SECTOR_SIZE ) {
         flash_erase(FLASH_ERASE_SECTOR, address);
         while (flash_check_busy()) {}
     }

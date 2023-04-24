@@ -127,6 +127,7 @@ rt582_executable("lighting_app") {
 
   # Attestation Credentials
   if (chip_build_platform_attestation_credentials_provider) {
+    defines += [ "CONFIG_CHIP_FACTORY_DATA" ]
     deps += [ "${chip_root}/src/platform/RT582:rt582-attestation-credentials" ]
   }
 

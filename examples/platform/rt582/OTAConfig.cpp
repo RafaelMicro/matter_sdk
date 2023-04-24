@@ -68,7 +68,7 @@ __attribute__((used)) ApplicationProperties_t sl_app_properties = {
 };
 */
 
-
+#if RT582_OTA_ENABLED
 // Global OTA objects
 chip::DefaultOTARequestor gRequestorCore;
 chip::DefaultOTARequestorStorage gRequestorStorage;
@@ -95,3 +95,4 @@ void OTAConfig::Init()
     gDownloader.SetImageProcessorDelegate(&gImageProcessor);
     // Initialize and interconnect the Requestor and Image Processor objects -- END
 }
+#endif 

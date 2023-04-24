@@ -12,6 +12,7 @@
 */
 #include "chip_define.h"
 #include "project_config.h"
+#include "CHIPProjectConfig.h"
 
 #ifndef ___FLASHDS_H__
 #define ___FLASHDS_H__
@@ -24,36 +25,40 @@ extern "C"
 /**************************************************************************************************
  *    CONSTANTS AND DEFINES
  *************************************************************************************************/
-#define DS_INVAILD										1
-#define DS_VAILD_TYPE									0xFF			
-#define DS_INVAILD_TYPE_00						0x00			
-#define DS_INVAILD_TYPE_FF						0xFF
+#define DS_INVAILD						1
+#define DS_VAILD_TYPE					0xFF			
+#define DS_INVAILD_TYPE_00				0x00			
+#define DS_INVAILD_TYPE_FF				0xFF
 
-#define DS_START_OFFSET								0
-#define DS_HEADER_OFFSET							7
-#define DS_TAIL_OFFSET								3
+#define DS_START_OFFSET					0
+#define DS_HEADER_OFFSET				7
+#define DS_TAIL_OFFSET					3
 
 
-#define DS_VAILD_TYPE_SEARCH					0
-#define DS_READ_TYPE_FLAG						1
-#define DS_READ_TYPE_SEARCH						1
-#define DS_READ_TYPE_DELETE						2
+#define DS_VAILD_TYPE_SEARCH			0
+#define DS_READ_TYPE_FLAG				1
+#define DS_READ_TYPE_SEARCH				1
+#define DS_READ_TYPE_DELETE				2
 
-#define DS_DATA_CHECK_SIZE						0x100	
+#define DS_DATA_CHECK_SIZE				0x100	
 
-#define DS_SERAIL_NUMBER_START				1
-#define DS_SERAIL_NUMBER_MAX					0xFFFF
+#define DS_SERAIL_NUMBER_START			1
+#define DS_SERAIL_NUMBER_MAX			0xFFFF
 
-#define DATA_SET_ERASE_SIZE						0x1000		
+#define DATA_SET_ERASE_SIZE				0x1000		
 
+#if (PLATFORM_CONFIG == RAFAEL_RT582_1M)
 #define DS_ONE_PAGE_END_ADDRESS_MAX		0xFC000 	//For Thread
 #define DS_TWO_PAGE_END_ADDRESS_MAX		0xF4000		//For Zigbee/BLE
+#elif (PLATFORM_CONFIG == RAFAEL_RT583_2M)
+#define DS_ONE_PAGE_END_ADDRESS_MAX		0x1EC000 	
+#define DS_TWO_PAGE_END_ADDRESS_MAX		0x1E4000		
+#endif
+#define DS_READ_STATUS_SUCCESS			0xF0
+#define DS_READ_FINSIH_SUCCESS 			0xF1
+#define DS_READ_DELETE_SUCCESS 			0xF2
 
-#define DS_READ_STATUS_SUCCESS				0xF0
-#define DS_READ_FINSIH_SUCCESS 			  0xF1
-#define DS_READ_DELETE_SUCCESS 			  0xF2
-
-#define DS_MAGIC_NUMBER								0x0000
+#define DS_MAGIC_NUMBER				    0x0000
 
 /**************************************************************************************************
  *    TYPEDEFS

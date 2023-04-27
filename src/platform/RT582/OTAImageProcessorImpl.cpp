@@ -169,6 +169,7 @@ CHIP_ERROR OTAImageProcessorImpl::ConfirmCurrentImage()
 void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 {
     int32_t err           = SL_BOOTLOADER_OK;
+    uint32_t otaBank      = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + SIZE_OF_FOTA_BANK_1MB_UNCOMPRESS;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
     if (imageProcessor == nullptr)
@@ -184,11 +185,11 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     // ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
-    for (uint32_t sector = 0; sector < 200; sector++) 
+    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS; sector < 0x001B7000; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
     {
         while (flash_check_busy()) {}
         taskENTER_CRITICAL();
-        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + 0x1000 * sector);
+        flash_erase(FLASH_ERASE_SECTOR, sector);
         taskEXIT_CRITICAL();
     }
 
@@ -283,7 +284,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
 
     t_bootloader_ota_info.fotabank_ready = FOTA_IMAGE_READY;
     t_bootloader_ota_info.fotabank_startaddr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS;
-    t_bootloader_ota_info.fota_image_info = 0;
+    t_bootloader_ota_info.fota_image_info = FOTA_IMAGE_INFO_COMPRESSED;
     t_bootloader_ota_info.signature_len = 0;
     t_bootloader_ota_info.target_startaddr = APP_START_ADDRESS;
     t_bootloader_ota_info.fotabank_datalen = imageProcessor->mParams.downloadedBytes;

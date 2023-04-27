@@ -12,7 +12,6 @@
 */
 #include "chip_define.h"
 #include "project_config.h"
-#include "CHIPProjectConfig.h"
 
 #ifndef ___FLASHDS_H__
 #define ___FLASHDS_H__
@@ -47,12 +46,12 @@ extern "C"
 
 #define DATA_SET_ERASE_SIZE				0x1000		
 
-#if (PLATFORM_CONFIG == RAFAEL_RT582_1M)
+#if (RAFAEL_BOARD == RT582)
 #define DS_ONE_PAGE_END_ADDRESS_MAX		0xFC000 	//For Thread
 #define DS_TWO_PAGE_END_ADDRESS_MAX		0xF4000		//For Zigbee/BLE
-#elif (PLATFORM_CONFIG == RAFAEL_RT583_2M)
-#define DS_ONE_PAGE_END_ADDRESS_MAX		0x1EC000 	
-#define DS_TWO_PAGE_END_ADDRESS_MAX		0x1E4000		
+#elif (RAFAEL_BOARD == RT583)
+#define DS_ONE_PAGE_END_ADDRESS_MAX		0x1F0000 	
+#define DS_TWO_PAGE_END_ADDRESS_MAX		0x1E0000		
 #endif
 #define DS_READ_STATUS_SUCCESS			0xF0
 #define DS_READ_FINSIH_SUCCESS 			0xF1

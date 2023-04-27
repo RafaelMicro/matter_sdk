@@ -80,6 +80,9 @@ declare_args() {
   # Enable OTA requestor support
   chip_enable_ota_requestor = false
 
+  # Rafael Platform
+  rafael_board = "RT582"
+
   # Select DNS-SD implementation
   if (chip_device_platform == "linux" || chip_device_platform == "esp32" ||
       chip_device_platform == "mbed" || chip_device_platform == "psoc6" ||

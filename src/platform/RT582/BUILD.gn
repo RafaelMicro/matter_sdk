@@ -63,6 +63,12 @@ static_library("RT582") {
   include_dirs = []
   deps = []
 
+  if (rafael_board == "RT582") {
+    defines = [ "RAFAEL_BOARD=0x02" ]
+  } else {
+    defines = [ "RAFAEL_BOARD=0x03" ]
+  }
+
   if (chip_enable_ota_requestor) {
     sources += [
       "OTAImageProcessorImpl.cpp",

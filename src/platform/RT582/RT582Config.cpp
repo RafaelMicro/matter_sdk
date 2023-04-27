@@ -411,13 +411,15 @@ void RT582Config::RunConfigUnitTest()
 
 // #include "util_log.h"
 #include "cm3_mcu.h"
+#include "chip_define.h"
 
-#if (PLATFORM_CONFIG == RAFAEL_RT582_1M)
+// KVS flash location
+#if (RAFAEL_BOARD == RT582)
 #define RT582CONFIG_BASE_ADDR       0xF3000
 #define RT582CONFIG_END_ADDR        0xFB000
-#elif (PLATFORM_CONFIG == RAFAEL_RT583_2M)
-#define RT582CONFIG_BASE_ADDR       0x1E3000
-#define RT582CONFIG_END_ADDR        0x1EB000
+#elif (RAFAEL_BOARD == RT583)
+#define RT582CONFIG_BASE_ADDR       0x1D0000
+#define RT582CONFIG_END_ADDR        0x1F0000
 #endif
 #define RT582CONFIG_ID_PER_SIZE     0x100
 #define RT582CONFIG_FLASH_PAGE_SIZE 0x100
@@ -743,7 +745,7 @@ CHIP_ERROR RT582Config::FactoryResetConfig(void)
     // flash_erase(FLASH_ERASE_SECTOR, 0xFB000);
     // while (flash_check_busy());
 
-    for (int address = RT582CONFIG_BASE_ADDR; address <= RT582CONFIG_END_ADDR; address += RT582CONFIG_SECTOR_SIZE ) {
+    for (int address = RT582CONFIG_BASE_ADDR; address < RT582CONFIG_END_ADDR; address += RT582CONFIG_SECTOR_SIZE ) {
         flash_erase(FLASH_ERASE_SECTOR, address);
         while (flash_check_busy()) {}
     }

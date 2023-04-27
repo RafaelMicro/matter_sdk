@@ -601,7 +601,7 @@ CHIP_ERROR AppTask::StartAppTask()
         return CHIP_ERROR_NO_MEMORY;
     }
 
-#if CONFIG_CHIP_FACTORY_DATA
+#if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
     // SetCommissionableDataProvider(&mFactoryDataProvider);

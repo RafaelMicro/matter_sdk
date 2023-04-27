@@ -31,10 +31,10 @@
 #include "FactoryDataParser.h"
 #include "util_log.h"
 
-#define PAI_CERT_ADDR    0x1f4010
-#define DAC_CERT_ADDR    0x1f4290
-#define DAC_PRIVKEY_ADDR 0x1f4590
-#define DAC_PUBKEY_ADDR  0x1f4510
+#define PAI_CERT_ADDR    0x001F4010
+#define DAC_CERT_ADDR    0x001F4290
+#define DAC_PRIVKEY_ADDR 0x001F4590
+#define DAC_PUBKEY_ADDR  0x001F4510
 
 namespace chip {
 namespace DeviceLayer {

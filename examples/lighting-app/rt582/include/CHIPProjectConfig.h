@@ -43,33 +43,13 @@
 //
 #define CHIP_CONFIG_SECURITY_TEST_MODE 0
 
-#define RAFAEL_RT582_1M 0
-#define RAFAEL_RT583_2M 1
-#define PLATFORM_CONFIG RAFAEL_RT582_1M    // choose RT582 or RT583, need to clean build
-
-#if (PLATFORM_CONFIG == RAFAEL_RT583_2M)
-#define RT582_OTA_ENABLED        0
-#define CONFIG_CHIP_FACTORY_DATA 0
-#elif (PLATFORM_CONFIG == RAFAEL_RT582_1M)
-#define RT582_OTA_ENABLED        0
-#define CONFIG_CHIP_FACTORY_DATA 0
-#endif 
-
-#if (PLATFORM_CONFIG == RAFAEL_RT582_1M && RT582_OTA_ENABLED)
-#error "not implemented yet!"
-#endif
-
-#if (PLATFORM_CONFIG == RAFAEL_RT582_1M && CONFIG_CHIP_FACTORY_DATA)
-#error "not implemented yet!"
-#endif
-
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID
  *
  * 0xFFF1: Test vendor
  */
 
-#if CONFIG_CHIP_FACTORY_DATA
+#if (RAFAEL_CERTS_ENABLED)
 #define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID 0x1346
 #else
 #define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID 0xFFF1
@@ -80,12 +60,12 @@
  *
  * 0x8005: example lighting app
  */
-#if CONFIG_CHIP_FACTORY_DATA
+
+#if (RAFAEL_CERTS_ENABLED)
 #define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x400E
 #else
 #define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8005
 #endif
-
 
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION
@@ -181,15 +161,15 @@
 #define CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL 50_ms32
 #endif
 
-/**
- *  @def CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL
- *
- *  @brief
- *    Active retransmit interval, or time to wait before retransmission after
- *    subsequent failures in milliseconds.
- *
- *  This is the default value, that might be adjusted by end device depending on its
- *  needs (e.g. sleeping period) using Service Discovery TXT record CRA key.
- *
- */
-// #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (2000_ms32)
+    /**
+     *  @def CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL
+     *
+     *  @brief
+     *    Active retransmit interval, or time to wait before retransmission after
+     *    subsequent failures in milliseconds.
+     *
+     *  This is the default value, that might be adjusted by end device depending on its
+     *  needs (e.g. sleeping period) using Service Discovery TXT record CRA key.
+     *
+     */
+    // #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (2000_ms32)

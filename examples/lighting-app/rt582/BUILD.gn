@@ -59,10 +59,17 @@ rt582_sdk("sdk") {
     "CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR=${setupDiscriminator}",
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
   ]
+
+  if (chip_build_platform_attestation_credentials_provider) {
+    defines += [ 
+      "RAFAEL_CERTS_ENABLED=1",
+    ]
+  }
 }
 
 rt582_executable("lighting_app") {
   output_name = "chip-rt582-lighting-app-example.out"
+
   include_dirs = [ 
     "include",
     "${examples_plat_dir}/projcrt_peripheral/lighting_app"
@@ -109,7 +116,7 @@ rt582_executable("lighting_app") {
   ]
 
   if (chip_enable_ota_requestor) {
-    defines += [ "RT582_OTA_ENABLED" ]
+    defines += [ "RT582_OTA_ENABLED=1" ]
     sources += [ "${examples_plat_dir}/OTAConfig.cpp" ]
   }
 
@@ -127,7 +134,6 @@ rt582_executable("lighting_app") {
 
   # Attestation Credentials
   if (chip_build_platform_attestation_credentials_provider) {
-    defines += [ "CONFIG_CHIP_FACTORY_DATA" ]
     deps += [ "${chip_root}/src/platform/RT582:rt582-attestation-credentials" ]
   }
 

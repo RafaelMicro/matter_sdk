@@ -34,7 +34,7 @@ set -x
 env
 USE_WIFI=false
 
-USAGE="./scripts/examples/gn_rt582_example.sh <AppRootFolder> <outputFolder>[<Build options>]"
+USAGE="./scripts/examples/gn_rt582_example.sh <AppRootFolder> <outputFolder> <rafael_board_name> [<Build options>]"
 
 if [ "$#" == "0" ]; then
     echo "Build script for RT582 Matter apps
@@ -46,6 +46,12 @@ if [ "$#" == "0" ]; then
 
     <outputFolder>
         Desired location for the output files
+
+    <rafael_board_name>
+        Identifier of the board for which this app is built
+        Currently Supported :
+            RT582
+            RT583
 
     <Build options> - optional noteworthy build options for RT582
         chip_build_libshell
@@ -78,6 +84,10 @@ if [ "$#" == "0" ]; then
             enable Addition data advertissing and rotating device ID
         --use_ot_lib
             use the silabs openthread library
+        --rafael-ota
+            matter ota for rafael rt583
+        --rafael-certs
+            rafael dac/pai/cd certificates
     "
 elif [ "$#" -lt "2" ]; then
     echo "Invalid number of arguments
@@ -87,6 +97,11 @@ else
     ROOT=$1
     OUTDIR=$2
 
+    if [ "$#" -gt "2" ]; then
+        RAFAEL_BOARD=$3
+        shift
+    fi
+
     shift
     shift
     while [ $# -gt 0 ]; do
@@ -95,13 +110,36 @@ else
             optArgs+="enable_sleepy_device=true chip_openthread_ftd=false "
             shift
             ;;
-        *)
 
+        --rafael-ota)
+            echo $1
+            if [ "$RAFAEL_BOARD" == "RT582" ]; then
+                echo "RT582 is not implemented OTA yet"
+                exit 1
+            fi
+            optArgs+="chip_enable_ota_requestor=true "
+            shift
+            ;;
+
+        --rafael-certs)
+            if [ "$RAFAEL_BOARD" == "RT582" ]; then
+                echo "RT582 is not implemented DAC/PAI yet./"
+                exit 1
+            fi
+            optArgs+="chip_build_platform_attestation_credentials_provider=true "
+            shift
+            ;;
+        *)
             optArgs+=$1" "
             shift
             ;;
         esac
     done
+
+    if [ "$RAFAEL_BOARD" != "RT582" ] && [ "$RAFAEL_BOARD" != "RT583" ]; then
+        echo "RAFAEL_BOARD is not defined"
+        exit 1
+    fi
 
     BUILD_DIR=$OUTDIR/"RT582"
     echo BUILD_DIR="$BUILD_DIR"
@@ -109,12 +147,12 @@ else
     # thread build
     #
     if [ -z "$optArgs" ]; then
-        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" "$BUILD_DIR"
+        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\"" "$BUILD_DIR"
     else
-        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="$optArgs" "$BUILD_DIR"
+        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\" $optArgs" "$BUILD_DIR"
     fi
-    # ninja -C "$BUILD_DIR"/
-    ninja -v -C "$BUILD_DIR"/
+    ninja -C "$BUILD_DIR"/
+    # ninja -v -C "$BUILD_DIR"/
     #print stats
     arm-none-eabi-size -A "$BUILD_DIR"/*.out
 fi

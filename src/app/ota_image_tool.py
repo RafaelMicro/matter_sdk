@@ -193,7 +193,9 @@ def write_image(args: object, header: bytes):
 
     with open(args.output_file, 'wb') as out_file:
         out_file.write(header)
-
+        print(len(header))
+        print(args.input_files)
+        print(args.output_file)
         for path in args.input_files:
             with open(path, 'rb') as file:
                 while True:

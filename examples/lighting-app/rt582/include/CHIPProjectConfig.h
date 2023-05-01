@@ -161,15 +161,15 @@
 #define CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL 50_ms32
 #endif
 
-    /**
-     *  @def CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL
-     *
-     *  @brief
-     *    Active retransmit interval, or time to wait before retransmission after
-     *    subsequent failures in milliseconds.
-     *
-     *  This is the default value, that might be adjusted by end device depending on its
-     *  needs (e.g. sleeping period) using Service Discovery TXT record CRA key.
-     *
-     */
-    // #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (2000_ms32)
+/**
+ *  @def CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL
+ *
+ *  @brief
+ *    Active retransmit interval, or time to wait before retransmission after
+ *    subsequent failures in milliseconds.
+ *
+ *  This is the default value, that might be adjusted by end device depending on its
+ *  needs (e.g. sleeping period) using Service Discovery TXT record CRA key.
+ *
+ */
+// #define CHIP_CONFIG_MRP_LOCAL_ACTIVE_RETRY_INTERVAL (2000_ms32)

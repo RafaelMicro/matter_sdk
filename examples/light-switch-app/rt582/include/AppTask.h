@@ -38,6 +38,7 @@
 #include <platform/CHIPDeviceLayer.h>
 
 #include "bsp.h"
+#include "FactoryDataProvider.h"
 
 /**********************************************************
  * Defines
@@ -120,6 +121,9 @@ private:
 
     static AppTask sAppTask;   
 
+#if RAFAEL_CERTS_ENABLED
+    chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
+#endif
 };
 inline AppTask & GetAppTask(void)
 {

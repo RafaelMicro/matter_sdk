@@ -20,7 +20,7 @@ rt582_sdk_target = get_label_info(":sdk", "label_no_toolchain")
 
 chip_enable_ota_requestor = false
 chip_build_libshell = true
-
+chip_build_platform_attestation_credentials_provider = false
 
 pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"
 pw_assert_BACKEND = "$dir_pw_assert_log:check_backend"

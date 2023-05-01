@@ -86,6 +86,12 @@ rt582_sdk("sdk") {
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
   ]
 
+  if (chip_build_platform_attestation_credentials_provider) {
+    defines += [ 
+      "RAFAEL_CERTS_ENABLED=1",
+    ]
+  }
+
   if (chip_enable_pw_rpc) {
     defines += [
       "HAL_VCOM_ENABLE=1",
@@ -139,7 +145,7 @@ rt582_executable("lock_app") {
   ]
 
   if (chip_enable_ota_requestor) {
-    defines += [ "RT582_OTA_ENABLED" ]
+    defines += [ "RT582_OTA_ENABLED=1" ]
     sources += [ "${examples_plat_dir}/OTAConfig.cpp" ]
   }
 

@@ -16,7 +16,7 @@
 #    limitations under the License.
 #
 
-# Build script for GN EFT32 examples GitHub workflow.
+# Build script for GN RT58x examples GitHub workflow.
 
 set -e
 
@@ -112,7 +112,7 @@ else
             ;;
 
         --rafael-ota)
-            echo $1
+            # echo $1
             if [ "$RAFAEL_BOARD" == "RT582" ]; then
                 echo "RT582 is not implemented OTA yet"
                 exit 1

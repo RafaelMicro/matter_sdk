@@ -141,7 +141,7 @@ else
         exit 1
     fi
 
-    BUILD_DIR=$OUTDIR/"RT582"
+    BUILD_DIR=$OUTDIR/$RAFAEL_BOARD
     echo BUILD_DIR="$BUILD_DIR"
 
     # thread build

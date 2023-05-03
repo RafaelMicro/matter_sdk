@@ -46,13 +46,13 @@
         {
             "label": "Build RT example",
             "type": "shell",
-            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject}",
+            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject} ${input:board} ${input:sed} ${input:OTA} ${input:Certificate}",
             "group": "build"
         },
         {
             "label": "Remove output of RT building example",
             "type": "shell",
-            "command": "sudo rm -fr out/${input:exampleproject}/RT582",
+            "command": "sudo rm -fr out/${input:exampleproject}/${input:board}",
             "group": "build"
         }
     ],
@@ -71,6 +71,46 @@
             ],
             "default": ""
         },
+        {
+            "type": "pickString",
+            "id": "board",
+            "description": "RT582 or RT583?",
+            "options": [
+                "RT582",
+                "RT583",
+            ],
+            "default": "RT582"
+        },
+        {
+            "type": "pickString",
+            "id": "sed",
+            "description": "Sleep device?",
+            "options": [
+                "",
+                "--sed",
+            ],
+            "default": ""
+        },
+        {
+            "type": "pickString",
+            "id": "OTA",
+            "description": "Enable OTA?",
+            "options": [
+                "",
+                "--rafael-ota",
+            ],
+            "default": ""
+        },
+        {
+            "type": "pickString",
+            "id": "Certificate",
+            "description": "Use attestation credentials?",
+            "options": [
+                "",
+                "--rafael-certs",
+            ],
+            "default": ""
+        },        
         {
             "type": "promptString",
             "id": "COMPort",

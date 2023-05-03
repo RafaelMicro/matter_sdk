@@ -91,7 +91,11 @@ rt582_sdk("sdk") {
       "RAFAEL_CERTS_ENABLED=1",
     ]
   }
-
+  if(chip_build_libshell) {
+    defines += [ 
+      "CONFIG_ENABLE_CHIP_SHELL=1",
+    ]
+  }
   if (chip_enable_pw_rpc) {
     defines += [
       "HAL_VCOM_ENABLE=1",
@@ -120,6 +124,10 @@ rt582_executable("lock_app") {
     "src/ZclCallbacks.cpp",
     "src/main.cpp",
   ]
+
+  if(chip_build_libshell) {
+    sources += [ "${examples_plat_dir}/cmd_rafael.cpp", ]
+  }
 
   deps = [
     ":sdk",

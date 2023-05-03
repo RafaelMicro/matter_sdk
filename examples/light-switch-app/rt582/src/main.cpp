@@ -44,7 +44,7 @@ using namespace ::chip::DeviceLayer::Internal;
 // ================================================================================
 // Main Code
 // ================================================================================
-
+extern void cmd_rafael_init();
 void ChipEventHandler(const ChipDeviceEvent * event, intptr_t /* arg */)
 {
     switch (event->Type)
@@ -74,10 +74,9 @@ int main(void)
         return 0;
     }
 
-    // DeviceLayer::ConfigurationMgr().InitiateFactoryReset();
-    // ConfigurationManagerImpl::DoFactoryReset(0);
-#if ENABLE_CHIP_SHELL
+#if (ENABLE_CHIP_SHELL && (CHIP_DEVICE_CONFIG_ENABLE_SED == 0))
     startShellTask();
+    cmd_rafael_init();
 #endif
     info( "==================================================\n");
     info( "chip-rt582-light-switch-example starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);

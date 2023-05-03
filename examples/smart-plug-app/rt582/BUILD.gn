@@ -65,6 +65,11 @@ rt582_sdk("sdk") {
       "RAFAEL_CERTS_ENABLED=1",
     ]
   }
+  if(chip_build_libshell) {
+    defines += [ 
+      "CONFIG_ENABLE_CHIP_SHELL=1",
+    ]
+  }  
 }
 
 rt582_executable("smart-plug_app") {
@@ -82,14 +87,15 @@ rt582_executable("smart-plug_app") {
     "${examples_plat_dir}/projcrt_peripheral/smart-plug-app/init_smart-plug-app_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
-    "${examples_plat_dir}/cmd_rafael.cpp",
     "include/SmartPlugManager.h",
     "src/AppTask.cpp",
     "src/SmartPlugManager.cpp",
     "src/ZclCallbacks.cpp",
     "src/main.cpp",
   ]
-
+  if(chip_build_libshell) {
+    sources += [ "${examples_plat_dir}/cmd_rafael.cpp", ]
+  }
   deps = [
     ":sdk",
     "${chip_root}/examples/smart-plug-app/smart-plug-common",

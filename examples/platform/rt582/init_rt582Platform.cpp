@@ -82,8 +82,24 @@ void init_rt582Platform(void)
     dma_init();
     uartConsoleInit();
     crypto_lib_init();
-    //otSysInit(0, NULL); 
-    // kvs_init();
+#if(CHIP_DEVICE_CONFIG_ENABLE_SED == 1)
+    timern_t *TIMER;
+    TIMER = TIMER4;
+    NVIC_DisableIRQ((IRQn_Type)(Timer4_IRQn));
+    NVIC_SetPriority((IRQn_Type)(Timer4_IRQn), 1);
+
+    TIMER->LOAD = 0;
+    TIMER->CLEAR = 0;
+    TIMER->CONTROL.reg = 0;
+
+    TIMER->CONTROL.bit.PRESCALE = 0;
+    TIMER->CONTROL.bit.MODE = 0;
+    TIMER->CONTROL.bit.EN = 0;
+
+    Lpm_Set_Low_Power_Level(LOW_POWER_LEVEL_SLEEP0);
+    Lpm_Enable_Low_Power_Wakeup(LOW_POWER_WAKEUP_GPIO);
+    Lpm_Enable_Low_Power_Wakeup(LOW_POWER_WAKEUP_32K_TIMER);
+#endif
 }
 
 // void kvs_init(void)

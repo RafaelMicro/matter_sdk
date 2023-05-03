@@ -3,11 +3,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 #include <stdint.h>
 #include <stdio.h>
-
 #define configTICK_RATE_HZ (1000)
 /* Definition used by Keil to replace default system clock source. */
 #define configOVERRIDE_DEFAULT_TICK_CONFIGURATION 0
@@ -30,8 +27,7 @@ extern "C" {
 #define configUSE_TIMERS (1)
 #define configTIMER_TASK_PRIORITY (40) /* Highest priority */
 #define configTIMER_QUEUE_LENGTH (10)
-#define configTIMER_TASK_STACK_DEPTH (512)
-
+#define configTIMER_TASK_STACK_DEPTH (1024)
 
 #define configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY 4
 
@@ -49,15 +45,13 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* FreeRTOS MPU specific definitions. */
 #define configINCLUDE_APPLICATION_DEFINED_PRIVILEGED_FUNCTIONS (0)
 
-
-//#define configUSE_TICKLESS_IDLE 1
-
 extern uint32_t SystemCoreClock;
 #define configCPU_CLOCK_HZ (SystemCoreClock)
 #define configUSE_PREEMPTION (1)
 #define configUSE_TIME_SLICING (0)
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION (0)
-#define configUSE_TICKLESS_IDLE_SIMPLE_DEBUG (1) /* See into vPortSuppressTicksAndSleep source code for explanation */
+#define configUSE_TICKLESS_IDLE (1)
+
 #define configMAX_PRIORITIES (56)
 #define configMINIMAL_STACK_SIZE (128) /* Number of words to use for Idle and Timer stacks */
 #define configMAX_TASK_NAME_LEN (10)
@@ -75,9 +69,9 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_STATIC_ALLOCATION (1)
 #define configSUPPORT_DYNAMIC_ALLOCATION (1)
 
-//#ifndef configTOTAL_HEAP_SIZE
-#define configTOTAL_HEAP_SIZE ((size_t)(26 * 1024))
-//#endif // configTOTAL_HEAP_SIZE
+// #ifndef configTOTAL_HEAP_SIZE
+#define configTOTAL_HEAP_SIZE ((size_t) (32 * 1024))
+// #endif // configTOTAL_HEAP_SIZE
 
 /* Optional functions - most linkers will remove unused functions anyway. */
 #define INCLUDE_vTaskPrioritySet (1)
@@ -105,7 +99,7 @@ extern uint32_t SystemCoreClock;
     if ((x) == 0)                                                                                                                  \
     {                                                                                                                              \
         taskDISABLE_INTERRUPTS();                                                                                                  \
-        printf("\nFREERTOS ASSERT ( %s ) %s %s %d\n", #x, __FILE__, __func__, __LINE__);                                                                                  \
+        printf("\nFREERTOS ASSERT ( %s ) %s %s %d\n", #x, __FILE__, __func__, __LINE__);                                           \
         for (;;)                                                                                                                   \
             ;                                                                                                                      \
     }
@@ -119,7 +113,7 @@ extern uint32_t SystemCoreClock;
 
 typedef enum task_priority
 {
-    TASK_PRIORITY_IDLE      = 0,        /* lowest, special for idle task */
+    TASK_PRIORITY_IDLE = 0, /* lowest, special for idle task */
 
     TASK_PRIORITY_APP = (configTIMER_TASK_PRIORITY - 5),
     TASK_PRIORITY_PROTOCOL_LOW,
@@ -133,8 +127,8 @@ typedef enum task_priority
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS
 standard names. */
-#define SVC_Handler vPortSVCHandler 
-#define PendSV_Handler xPortPendSVHandler 
+#define SVC_Handler vPortSVCHandler
+#define PendSV_Handler xPortPendSVHandler
 /* Ensure Cortex-M port compatibility. */
 #define SysTick_Handler xPortSysTickHandler
 

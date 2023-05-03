@@ -107,7 +107,7 @@ else
     while [ $# -gt 0 ]; do
         case $1 in
         --sed)
-            optArgs+="enable_sleepy_device=true chip_openthread_ftd=false "
+            optArgs+="enable_sleepy_device=true chip_openthread_ftd=false chip_build_libshell=false"
             shift
             ;;
 

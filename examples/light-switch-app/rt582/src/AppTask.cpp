@@ -187,6 +187,7 @@ void AppTask::ActionCompleted(AppTask::Action_t aAction)
 
 void AppTask::UpdateStatusLED()
 {
+#if(CHIP_DEVICE_CONFIG_ENABLE_SED == 0)    
     if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
     {
         init_rt582_led_flash(20, 250, 150);
@@ -199,6 +200,7 @@ void AppTask::UpdateStatusLED()
     {
         init_rt582_led_flash(20, 50, 50);
     }
+#endif    
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
@@ -584,7 +586,7 @@ void AppTask::AppTaskMain(void * pvParameter)
 
     while (true)
     {       
-        BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, pdMS_TO_TICKS(10));
+        BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
        
         while (eventReceived == pdTRUE)
         {

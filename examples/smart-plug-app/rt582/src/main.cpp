@@ -45,7 +45,7 @@ using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer::Internal;
-
+extern void cmd_rafael_init();
 // ================================================================================
 // Main Code
 // ================================================================================
@@ -66,7 +66,7 @@ int main(void)
         return 0; 
     }
 
-#if CONFIG_ENABLE_CHIP_SHELL
+#if (ENABLE_CHIP_SHELL && (CHIP_DEVICE_CONFIG_ENABLE_SED == 0))
     startShellTask();
     cmd_rafael_init();
 #endif

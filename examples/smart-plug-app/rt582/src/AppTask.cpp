@@ -443,6 +443,7 @@ void AppTask::InitServer(intptr_t arg)
 
 void AppTask::UpdateStatusLED()
 {
+#if(CHIP_DEVICE_CONFIG_ENABLE_SED == 0)    
     if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
     {
         init_rt582_led_flash(20, 250, 150);
@@ -455,6 +456,7 @@ void AppTask::UpdateStatusLED()
     {
         init_rt582_led_flash(20, 50, 50);
     }
+#endif    
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)

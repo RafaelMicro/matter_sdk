@@ -46,7 +46,7 @@
         {
             "label": "Build RT example",
             "type": "shell",
-            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject} ${input:board} ${input:sed} ${input:OTA} ${input:Certificate}",
+            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject} ${input:board} --sed=${input:sed} --ota=${input:OTA} --certs=${input:Certificate}",
             "group": "build"
         },
         {
@@ -86,30 +86,30 @@
             "id": "sed",
             "description": "Sleep device?",
             "options": [
-                "",
-                "--sed",
+                "yes",
+                "no",
             ],
-            "default": ""
+            "default": "no"
         },
         {
             "type": "pickString",
             "id": "OTA",
             "description": "Enable OTA?",
             "options": [
-                "",
-                "--rafael-ota",
+                "yes",
+                "no",
             ],
-            "default": ""
+            "default": "no"
         },
         {
             "type": "pickString",
             "id": "Certificate",
             "description": "Use attestation credentials?",
             "options": [
-                "",
-                "--rafael-certs",
+                "yes",
+                "no",
             ],
-            "default": ""
+            "default": "no"
         },        
         {
             "type": "promptString",

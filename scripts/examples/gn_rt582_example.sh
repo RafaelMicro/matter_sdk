@@ -106,12 +106,12 @@ else
     shift
     while [ $# -gt 0 ]; do
         case $1 in
-        --sed)
-            optArgs+="enable_sleepy_device=true chip_openthread_ftd=false chip_build_libshell=false"
+        --sed=yes)
+            optArgs+="enable_sleepy_device=true chip_openthread_ftd=false chip_build_libshell=false "
             shift
             ;;
 
-        --rafael-ota)
+        --ota=yes)
             # echo $1
             if [ "$RAFAEL_BOARD" == "RT582" ]; then
                 echo "RT582 is not implemented OTA yet"
@@ -121,7 +121,7 @@ else
             shift
             ;;
 
-        --rafael-certs)
+        --certs=yes)
             if [ "$RAFAEL_BOARD" == "RT582" ]; then
                 echo "RT582 is not implemented DAC/PAI yet./"
                 exit 1
@@ -130,7 +130,6 @@ else
             shift
             ;;
         *)
-            optArgs+=$1" "
             shift
             ;;
         esac

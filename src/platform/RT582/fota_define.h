@@ -43,11 +43,14 @@
 #define FOTA_UPDATE_BANK_INFO_ADDRESS                 0x00007000          /**< Address of FOTA update information*/
 #define APP_START_ADDRESS                             0x00008000          /**< Start address of application code.*/
 
+#define FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB             0x00108000          /**< Address of uncompressed FOTA update data.*/
+#define SIZE_OF_FOTA_BANK_2MB                         0x000AF000          /**< Total Size for saving FOTA update data.*/
+
 #define FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB             0x00099000          /**< Address of FOTA update data.*/
 #define SIZE_OF_FOTA_BANK_1MB                         0x00057000          /**< Total Size for saving FOTA update data.*/
 
-#define FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS  0x00108000          /**< Address of uncompressed FOTA update data.*/
-#define SIZE_OF_FOTA_BANK_1MB_UNCOMPRESS              0x000AF000          /**< Total Size for saving FOTA update data.*/
+#define FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS  0x0007C000          /**< Address of uncompressed FOTA update data.*/
+#define SIZE_OF_FOTA_BANK_1MB_UNCOMPRESS              0x00074000          /**< Total Size for saving FOTA update data.*/
 
 #define FOTA_UPDATE_BUFFER_FW_ADDRESS_512K            0x0004F000          /**< Address of FOTA update data.*/
 #define SIZE_OF_FOTA_BANK_512K                        0x0002B000          /**< Total Size for saving FOTA update data.*/

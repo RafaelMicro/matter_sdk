@@ -169,7 +169,7 @@ CHIP_ERROR OTAImageProcessorImpl::ConfirmCurrentImage()
 void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 {
     int32_t err           = SL_BOOTLOADER_OK;
-    uint32_t otaBank      = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + SIZE_OF_FOTA_BANK_1MB_UNCOMPRESS;
+    uint32_t otaBank      = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + SIZE_OF_FOTA_BANK_2MB;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
     if (imageProcessor == nullptr)
@@ -185,7 +185,7 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     // ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
-    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS; sector < 0x001B7000; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
+    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB; sector < otaBank; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
     {
         while (flash_check_busy()) {}
         taskENTER_CRITICAL();
@@ -231,8 +231,8 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 
         while (flash_check_busy());
         taskENTER_CRITICAL();
-        flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + mPageNo * kAlignmentBytes);
-        // info("===> write last page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + mPageNo * kAlignmentBytes);
+        flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+        // info("===> write last page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
         taskEXIT_CRITICAL();
 
         // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mPageNo, mWriteOffset, writeBuffer, kAlignmentBytes);)
@@ -283,7 +283,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     memcpy(&t_bootloader_ota_info, (uint8_t *)FOTA_UPDATE_BANK_INFO_ADDRESS, sizeof(t_bootloader_ota_info));
 
     t_bootloader_ota_info.fotabank_ready = FOTA_IMAGE_READY;
-    t_bootloader_ota_info.fotabank_startaddr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS;
+    t_bootloader_ota_info.fotabank_startaddr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
     t_bootloader_ota_info.fota_image_info = FOTA_IMAGE_INFO_COMPRESSED;
     t_bootloader_ota_info.signature_len = 0;
     t_bootloader_ota_info.target_startaddr = APP_START_ADDRESS;
@@ -305,7 +305,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
 
     // This reboots the device
     ChipLogProgress(SoftwareUpdate, "system restarting...");
-    chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(10 * 1000), HandleRestart, nullptr);
+    chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(300), HandleRestart, nullptr);
 }
 
 void OTAImageProcessorImpl::HandleRestart(chip::System::Layer * systemLayer, void * appState)
@@ -366,8 +366,8 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
             writeBufOffset = 0;
             while (flash_check_busy()) {}
             taskENTER_CRITICAL();
-            flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + mPageNo * kAlignmentBytes);
-            // info("===> write page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB_UNCOMPRESS + mPageNo * kAlignmentBytes);
+            flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+            // info("===> write page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
             taskEXIT_CRITICAL();
             mPageNo++;
 

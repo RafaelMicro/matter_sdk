@@ -20,6 +20,7 @@
 #define SET_SYS_CLK                         SYS_CLK_64MHZ
 
 #define SUPPORT_MULTITASKING                1
+#define FLASH_CHECK_ADDRESS_DISABLE         1
 
 #define SUPPORT_MATTER_CONCURRENT          1
 #if (MODULE_ENABLE(SUPPORT_MATTER_CONCURRENT))

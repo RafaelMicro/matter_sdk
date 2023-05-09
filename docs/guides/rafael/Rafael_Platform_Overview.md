@@ -72,13 +72,13 @@ ninja build scripts:
 
 As a result, Matter's stack and platform modules are built with GN (see the
 overview diagram) and the output is used to generate the library file. The
-application, RT58x SDK, and Zephyr are built with CMake and the Matter
+application, RT58x SDK are built with CMake and the Matter
 library file is imported during the compilation process.
 
 <hr>
 
 
-Please follow the steps below to create and test a fully functional Matter example on ESP32 series of SoCs
+Please follow the steps below to create and test a fully functional Matter example on RT58x series of SoCs
 
 -   [Rafael(RT582/RT583) Getting Start Guide]()
     -   [Setup Matter SDK Enviroment]()

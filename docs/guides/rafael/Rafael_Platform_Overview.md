@@ -88,7 +88,7 @@ Please follow the steps below to create and test a fully functional Matter examp
         -   [Flash application]()
         -   [Commissioning]()
     -   [Factory Data]()
-    -   [Matter OTA]()
+    -   [Matter OTA](rafael_software_update.md)
 -   [Application development Guide]()
     -   [File structure]()
     -   [How to modify]()

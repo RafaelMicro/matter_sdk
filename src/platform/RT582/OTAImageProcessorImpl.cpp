@@ -169,7 +169,8 @@ CHIP_ERROR OTAImageProcessorImpl::ConfirmCurrentImage()
 void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 {
     int32_t err           = SL_BOOTLOADER_OK;
-    uint32_t otaBank      = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + SIZE_OF_FOTA_BANK_2MB;
+    uint32_t otaBankStart = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
+    uint32_t otaBankSize  = SIZE_OF_FOTA_BANK_2MB;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
     if (imageProcessor == nullptr)
@@ -185,7 +186,7 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     // ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
-    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB; sector < otaBank; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
+    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB; sector < otaBankStart + otaBankSize; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
     {
         while (flash_check_busy()) {}
         taskENTER_CRITICAL();

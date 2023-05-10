@@ -31,18 +31,13 @@
 
 ## Running the OTA Download scenario
 
-- In a Raspberry Pi open a terminal 1 and enter following command with operationalDataset where is obtained from the OpenThread Border Router
-
-      ./chip-tool pairing ble-thread 1 hex:<operationalDataset> 20202021 3840
-        
-- In a Raspberry Pi open a terminal 2 and start the Provider app passing to it the path to the Matter
-    OTA image created in the previous step
+- In a Raspberry Pi open a terminal 1 and start the Matter OTA Provider app passing the to it the path to the Matter OTA file created in the previous step
 
       rm -r /tmp/chip_*
         
       ./chip-ota-provider-app -f chip-rt582-lighting-app-example.ota --discriminator 3841
 
-- In a Raspberry Pi terminal 2 run the chip-tool commands to provision the Provider
+- In a Raspberry Pi terminal 1 run the chip-tool commands to provision the Provider
 
       ./chip-tool pairing onnetwork-long 2 20202021 3841
 
@@ -50,6 +45,10 @@
 
 - If the RT583 had been previously commissioned, please hold Button SW2 for
     6 seconds to factory-reset the device
+    
+- In a Raspberry Pi open a terminal 2 and enter following command with operationalDataset where is obtained from the OpenThread Border Router
+
+      ./chip-tool pairing ble-thread 1 hex:<operationalDataset> 20202021 3840
 
 - Once the commissioning process completes enter
 

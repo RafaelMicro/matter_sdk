@@ -86,7 +86,7 @@ example on RT58x series of SoCs
     -   [Application Usage Guide]()
         -   [Flash application]()
         -   [Commissioning]()
-    -   [Factory Data]()
+    -   [Factory Data](rafael_factory_data.md)
     -   [Matter OTA](rafael_software_update.md)
 -   [Application development Guide]()
     -   [File structure]()

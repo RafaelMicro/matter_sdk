@@ -74,20 +74,17 @@ rt582_sdk("sdk") {
 
 rt582_executable("smart-plug_app") {
   output_name = "chip-rt582-smart-plug-app-example.out"
-  include_dirs = [ 
-    "include",
-    "${examples_plat_dir}/projcrt_peripheral/smart-plug-app"
-  ]
+  include_dirs = ["include"]
   defines = []
 
   sources = [
     "${examples_plat_dir}/BaseApplication.cpp",
     "${examples_plat_dir}/heap_4_rt582.c",
     "${examples_plat_dir}/init_rt582Platform.cpp",
-    "${examples_plat_dir}/projcrt_peripheral/smart-plug-app/init_smart-plug-app_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "include/SmartPlugManager.h",
+    "src/init_smart-plug-app_rt582Platform.cpp",
     "src/AppTask.cpp",
     "src/SmartPlugManager.cpp",
     "src/ZclCallbacks.cpp",

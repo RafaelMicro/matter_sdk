@@ -78,7 +78,6 @@ rt582_executable("lighting_app") {
 
   include_dirs = [ 
     "include",
-    "${examples_plat_dir}/projcrt_peripheral/lighting_app"
   ]
   defines = []
 
@@ -86,10 +85,10 @@ rt582_executable("lighting_app") {
     "${examples_plat_dir}/BaseApplication.cpp",
     "${examples_plat_dir}/heap_4_rt582.c",
     "${examples_plat_dir}/init_rt582Platform.cpp",
-    "${examples_plat_dir}/projcrt_peripheral/lighting_app/init_lighting_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "include/LightingManager.h",
+    "src/init_lighting_rt582Platform.cpp",
     "src/AppTask.cpp",
     "src/LightingManager.cpp",
     "src/ZclCallbacks.cpp",

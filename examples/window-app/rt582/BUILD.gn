@@ -101,10 +101,7 @@ rt582_sdk("sdk") {
 
 rt582_executable("window_app") {
   output_name = "chip-rt582-window-app-example.out"
-  include_dirs = [ 
-    "include",
-    "${examples_plat_dir}/projcrt_peripheral/window_app"
-  ]
+  include_dirs = ["include"]
   defines = []
 
   sources = [
@@ -113,7 +110,7 @@ rt582_executable("window_app") {
     "${examples_plat_dir}/init_rt582Platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
-    "${examples_plat_dir}/projcrt_peripheral/window_app/init_window_rt582Platform.cpp",
+    "src/init_window_rt582Platform.cpp",
     "src/AppTask.cpp",
     "src/main.cpp",
     "src/WindowCovering.cpp",

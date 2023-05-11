@@ -86,9 +86,9 @@ example on RT58x series of SoCs
     -   Application Usage Guide
         -   [Flash application](./flash_application.md)
         -   [Commissioning](./commissioning.md)
-    -   [Factory Data](rafael_factory_data.md)
-    -   [Matter OTA](rafael_software_update.md)
--   [Application development Guide]()
-    -   [File structure]()
-    -   [How to modify]()
-    -   [Where is peripheral API]()
+    -   [Factory Data](Rafael_Factory_Data.md)
+    -   [Matter OTA](Rafael_Software_Update.md)
+-   Application development Guide
+    -   [File structure](Rafael_App_File_Structure.md)
+    -   [How to modify](Rafael_App_Development.md)
+    -   [Where is peripheral API](Rafael_Peripheral_SDK.md)

@@ -1,6 +1,6 @@
-# RafaelMicro RT583 Matter OTA example
+# Rafael RT583 Matter OTA example
 
-## Building Matter OTA example
+## Build Matter OTA example
 
 - On a Linux platform build the lighting-app with OTA feature as follow
 
@@ -37,7 +37,7 @@
         
       ./chip-ota-provider-app -f chip-rt582-lighting-app-example.ota --discriminator 3841
 
-- In a Raspberry Pi terminal 1 run the chip-tool commands to provision the Provider
+- In a Raspberry Pi terminal 2 run the chip-tool commands to provision the Provider
 
       ./chip-tool pairing onnetwork-long 2 20202021 3841
 
@@ -63,16 +63,16 @@
 In order for the Provider to successfully serve the image to a device during the
 OTA Software Update process the Software Version parameter that the .ota file
 was built with must be greater than the
-CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION parameter set in the application's
+`CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION` parameter set in the application's
 `CHIPProjectConfig.h` file. The Software Version parameter is set by the `-vn`
 parameter passed to the `rafael_ota_tool.py create` command. For example, if the
 application's running image was built with
-CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION set to 1 and if the `.ota` file is
+`CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION` set to 1 and if the `.ota` file is
 built with `-vn 2` then the Provider will serve the update image when requested.
 
 In order for the OTA Software Update subsystem to consider an update to be
 successful and for the NotifyUpdateApplied command to be transmitted the
-CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION in the updated image must exceed the
+`CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION` in the updated image must exceed the
 software version of the running image (continuing the above example, the image
-for the update must be built with CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION set
+for the update must be built with `CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION` set
 to 2).

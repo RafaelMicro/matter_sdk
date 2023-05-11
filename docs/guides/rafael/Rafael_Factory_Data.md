@@ -1,4 +1,4 @@
-# Configuring factory data for RafaelMicro RT583 examples
+# Configuring factory data for Rafael RT583 examples
 
 ## Supported data
 
@@ -14,7 +14,7 @@ Device attestation data
 
 By default applications uses default device attestation credentials provider. There are two ways to modify different device attestation data. First, you can write hardcode value in your Matter code. Second, you can use the RafaelMicro MP tool to replace device attestation data.
 
-- Hardcoding - need to generate device attestion data to replace following c++ files
+- Hardcoding - you need to generate device attestion data and replace following c++ files
   - DeviceAttestationCredsExample.cpp
   - ExampleDACs.cpp
   - ExamplePAI.cpp
@@ -182,12 +182,21 @@ For example, we'll use Matter 's own test PAA certificate and signing key from M
 
 13. If you don't use Rafael MP tool with MPTCB to modify device attestaion data, you might neet to replace array `const uint8_t kCdForAllExamples` value in `src/credentials/examples/DeviceAttestationCredsExample.cpp` file
 
-## RafaelMicro MP tool with MPTCB
+## Rafael MP tool with MPTCB
+
+For example, build lighting-app with certificates and use MP tool with MPTCB to modify device attestation
+
+    ./scripts/examples/gn_rt582_example.sh examples/lighting-app/rt582/ out RT583 --certs=yes
+
+First of all, RT583 has to connect with MPTCB
+
+Furthermore, open Rafael MP tool and follow the steps to operate
 
 ![RafaelMicro MP tool](./mp_tool.png)
 
-1. Press SETTINGS button and pop out Settings window
-2. Select MATTER CERTIFICATES in the left side of Settings window
-3. Press Select Certificates Folder button and select Certifcates file
+1. Press `SETTINGS` button and it will pop out Settings window
+2. Select `MATTER CERTIFICATES` in the left side of Settings window
+3. Press `Select Certificates Folder` button and select Certifcate files
 4. Close the Settings window
-5. Type certificate index number in DAC Index field and press TEST button
+5. Type certificate index number in `DAC Index` field and press `TEST` button
+6. If it shows PASS message, it means the certificates is successfully modified

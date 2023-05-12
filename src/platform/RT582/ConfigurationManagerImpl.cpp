@@ -186,6 +186,7 @@ void ConfigurationManagerImpl::RunConfigUnitTest(void)
 void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
 {
     CHIP_ERROR err;
+    uint32_t reboot_cnt = 0;
 
     ChipLogProgress(DeviceLayer, "Performing factory reset");
 
@@ -194,6 +195,8 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
     {
         ChipLogError(DeviceLayer, "FactoryResetConfig() failed: %s", chip::ErrorStr(err));
     }
+
+    ConfigurationMgr().StoreRebootCount(reboot_cnt);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
 

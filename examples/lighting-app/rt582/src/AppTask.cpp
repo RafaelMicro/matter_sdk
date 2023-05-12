@@ -581,6 +581,42 @@ CHIP_ERROR AppTask::Init()
     return CHIP_NO_ERROR;
 }
 
+void AppTask::FactoryResetCheck()
+{
+    uint32_t i =0, reboot_cnt;
+
+    ConfigurationMgr().GetRebootCount(reboot_cnt);
+    ChipLogProgress(NotSpecified, "Cur reboot cnt : %d", reboot_cnt);
+
+    if(reboot_cnt >= 6)
+    {
+        ChipLogProgress(NotSpecified, "[Reboot] - Factory Reset (>6)" );
+
+        for(i=0;i<3;i++)
+        {
+            rt582_led_level_ctl(2, 120);
+            rt582_led_level_ctl(3, 120);
+            rt582_led_level_ctl(4, 120);
+            Delay_ms(500);
+            rt582_led_level_ctl(2, 250);
+            rt582_led_level_ctl(3, 250);
+            rt582_led_level_ctl(4, 250);
+            Delay_ms(500);
+        }
+        chip::Server::GetInstance().ScheduleFactoryReset();
+    }
+    else
+    {
+        reboot_cnt++;
+        ConfigurationMgr().StoreRebootCount(reboot_cnt);
+    }
+
+
+    sAppTask.StartTimer(FACTORY_RESET_TRIGGER_TIMEOUT);
+    sAppTask.mFunction = kFunction_ClearRebootCnt;
+
+}
+
 CHIP_ERROR AppTask::StartAppTask()
 {
     CHIP_ERROR err;
@@ -602,6 +638,8 @@ CHIP_ERROR AppTask::StartAppTask()
     {
         return CHIP_ERROR_NO_MEMORY;
     }
+
+    FactoryResetCheck();
 
 #if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
@@ -671,6 +709,7 @@ void AppTask::DispatchEvent(AppEvent * aEvent)
 
 void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
 {
+    uint32_t rebootCount = 0;
     if (aEvent->Type != AppEvent::kEventType_Timer)
     {
         return;
@@ -683,6 +722,14 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
         chip::Server::GetInstance().ScheduleFactoryReset();
+    }
+
+    else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_ClearRebootCnt)
+    {
+        sAppTask.mFunction = kFunction_NoneSelected;
+        rebootCount = 0;
+        ConfigurationMgr().StoreRebootCount(rebootCount);
+        sAppTask.CancelTimer();
     }
 }
 

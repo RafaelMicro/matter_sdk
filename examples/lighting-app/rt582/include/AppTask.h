@@ -75,6 +75,7 @@ private:
     friend AppTask & GetAppTask(void);
 
     CHIP_ERROR Init();
+    static void FactoryResetCheck();
     static void InitServer(intptr_t arg);
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
@@ -100,6 +101,8 @@ private:
         kFunction_NoneSelected   = 0,
         kFunction_FactoryReset   = 1,
         kFunction_Switch_1       = 2,
+
+        kFunction_ClearRebootCnt ,
 
         kFunction_Invalid
     } Function;

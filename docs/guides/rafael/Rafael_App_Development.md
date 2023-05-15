@@ -15,8 +15,25 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
 - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
-- In `AppTask.cpp` file, you can implement behavier callback function `ActionInitiated()` and `ActionCompleted()` of lighting device and register in `LightMgr().SetCallbacks()`.
-   - For exmaple, in `ActionCompleted()` callback function, you can use `PWM2`, `PWM3` and `PWM4` to turn light ON when `aActin` variable is equal to `LightingManager::ON_ACTION` status or turn light OFF when `aActin` variable is equal to `LightingManager::OFF_ACTION` status.
+- `LightingManager.cpp` offers lighting control fucntions. For example
+   
+   - Init()
+   - SetCallbacks()
+   - GetLevel()
+   - GetRgb()
+   - InitiateAction()
+   - SetLevel()
+   - SetColor()
+   - SetColorTemperature()
+   - Set()
+
+- In `AppTask.cpp` file, you can implement callback function `ActionInitiated()` and `ActionCompleted()` of lighting device and register the callback function using `LightMgr().SetCallbacks()`.
+
+   - `ActionInitiated()` can be used to initiaze on/off or level value before light status changes.
+
+   - `ActionCompleted()` can be used to control light behavier, on/off, levle, color...etc.
+
+   - For exmaple, in `ActionCompleted()` callback function, you can use `PWM2`, `PWM3` and `PWM4` to turn light ON with level when `aActin` variable is equal to `LightingManager::ON_ACTION` status or turn light OFF when `aActin` variable is equal to `LightingManager::OFF_ACTION` status.
 
       ```cpp
       void AppTask::ActionCompleted(LightingManager::Action_t aAction)
@@ -42,8 +59,12 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
             rt582_led_level_ctl(4, 0); 
          }
       }
+      ```
 
-- `LightingManager.cpp` offers lighting control fucntions
+   - We register the callback function.
+      ```cpp
+      LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
+      ```
 
 - In this case, we call the `init_lighting_pin_mux()` function in the `init_lighting_rt582Platform.cpp` file to set pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_lighting_app_rt582Platform()` function to control RGB LED using `PWMs` for dimmable light or set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder. 
    - configurate GPIO21, GPIO22, GPIO23 for PWM2, PWM3, PWM4

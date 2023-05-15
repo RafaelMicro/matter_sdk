@@ -534,6 +534,13 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         sCommissioned = true;
         UpdateStatusLED();
         break;
+    case DeviceEventType::kRemoveFabricEvent:
+        // info("===> Commissioned Fabric: %d\r\n", chip::Server::GetInstance().GetFabricTable().FabricCount());
+        if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
+        {
+            chip::Server::GetInstance().ScheduleFactoryReset();
+        }
+        break;
     default:
         break;
     }

@@ -225,6 +225,11 @@ enum PublicEventTypes
      * Signals that the state of the OTA engine changed.
      */
     kOtaStateChanged,
+
+    /**
+     * Signals that receives remove fabric command
+     */
+    kRemoveFabricEvent,
 };
 
 /**
@@ -498,6 +503,11 @@ struct ChipDeviceEvent final
         {
             OtaState newState;
         } OtaStateChanged;
+
+        struct
+        {
+
+        } RemoveFabric;
     };
 
     void Clear() { memset(this, 0, sizeof(*this)); }

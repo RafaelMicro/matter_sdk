@@ -60,18 +60,18 @@ struct FactoryData
     struct FactoryDataCert dac_cert;
     struct FactoryDataCert dac_privkey;
     struct FactoryDataCert pai_cert;
-    // uint32_t spake2_it;
-    // struct FactoryDataString spake2_salt;
-    // struct FactoryDataString spake2_verifier;
-    // uint16_t discriminator;
-    // uint32_t passcode;
+    uint32_t spake2_it;
+    struct FactoryDataString spake2_salt;
+    struct FactoryDataString spake2_verifier;
+    uint16_t discriminator;
+    uint32_t passcode;
     // struct FactoryDataString enable_key;
     // struct FactoryDataString user;
 
-    // bool vendorIdPresent;
-    // bool productIdPresent;
-    // bool hwVerPresent;
-    // bool discriminatorPresent;
+    bool vendorIdPresent;
+    bool productIdPresent;
+    bool hwVerPresent;
+    bool discriminatorPresent;
 };
 
 /**

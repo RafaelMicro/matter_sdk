@@ -129,8 +129,8 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
-   - In the `ActionInitiated()` function of the `AppTask.cpp` file, we use GPIO22, GPIO23 and GPIO24 to simulate door lock or unlock.
-      - `ActionInitiated()` can be used to simulate door lock or unlock by determining aAction value. When aAction is equal to `LockManager::UNLOCK_ACTION`, LED turns on.
+   - In the `ActionInitiated()` function of the `AppTask.cpp` file, we use GPIO22, GPIO23 and GPIO24 to simulate door locked or unlocked.
+      - `ActionInitiated()` can be used to simulate door locked or unlocked by determining aAction value. When aAction is equal to `LockManager::LOCK_ACTION`, it means the door is locked and LED turn on the light.
       - For example
          ```cpp
          void AppTask::ActionInitiated(LockManager::Action_t aAction, int32_t aActor)
@@ -189,8 +189,6 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
    - In `AppTask.cpp` file, you can implement callback function `ActionInitiated()` and `ActionCompleted()` of smart plug device and register the callback function using `PlugMgr().SetCallbacks()`.
-
-      - `ActionInitiated()` can be used to initiaze smart plug status.
 
       - `ActionCompleted()` can be used to control smart plug behavier.
 

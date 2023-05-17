@@ -127,6 +127,7 @@ else
                 exit 1
             fi
             optArgs+="chip_build_platform_attestation_credentials_provider=true "
+            # optArgs+="chip_build_platform_attestation_credentials_provider=true chip_use_transitional_commissionable_data_provider=false "
             shift
             ;;
         *)
@@ -152,6 +153,6 @@ else
     fi
     ninja -C "$BUILD_DIR"/
     # ninja -v -C "$BUILD_DIR"/
-    #print stats
+    # print stats
     arm-none-eabi-size -A "$BUILD_DIR"/*.out
 fi

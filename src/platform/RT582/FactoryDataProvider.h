@@ -169,7 +169,8 @@ struct ExternalFlashFactoryData
 //                             public CommissionableDataProvider,
 //                             public DeviceInstanceInfoProvider
 template <class FlashFactoryData>
-class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider
+class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider,
+                            public chip::DeviceLayer::CommissionableDataProvider
 {
 public:
     CHIP_ERROR Init();
@@ -182,13 +183,13 @@ public:
     CHIP_ERROR SignWithDeviceAttestationKey(const ByteSpan & messageToSign, MutableByteSpan & outSignBuffer) override;
 
     // ===== Members functions that implement the CommissionableDataProvider
-    // CHIP_ERROR GetSetupDiscriminator(uint16_t & setupDiscriminator) override;
-    // CHIP_ERROR SetSetupDiscriminator(uint16_t setupDiscriminator) override;
-    // CHIP_ERROR GetSpake2pIterationCount(uint32_t & iterationCount) override;
-    // CHIP_ERROR GetSpake2pSalt(MutableByteSpan & saltBuf) override;
-    // CHIP_ERROR GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen) override;
-    // CHIP_ERROR GetSetupPasscode(uint32_t & setupPasscode) override;
-    // CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
+    CHIP_ERROR GetSetupDiscriminator(uint16_t & setupDiscriminator) override;
+    CHIP_ERROR SetSetupDiscriminator(uint16_t setupDiscriminator) override;
+    CHIP_ERROR GetSpake2pIterationCount(uint32_t & iterationCount) override;
+    CHIP_ERROR GetSpake2pSalt(MutableByteSpan & saltBuf) override;
+    CHIP_ERROR GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen) override;
+    CHIP_ERROR GetSetupPasscode(uint32_t & setupPasscode) override;
+    CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
 
     // ===== Members functions that implement the DeviceInstanceInfoProvider
     // CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;

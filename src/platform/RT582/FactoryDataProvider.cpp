@@ -24,10 +24,28 @@
 #include <platform/RT582/RT582Config.h>
 #endif
 
+#include <lib/support/SafeInt.h>
+#include <lib/support/Base64.h>
+
 // #include <logging/log.h>
 #include "util_log.h"
 #include "FactoryDataParser.h"
 #include "cm3_mcu.h"
+
+// for test
+#define SETUP_PIN_CODE 87878787
+#define SETUP_DISCRIMINATOR 3846
+#define SPAKE2P_ITERATION_COUNT 1234
+#define SPAKE2P_SALT "UmFmYWVsTWljcm8gTWF0dGVyIFJUNTh4"
+#define SPAKE2P_VERIFIER                                                                               \
+    "YvdRY7tNGx8WY/eQix/HKJ/NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
+
+// #define SETUP_PIN_CODE 20202021
+// #define SETUP_DISCRIMINATOR 3840
+// #define SPAKE2P_ITERATION_COUNT 1000
+// #define SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
+// #define SPAKE2P_VERIFIER                                                                               \
+//     "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=="
 
 namespace chip {
 namespace {
@@ -59,6 +77,22 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::Init()
         ChipLogError(DeviceLayer, "Failed to read factory data partition");
         return err;
     }
+
+#if RAFAEL_PASSCODE_ENABLED
+    // for test
+    mFactoryData.discriminator = SETUP_DISCRIMINATOR;
+    mFactoryData.passcode = SETUP_PIN_CODE;
+    mFactoryData.spake2_it = SPAKE2P_ITERATION_COUNT;
+    mFactoryData.spake2_salt.data = (void *)SPAKE2P_SALT;
+    mFactoryData.spake2_salt.len = strlen(SPAKE2P_SALT);
+    mFactoryData.spake2_verifier.data = (void *)SPAKE2P_VERIFIER;
+    mFactoryData.spake2_verifier.len = strlen(SPAKE2P_VERIFIER);
+    mFactoryData.discriminatorPresent = true;
+#endif
+
+    // info("===> Get commissionable data from factory data\r\n");
+    // info("===> Discriminator: %d\r\n", mFactoryData.discriminator);
+    // info("===> Passcode: %d\r\n", mFactoryData.passcode);
 
     // CHIP_ERROR error = mFlashFactoryData.ProtectFactoryDataPartitionAgainstWrite();
 
@@ -204,69 +238,87 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SignWithDeviceAttestationKey(c
     // return CopySpanToMutableSpan(ByteSpan{ signature.ConstBytes(), signature.Length() }, out_signature_buffer);
 }
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSetupDiscriminator(uint16_t & setupDiscriminator)
-// {
-//     VerifyOrReturnError(mFactoryData.discriminatorPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     setupDiscriminator = mFactoryData.discriminator;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSetupDiscriminator(uint16_t & setupDiscriminator)
+{
+    VerifyOrReturnError(mFactoryData.discriminatorPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    setupDiscriminator = mFactoryData.discriminator;
+    
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupDiscriminator(uint16_t setupDiscriminator)
-// {
-//     return CHIP_ERROR_NOT_IMPLEMENTED;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupDiscriminator(uint16_t setupDiscriminator)
+{
+    return CHIP_ERROR_NOT_IMPLEMENTED;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pIterationCount(uint32_t & iterationCount)
-// {
-//     ReturnErrorCodeIf(mFactoryData.spake2_it == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     iterationCount = mFactoryData.spake2_it;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pIterationCount(uint32_t & iterationCount)
+{
+    ReturnErrorCodeIf(mFactoryData.spake2_it == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    iterationCount = mFactoryData.spake2_it;
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pSalt(MutableByteSpan & saltBuf)
-// {
-//     ReturnErrorCodeIf(saltBuf.size() < mFactoryData.spake2_salt.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.spake2_salt.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    return CHIP_NO_ERROR;
+}
 
-//     memcpy(saltBuf.data(), mFactoryData.spake2_salt.data, mFactoryData.spake2_salt.len);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pSalt(MutableByteSpan & saltBuf)
+{
+    static constexpr size_t kSpake2pSalt_MaxBase64Len = BASE64_ENCODED_LEN(chip::Crypto::kSpake2p_Max_PBKDF_Salt_Length) + 1;
+    char saltB64[kSpake2pSalt_MaxBase64Len] = { 0 };
 
-//     saltBuf.reduce_size(mFactoryData.spake2_salt.len);
+    ReturnErrorCodeIf(mFactoryData.spake2_salt.len > sizeof(saltB64), CHIP_ERROR_BUFFER_TOO_SMALL);
+    memcpy(saltB64, mFactoryData.spake2_salt.data, mFactoryData.spake2_salt.len);
 
-//     return CHIP_NO_ERROR;
-// }
+    VerifyOrReturnError(chip::CanCastTo<uint32_t>(mFactoryData.spake2_salt.len), CHIP_ERROR_INTERNAL);
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen)
-// {
-//     ReturnErrorCodeIf(verifierBuf.size() < mFactoryData.spake2_verifier.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.spake2_verifier.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    size_t saltLen = chip::Base64Decode32(saltB64, static_cast<uint32_t>(mFactoryData.spake2_salt.len), reinterpret_cast<uint8_t *>(saltB64));
 
-//     memcpy(verifierBuf.data(), mFactoryData.spake2_verifier.data, mFactoryData.spake2_verifier.len);
+    ReturnErrorCodeIf(mFactoryData.spake2_salt.len > saltBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
+    memcpy(saltBuf.data(), saltB64, mFactoryData.spake2_salt.len);
 
-//     verifierLen = mFactoryData.spake2_verifier.len;
+    saltBuf.reduce_size(saltLen);
 
-//     verifierBuf.reduce_size(verifierLen);
+    return CHIP_NO_ERROR;
+}
 
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pVerifier(MutableByteSpan & verifierBuf, size_t & verifierLen)
+{
+    static constexpr size_t kSpake2pSerializedVerifier_MaxBase64Len =
+    BASE64_ENCODED_LEN(chip::Crypto::kSpake2p_VerifierSerialized_Length) + 1;
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSetupPasscode(uint32_t & setupPasscode)
-// {
-//     ReturnErrorCodeIf(mFactoryData.passcode == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     setupPasscode = mFactoryData.passcode;
-//     return CHIP_NO_ERROR;
-// }
+    char verifierB64[kSpake2pSerializedVerifier_MaxBase64Len] = { 0 };
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupPasscode(uint32_t setupPasscode)
-// {
-//     return CHIP_ERROR_NOT_IMPLEMENTED;
-// }
+    ReturnErrorCodeIf(mFactoryData.spake2_verifier.len > sizeof(verifierB64), CHIP_ERROR_BUFFER_TOO_SMALL);
+    memcpy(verifierB64, mFactoryData.spake2_verifier.data, mFactoryData.spake2_verifier.len);
+
+    VerifyOrReturnError(chip::CanCastTo<uint32_t>(mFactoryData.spake2_verifier.len), CHIP_ERROR_INTERNAL);
+    verifierLen =
+    chip::Base64Decode32(verifierB64, static_cast<uint32_t>(mFactoryData.spake2_verifier.len), reinterpret_cast<uint8_t *>(verifierB64));
+
+    ReturnErrorCodeIf(verifierLen > verifierBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
+    memcpy(verifierBuf.data(), verifierB64, verifierLen);
+    verifierBuf.reduce_size(verifierLen);
+
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSetupPasscode(uint32_t & setupPasscode)
+{
+    ReturnErrorCodeIf(mFactoryData.passcode == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    setupPasscode = mFactoryData.passcode;
+
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupPasscode(uint32_t setupPasscode)
+{
+    return CHIP_ERROR_NOT_IMPLEMENTED;
+}
 
 // template <class FlashFactoryData>
 // CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorName(char * buf, size_t bufSize)

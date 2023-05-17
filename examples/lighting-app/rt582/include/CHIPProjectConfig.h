@@ -28,12 +28,25 @@
 
 #pragma once
 
-// Use a default pairing code if one hasn't been provisioned in flash.
-#ifndef CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE
-#define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 20202021
-#endif
+// Modify Passcode by spake2p tool if one hasn't been provisioned in flash.
+/*
+python3 scripts/tools/spake2p/spake2p.py gen-verifier -p 20202021 -s U1BBS0UyUCBLZXkgU2FsdA== -i 1000
 
+salt verifier: uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw==
+*/
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 87878787
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR 3846
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_ITERATION_COUNT 1234
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_SALT "UmFmYWVsTWljcm8gTWF0dGVyIFJUNTh4"
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
+//     "YvdRY7tNGx8WY/eQix/HKJ/NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
+
+#define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 20202021
 #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR 3840
+#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_ITERATION_COUNT 1000
+#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
+#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
+    "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=="
 
 // For convenience, Chip Security Test Mode can be enabled and the
 // requirement for authentication in various protocols can be disabled.

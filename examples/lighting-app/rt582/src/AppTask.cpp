@@ -651,7 +651,9 @@ CHIP_ERROR AppTask::StartAppTask()
 #if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
-    // SetCommissionableDataProvider(&mFactoryDataProvider);
+#if RAFAEL_PASSCODE_ENABLED
+    SetCommissionableDataProvider(&mFactoryDataProvider);
+#endif
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());

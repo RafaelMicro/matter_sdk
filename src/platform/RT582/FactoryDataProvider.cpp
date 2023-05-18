@@ -33,19 +33,19 @@
 #include "cm3_mcu.h"
 
 // for test
-#define SETUP_PIN_CODE 87878787
-#define SETUP_DISCRIMINATOR 3846
-#define SPAKE2P_ITERATION_COUNT 1234
-#define SPAKE2P_SALT "UmFmYWVsTWljcm8gTWF0dGVyIFJUNTh4"
-#define SPAKE2P_VERIFIER                                                                               \
-    "YvdRY7tNGx8WY/eQix/HKJ/NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
-
-// #define SETUP_PIN_CODE 20202021
-// #define SETUP_DISCRIMINATOR 3840
-// #define SPAKE2P_ITERATION_COUNT 1000
-// #define SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
+// #define SETUP_PIN_CODE 87878787
+// #define SETUP_DISCRIMINATOR 3846
+// #define SPAKE2P_ITERATION_COUNT 1234
+// #define SPAKE2P_SALT "UmFmYWVsTWljcm8gTWF0dGVyIFJUNTh4"
 // #define SPAKE2P_VERIFIER                                                                               \
-//     "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=="
+//     "YvdRY7tNGx8WY/eQix/HKJ/NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
+
+#define SETUP_PIN_CODE 20202021
+#define SETUP_DISCRIMINATOR 3840
+#define SPAKE2P_ITERATION_COUNT 1000
+#define SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
+#define SPAKE2P_VERIFIER                                                                               \
+    "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=="
 
 namespace chip {
 namespace {
@@ -88,11 +88,11 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::Init()
     mFactoryData.spake2_verifier.data = (void *)SPAKE2P_VERIFIER;
     mFactoryData.spake2_verifier.len = strlen(SPAKE2P_VERIFIER);
     mFactoryData.discriminatorPresent = true;
-#endif
 
-    // info("===> Get commissionable data from factory data\r\n");
-    // info("===> Discriminator: %d\r\n", mFactoryData.discriminator);
-    // info("===> Passcode: %d\r\n", mFactoryData.passcode);
+    info("===> Get commissionable data from factory data\r\n");
+    info("===> Discriminator: %d\r\n", mFactoryData.discriminator);
+    info("===> Passcode: %d\r\n", mFactoryData.passcode);
+#endif
 
     // CHIP_ERROR error = mFlashFactoryData.ProtectFactoryDataPartitionAgainstWrite();
 

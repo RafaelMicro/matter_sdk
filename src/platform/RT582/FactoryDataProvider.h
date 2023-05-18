@@ -116,6 +116,11 @@ struct InternalFlashFactoryData
         return CHIP_NO_ERROR;
     }
 
+    // CHIP_ERROR GetFactoryDataPasscode(uint8_t *& data, size_t & dataSize)
+    // {
+    //     return CHIP_NO_ERROR;
+    // }
+
     CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
     {
         // data     = reinterpret_cast<uint8_t *>(PM_FACTORY_DATA_ADDRESS);
@@ -142,6 +147,11 @@ struct ExternalFlashFactoryData
     {
         return CHIP_NO_ERROR;
     }
+
+    // CHIP_ERROR GetFactoryDataPasscode(uint8_t *& data, size_t & dataSize)
+    // {
+    //     return CHIP_NO_ERROR;
+    // }
 
     CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
     {

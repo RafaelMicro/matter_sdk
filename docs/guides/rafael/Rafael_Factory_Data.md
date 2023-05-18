@@ -4,11 +4,37 @@
 
 Rafael MP tool with MPTCB supports adding following data to RT583:
 
-Device attestation data
+- Commissionalbe data
 
-- Device attestation key and certificate (DAC Keys, DAC)
-- Product attestation intermediate certificate (PAI)
-- Certificate declaration (CD)
+   - Discriminator
+   - Passcode
+   - Spake2+ verifier, salt and iteration count
+
+- Device attestation data
+
+   - Device attestation key and certificate (DAC Keys, DAC)
+   - Product attestation intermediate certificate (PAI)
+   - Certificate declaration (CD)
+
+## Modify commissionable data
+
+In `matter_sdk/examples/lighting-app/rt582/include` folder, you can modify the following macro in the `CHIPProjectConfig.h`
+   
+   ```cpp
+   #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 20202021 
+   #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR 3840
+   #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_ITERATION_COUNT 1000
+   #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
+   #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
+       "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw=="
+   ```
+
+## Generate Spake2+ verifier
+
+    python3 scripts/tools/spake2p/spake2p.py -p 20202021 -s U1BBS0UyUCBLZXkgU2FsdA== -i 1000
+
+    uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/NH6Rmzw==
+
 
 ## Modify device attestation data
 

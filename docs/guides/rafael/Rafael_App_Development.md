@@ -15,6 +15,128 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
+   - In the `FunctionTimerEventHandler` callback function of `AppTask.cpp` file, you can implement Software Timer event by using `StarTimer()` and `CancelTimer()` function. You also can implement button event in the `ButtonEventHandler()` callback function. You can create `AppEvent` event and post to event queue in application layer
+
+      - For example, we use matter system timer and create a software timer event using `AppEvent::kEventType_Timer` type and `FunctionTimerEventHandler` handler. Then, RTOS will call `FunctionTimerEventHandler` callback handler and do factory reset.
+
+      ```cpp
+      void AppTask::CancelTimer()
+      {
+          chip::DeviceLayer::SystemLayer().CancelTimer(TimerEventHandler, this);
+          mFunctionTimerActive = false;
+      }
+      ```
+
+      ```cpp
+      void AppTask::StartTimer(uint32_t aTimeoutInMs)
+      {
+          CHIP_ERROR err;
+
+          chip::DeviceLayer::SystemLayer().CancelTimer(TimerEventHandler, this);
+          err = chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(aTimeoutInMs), TimerEventHandler, this);
+          SuccessOrExit(err);
+
+          mFunctionTimerActive = true;
+      exit:
+          if (err != CHIP_NO_ERROR)
+          {
+              ChipLogError(NotSpecified, "StartTimer failed %s: ", chip::ErrorStr(err));
+          }
+      }
+      ```
+      
+      ```cpp
+      void AppTask::TimerEventHandler(chip::System::Layer * aLayer, void * aAppState)
+      {
+          AppEvent event;
+          event.Type               = AppEvent::kEventType_Timer;
+          event.TimerEvent.Context = aAppState;
+          event.Handler            = FunctionTimerEventHandler;
+          sAppTask.PostEvent(&event);
+      }
+      ```
+      ```cpp
+      void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
+      {
+          if (aEvent->Type != AppEvent::kEventType_Timer)
+          {
+              return;
+          }
+
+          // If we reached here, the button was held past FACTORY_RESET_TRIGGER_TIMEOUT,
+          // initiate factory reset
+          else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+          {
+              // Actually trigger Factory Reset
+              sAppTask.mFunction = kFunction_NoneSelected;
+              chip::Server::GetInstance().ScheduleFactoryReset();
+          }
+      }
+      ```
+      
+      - You can create event to execute switch (On/Off/Toggle) function in the `binding-handler.cpp` file. 
+
+      ```cpp
+      void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
+      {
+          if (aEvent->Type == AppEvent::kEventType_Button_ON)
+          {
+              ChipLogProgress(NotSpecified, "SwitchState: ON");
+              gpio_pin_clear(21);
+              BindingCommandData * data = chip::Platform::New<BindingCommandData>();
+              data->commandId           = chip::app::Clusters::OnOff::Commands::On::Id;
+              data->clusterId           = chip::app::Clusters::OnOff::Id;
+              PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+          }
+          else if (aEvent->Type == AppEvent::kEventType_Button_OFF)
+          {
+              ChipLogProgress(NotSpecified, "SwitchState: OFF");
+              gpio_pin_clear(21);
+              BindingCommandData * data = chip::Platform::New<BindingCommandData>();
+              data->commandId           = chip::app::Clusters::OnOff::Commands::Off::Id;
+              data->clusterId           = chip::app::Clusters::OnOff::Id;
+              PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+          }
+      }
+      ```
+
+   - In this case, we call the `init_light_switch_app_pin_mux()` function in the `init_light_switch_app_rt582Platform.cpp` file to set pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_light_switch_app_rt582Platform()` function to set TIMER to periodically update LED onoff status. RT583's peripheral SDK is in the matter_sdk/third_party/rafael/sdk/Driver/Peripheral folder.
+
+      - Configurate GPIO20 for switch on and GPIO21 for switch off
+
+      ```cpp
+      static void init_light_switch_app_pin_mux(void)
+      {
+          gpio_cfg_output(20);
+          gpio_cfg_output(21);
+          gpio_pin_set(20);
+          gpio_pin_set(21);
+          return;
+      }
+      ```
+
+      - Configurate TIMER2 for flashing LED
+
+      ```cpp
+      void init_light_switch_app_rt582Platform(void)
+      {
+          timer_config_mode_t cfg;
+
+          init_light_switch_app_pin_mux();
+
+          cfg.int_en = ENABLE;
+          cfg.mode = TIMER_PERIODIC_MODE;
+          cfg.prescale = TIMER_PRESCALE_32;
+
+          Timer_Open(2, cfg, _timer_isr_handler);
+          Timer_Int_Priority(2, 3);
+
+          Timer_Start(2, 999);
+
+          memset(flash_table, 0, sizeof(flash_table));    
+      }
+      ```
+
 - <span id = 2>**lighting-app**</span>
 
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
@@ -96,7 +218,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
          } 
          ```
 
-      - Initialize PWM2, PWM3, PWM4 for LED level control and configurate TIMER2 for flashing light
+      - Initialize PWM2, PWM3, PWM4 for LED level control and configurate TIMER2 for flashing LED
 
          ```cpp
          void init_lighting_app_rt582Platform(void)

@@ -36,6 +36,10 @@
 
 #include "sys_arch.h"
 #include "mib_counters.h"
+#include "EnhancedFlashDataset.h"
+
+#include "FreeRTOS.h"
+#include "task.h"
 
 
 #ifdef __cplusplus
@@ -66,6 +70,117 @@ CHIP_ERROR cmd_mib(int argc, char ** argv)
     return CHIP_NO_ERROR;
 }
 
+CHIP_ERROR cmd_env(int argc, char ** argv)
+{
+    info_env();
+
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR cmd_fbench(int argc, char ** argv)
+{
+    /* full chip benchmark test */
+    int result,i,j,w_cnt = 0,r_cnt = 0,d_cnt =0;
+    uint32_t start_time, time_cast, total_bytes = 0,avg_time =0 ;;
+    size_t write_size, cur_op_size;
+    uint8_t *write_data, *read_data;
+    size_t read_len;
+
+
+    char key[] = "Test";
+
+    sys_set_random_seed(xTaskGetTickCount());
+
+    for(j = 0;j<5000;j++)
+    {
+        info(".");
+    do
+    {
+        write_size = sys_random() % 1024;
+    } while (write_size==0);
+    
+    write_data = (uint8_t *)pvPortMalloc(write_size);
+    read_data = (uint8_t *)pvPortMalloc(write_size);
+
+    if (write_data && read_data)
+    {
+        total_bytes += write_size;
+        for (i = 0; i < write_size; i ++) {
+            write_data[i] = i & 0xFF;
+        }
+
+        /* benchmark testing */
+        /* write test */
+        start_time = xTaskGetTickCount();
+
+        efd_port_env_lock();
+
+        if (write_data && write_size)
+        {
+            result = efd_set_env_blob(key, write_data, write_size);
+        }
+
+        efd_port_env_unlock();        
+
+        if (result == EFD_NO_ERR)
+        {
+            time_cast = xTaskGetTickCount() - start_time;
+
+            if(j==0)
+                avg_time = time_cast;
+            avg_time = (time_cast + avg_time)/2;
+            w_cnt++;
+        }
+        else
+        {
+            err("Write benchmark has an error. Error code: %d.\n", result);
+        }
+        /* read test */
+        start_time = xTaskGetTickCount();
+
+        efd_port_env_lock();
+
+        efd_get_env_blob(key, read_data, write_size, &read_len);
+
+        efd_port_env_unlock();  
+
+        if(!memcmp(read_data, write_data, write_size))
+        {
+            time_cast = xTaskGetTickCount() - start_time;
+            r_cnt++;
+        }
+        else
+        {
+            err("Read benchmark has an error. Compare Error\n");
+        }
+
+        start_time = xTaskGetTickCount();
+
+        efd_port_env_lock();
+        efd_del_env(key);
+        efd_port_env_unlock();  
+        if (result >= 0)
+        {
+            time_cast = xTaskGetTickCount() - start_time;
+            d_cnt++;
+        }
+        else
+        {
+            err("Delete benchmark has an error. Error code: %d.\n", result);
+        }
+    }
+    else
+    {
+        info("Low memory!\n");
+    }
+    vPortFree(write_data);
+    vPortFree(read_data);
+    }
+
+    info("\nTotal Run: %d, W: %d, R: %d, D: %d, Bytes: %d\n", j, w_cnt, r_cnt, d_cnt, total_bytes);
+    info("Avg Write cost time %dmS\n", avg_time);
+    return CHIP_NO_ERROR;   
+}
 
 CHIP_ERROR cmd_rd(int argc, char ** argv)
 {
@@ -110,6 +225,8 @@ static shell_command_t cmds_rafael[] = {
     { &cmd_rd, "rd", "Read memory" },
     { &cmd_mem, "mem", "Show memory usage" },
     { &cmd_mib, "mib", "Show mib counters" },
+    { &cmd_env, "env", "Show env datas" },
+    { &cmd_fbench, "bench", "flash bench"},
 };
 void cmd_rafael_init()
 {

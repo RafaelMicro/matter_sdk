@@ -82,7 +82,7 @@ struct InternalFlashFactoryData
         struct FactoryData mFlashData;
 
         mbedtls_sha256(sha256, 4, key, 0);
-
+        
         mFlashData.pai_cert.len = flash_read_byte(PAI_CERT_ADDR);
         mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_ADDR + 1) << 8;
 

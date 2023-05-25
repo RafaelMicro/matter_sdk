@@ -55,8 +55,8 @@ template("rt582_sdk") {
     if (defined(invoker.include_dirs)) {
       include_dirs += invoker.include_dirs
     }
- 
-      # Treat these includes as system includes, so warnings in them are not fatal.
+
+    # Treat these includes as system includes, so warnings in them are not fatal.
     _include_dirs = [
       "${chip_root}/third_party/openthread/ot-rt582/openthread/third_party/mbedtls/repo/include",
       "${chip_root}/examples/platform/rt582/config/",
@@ -75,6 +75,8 @@ template("rt582_sdk") {
       "${rt582_sdk_root}/Portable/Utility/include",
       "${rt582_sdk_root}/Portable/freertos/repo/include",
       "${rt582_sdk_root}/Portable/freertos/repo/portable/GCC/ARM_CM3",
+      "${rt582_sdk_root}/Portable/EnhancedFlashDataset/inc",
+
       #Hardware Crypto Engine Inclide Dirs
       "${chip_root}/third_party/mbedtls/repo/include/mbedtls",
       "${chip_root}/third_party/mbedtls/repo/library",
@@ -137,45 +139,49 @@ template("rt582_sdk") {
     }
 
     # public_configs = [ ":${sdk_target_name}_config" ]
-    public_deps=[":RT_SDK"]
+    public_deps = [ ":RT_SDK" ]
   }
 
-  static_library("RT_SDK"){
-    sources =[]
+  static_library("RT_SDK") {
+    sources = []
     if (defined(invoker.sources)) {
       sources += invoker.sources
     }
     public_configs = [ ":${sdk_target_name}_config" ]
 
     sources += [
+      "${rt582_sdk_root}/Driver/Peripheral/Include/flashctl.h",
       "${rt582_sdk_root}/Driver/Peripheral/dma.c",
       "${rt582_sdk_root}/Driver/Peripheral/flashctl.c",
       "${rt582_sdk_root}/Driver/Peripheral/flashds.c",
-      "${rt582_sdk_root}/Driver/Peripheral/Include/flashctl.h",
       "${rt582_sdk_root}/Driver/Peripheral/gpio.c",
+      "${rt582_sdk_root}/Driver/Peripheral/lpm.c",
       "${rt582_sdk_root}/Driver/Peripheral/mp_sector.c",
+      "${rt582_sdk_root}/Driver/Peripheral/pwm.c",
       "${rt582_sdk_root}/Driver/Peripheral/sysctrl.c",
       "${rt582_sdk_root}/Driver/Peripheral/sysfun.c",
       "${rt582_sdk_root}/Driver/Peripheral/timer.c",
       "${rt582_sdk_root}/Driver/Peripheral/uart_retarget.c",
       "${rt582_sdk_root}/Driver/Peripheral/wdt.c",
-      "${rt582_sdk_root}/Driver/Peripheral/lpm.c",
-      "${rt582_sdk_root}/Driver/Peripheral/pwm.c",
+      "${rt582_sdk_root}/Portable/EnhancedFlashDataset/src/EnhancedFlashDataset.c",
+      "${rt582_sdk_root}/Portable/EnhancedFlashDataset/src/efd_kv.c",
+      "${rt582_sdk_root}/Portable/EnhancedFlashDataset/src/efd_port.c",
+      "${rt582_sdk_root}/Portable/EnhancedFlashDataset/src/efd_utils.c",
+      "${rt582_sdk_root}/Portable/System/sys_arch.c",
+      "${rt582_sdk_root}/Portable/System/sys_taskdbg.c",
       "${rt582_sdk_root}/Portable/Utility/util.c",
       "${rt582_sdk_root}/Portable/Utility/util_log.c",
       "${rt582_sdk_root}/Portable/Utility/util_printf.c",
-      "${rt582_sdk_root}/Portable/Utility/util_string.c",
       "${rt582_sdk_root}/Portable/Utility/util_queue.c",
+      "${rt582_sdk_root}/Portable/Utility/util_string.c",
       "${rt582_sdk_root}/Portable/bsp/bsp.c",
       "${rt582_sdk_root}/Portable/bsp/bsp_button.c",
       "${rt582_sdk_root}/Portable/bsp/bsp_led.c",
       "${rt582_sdk_root}/Portable/bsp/bsp_uart.c",
       "${rt582_sdk_root}/Portable/bsp/bsp_uart_drv.c",
-      "${rt582_sdk_root}/Portable/System/sys_taskdbg.c",
-      "${rt582_sdk_root}/Portable/System/sys_arch.c",
       "${rt582_sdk_root}/Portable/mib/mib_counters.c",
     ]
 
-    libs=["${rt582_sdk_root}/Library/librt582sdk.a"]
+    libs = [ "${rt582_sdk_root}/Library/librt582sdk.a" ]
   }
 }

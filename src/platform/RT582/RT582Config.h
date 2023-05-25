@@ -16,9 +16,6 @@
  *    limitations under the License.
  */
 
-#if 0
-
-
 #pragma once
 
 #include <functional>
@@ -29,278 +26,52 @@ namespace chip {
 namespace DeviceLayer {
 namespace Internal {
 
-constexpr inline uint16_t RT582ConfigKey(uint8_t keyBaseOffset, uint8_t id)
-{
-    return static_cast<uint16_t>(keyBaseOffset) << 6 | (id & 0x3F);
-}
-class RT582Config
-{
-public:
-    using Key = uint16_t;
-
-    static constexpr uint8_t kMatterFactory_KeyBase = 0x3;
-    static constexpr uint8_t kMatterConfig_KeyBase  = 0x2;
-    static constexpr uint8_t kMatterKvs_KeyBase     = 0x1;
-    static constexpr uint8_t kMatterKvs_KeyValue    = 0x0;
-
-    // Key definitions for well-known configuration values.
-    // Factory config keys
-    static constexpr Key kConfigKey_SerialNum             = RT582ConfigKey(kMatterFactory_KeyBase, 0x00);
-    static constexpr Key kConfigKey_MfrDeviceId           = RT582ConfigKey(kMatterFactory_KeyBase, 0x01);
-    static constexpr Key kConfigKey_MfrDeviceCert         = RT582ConfigKey(kMatterFactory_KeyBase, 0x02);
-    static constexpr Key kConfigKey_MfrDevicePrivateKey   = RT582ConfigKey(kMatterFactory_KeyBase, 0x03);
-    static constexpr Key kConfigKey_ManufacturingDate     = RT582ConfigKey(kMatterFactory_KeyBase, 0x04);
-    static constexpr Key kConfigKey_SetupPinCode          = RT582ConfigKey(kMatterFactory_KeyBase, 0x05);
-    static constexpr Key kConfigKey_MfrDeviceICACerts     = RT582ConfigKey(kMatterFactory_KeyBase, 0x06);
-    static constexpr Key kConfigKey_SetupDiscriminator    = RT582ConfigKey(kMatterFactory_KeyBase, 0x07);
-    static constexpr Key kConfigKey_Spake2pIterationCount = RT582ConfigKey(kMatterFactory_KeyBase, 0x08);
-    static constexpr Key kConfigKey_Spake2pSalt           = RT582ConfigKey(kMatterFactory_KeyBase, 0x09);
-    static constexpr Key kConfigKey_Spake2pVerifier       = RT582ConfigKey(kMatterFactory_KeyBase, 0x0A);
-    static constexpr Key kConfigKey_SoftwareVersion       = RT582ConfigKey(kMatterFactory_KeyBase, 0x0B);
-
-    // Matter Config Keys
-    // static constexpr Key kConfigKey_ServiceConfig      = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    // static constexpr Key kConfigKey_PairedAccountId    = RT582ConfigKey(kMatterConfig_KeyBase, 0x01);
-    // static constexpr Key kConfigKey_ServiceId          = RT582ConfigKey(kMatterConfig_KeyBase, 0x02);
-    static constexpr Key kConfigKey_LastUsedEpochKeyId = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    static constexpr Key kConfigKey_FailSafeArmed      = RT582ConfigKey(kMatterConfig_KeyBase, 0x01);
-    static constexpr Key kConfigKey_GroupKey           = RT582ConfigKey(kMatterConfig_KeyBase, 0x02);
-    static constexpr Key kConfigKey_HardwareVersion    = RT582ConfigKey(kMatterConfig_KeyBase, 0x03);
-    static constexpr Key kConfigKey_RegulatoryLocation = RT582ConfigKey(kMatterConfig_KeyBase, 0x04);
-    static constexpr Key kConfigKey_CountryCode        = RT582ConfigKey(kMatterConfig_KeyBase, 0x05);
-    static constexpr Key kConfigKey_RebootCount        = RT582ConfigKey(kMatterConfig_KeyBase, 0x06);
-    static constexpr Key kConfigKey_UniqueId           = RT582ConfigKey(kMatterConfig_KeyBase, 0x07);
-    // static constexpr Key kConfigKey_LockUser           = RT582ConfigKey(kMatterConfig_KeyBase, 0x0B);
-    // static constexpr Key kConfigKey_Credential         = RT582ConfigKey(kMatterConfig_KeyBase, 0x08);
-    // static constexpr Key kConfigKey_LockUserName       = RT582ConfigKey(kMatterConfig_KeyBase, 0x0D);
-    // static constexpr Key kConfigKey_CredentialData     = RT582ConfigKey(kMatterConfig_KeyBase, 0x09);
-    // static constexpr Key kConfigKey_UserCredentials    = RT582ConfigKey(kMatterConfig_KeyBase, 0x0A);
-    // static constexpr Key kConfigKey_WeekDaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x10);
-    // static constexpr Key kConfigKey_YearDaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x11);
-    // static constexpr Key kConfigKey_HolidaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x12);
-    // static constexpr Key kConfigKey_BootReason         = RT582ConfigKey(kMatterConfig_KeyBase, 0x13);
-
-    // static constexpr Key kConfigKey_GroupKeyBase       = RT582ConfigKey(kMatterConfig_KeyBase, 0x1F);
-    // // Allows 16 Group Keys to be created.    
-    // static constexpr Key kConfigKey_GroupKeyMax        = RT582ConfigKey(kMatterKvs_KeyValue, 0x2F); 
-
-    static constexpr Key kMinConfigKey_MatterFactory = RT582ConfigKey(kMatterFactory_KeyBase, 0x00);
-    static constexpr Key kMaxConfigKey_MatterFactory = RT582ConfigKey(kMatterFactory_KeyBase, 0x0B);
-    static constexpr Key kMinConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    static constexpr Key kMaxConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x07);
-    // static constexpr Key kMaxConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x0F);
-
-    static constexpr Key kMinConfigKey_KVSKey      = RT582ConfigKey(kMatterKvs_KeyBase, 0x00);
-    static constexpr Key kMaxConfigKey_KVSKey      = RT582ConfigKey(kMatterKvs_KeyBase, 0x3f);
-    static constexpr Key kMinConfigKey_KVSValue    = RT582ConfigKey(kMatterKvs_KeyValue, 0x00);
-    static constexpr Key kMaxConfigKey_KVSValue    = RT582ConfigKey(kMatterKvs_KeyValue, 0x3f);    
-
-
-    static CHIP_ERROR Init(void);
-    // Configuration methods used by the GenericConfigurationManagerImpl<> template.
-    template <typename T>
-    static CHIP_ERROR ReadConfigValue(Key key, T & val);
-    
-    static CHIP_ERROR ReadConfigValueStr(Key key, char * buf, size_t bufSize, size_t & outLen);
-    static CHIP_ERROR ReadConfigValueBin(Key key, uint8_t * buf, size_t bufSize, size_t & outLen);
-    static CHIP_ERROR ReadConfigValueBin(Key key, void * buf, size_t bufSize, size_t & outLen);
-
-    template <typename T>
-    static CHIP_ERROR WriteConfigValue(Key key, T val);
-    static CHIP_ERROR WriteConfigValueStr(Key key, const char * str);
-    static CHIP_ERROR WriteConfigValueStr(Key key, const char * str, size_t strLen);
-    static CHIP_ERROR WriteConfigValueBin(Key key, const uint8_t * data, size_t dataLen);
-    static CHIP_ERROR WriteConfigValueBin(Key key, const void * data, size_t dataLen);
-    static CHIP_ERROR ClearConfigValue(Key key);
-    static bool ConfigValueExists(Key key);
-    static CHIP_ERROR FactoryResetConfig(void);
-    static void RunConfigUnitTest(void);
-
-    static uint32_t RT582KeyaddrPasser(uint32_t id)
-    {
-        uint32_t index = id;
-
-        do
-        {
-            if (id >= kMinConfigKey_MatterFactory) {
-                index = (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-                        (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) +
-                        (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-                        (id - kMinConfigKey_MatterFactory);
-            }
-            else if (id >= kMinConfigKey_MatterConfig) {
-                index = (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) +
-                        (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-                        (id - kMinConfigKey_MatterConfig);
-            }
-            else if (id >= kMinConfigKey_KVSKey) {
-                index = (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-                        (id - kMinConfigKey_KVSKey);
-            }
-            else if (id >= kMinConfigKey_KVSValue) {
-                index = id - kMinConfigKey_KVSValue;
-            }
-            
-            // if (id >= kMinConfigKey_KVSValue)
-            // {
-            //     index = ((kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) + 
-            //             (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) + 
-            //             (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_KVSValue));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_KVSKey)
-            // {
-            //     index = ((kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) + 
-            //             (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_KVSKey));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_MatterConfig)
-            // {
-            //     index = ((kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_MatterConfig));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_MatterFactory)
-            // {
-            //     index = (id - kMinConfigKey_MatterFactory);
-            //     break;
-            // }              
-
-        } while (0);
-        
-        return index;
-    }
-
-protected:
-
-private:    
-};
-} // namespace Internal
-} // namespace DeviceLayer
-} // namespace chip
-
-
-#else 
-
-
-#pragma once
-
-#include <functional>
-
-#include <platform/internal/CHIPDeviceLayerInternal.h>
-
-namespace chip {
-namespace DeviceLayer {
-namespace Internal {
-
-constexpr inline uint16_t RT582ConfigKey(uint8_t keyBaseOffset, uint8_t id)
-{
-    // return static_cast<uint16_t>(keyBaseOffset) << 6 | (id & 0x3F);
-    return static_cast<uint16_t>(keyBaseOffset) + id;
-}
+#define KCONFIG_SECT_PSV "PSV"
 
 class RT582Config
 {
 public:
-    using Key = uint16_t;
+    using Key = const char *;
 
-    // static constexpr uint8_t kMatterFactory_KeyBase = 0x0;
-    // static constexpr uint8_t kMatterConfig_KeyBase  = 0x1;
-    static constexpr uint8_t kMatterKvs_KeyBase     = 0x2C;
-    static constexpr uint8_t kMatterKvs_KeyValue    = 0x96;
+    static constexpr const char * kConfigKey_SerialNum             = ("serial-num");
+    static constexpr const char * kConfigKey_MfrDeviceId           = ("device-id");
+    static constexpr const char * kConfigKey_MfrDeviceCert         = ("device-cert");
+    static constexpr const char * kConfigKey_MfrDeviceICACerts     = ("device-ca-certs");
+    static constexpr const char * kConfigKey_MfrDevicePrivateKey   = ("device-key");
+    static constexpr const char * kConfigKey_ManufacturingDate     = ("mfg-date");
+    static constexpr const char * kConfigKey_SetupPinCode          = ("pin-code");
+    static constexpr const char * kConfigKey_SetupDiscriminator    = ("discriminator");
+    static constexpr const char * kConfigKey_Spake2pIterationCount = ("iteration-count");
+    static constexpr const char * kConfigKey_Spake2pSalt           = ("salt");
+    static constexpr const char * kConfigKey_Spake2pVerifier       = ("verifier");
+    static constexpr const char * kConfigKey_UniqueId              = ("unique-id");
+    static constexpr const char * kConfigKey_SoftwareVersion       = ("sw-ver");
+    static constexpr const char * kConfigKey_RebootCount           = ("reboot-cnt");
 
-    // Key definitions for well-known configuration values.
-    // Factory config keys
-    // static constexpr Key kConfigKey_SerialNum             = RT582ConfigKey(kMatterFactory_KeyBase, 0x00);
-    // static constexpr Key kConfigKey_MfrDeviceId           = RT582ConfigKey(kMatterFactory_KeyBase, 0x01);
-    // static constexpr Key kConfigKey_MfrDeviceCert         = RT582ConfigKey(kMatterFactory_KeyBase, 0x02);
-    // static constexpr Key kConfigKey_MfrDevicePrivateKey   = RT582ConfigKey(kMatterFactory_KeyBase, 0x03);
-    // static constexpr Key kConfigKey_ManufacturingDate     = RT582ConfigKey(kMatterFactory_KeyBase, 0x04);
-    // static constexpr Key kConfigKey_SetupPinCode          = RT582ConfigKey(kMatterFactory_KeyBase, 0x05);
-    // static constexpr Key kConfigKey_MfrDeviceICACerts     = RT582ConfigKey(kMatterFactory_KeyBase, 0x06);
-    // static constexpr Key kConfigKey_SetupDiscriminator    = RT582ConfigKey(kMatterFactory_KeyBase, 0x07);
-    // static constexpr Key kConfigKey_Spake2pIterationCount = RT582ConfigKey(kMatterFactory_KeyBase, 0x08);
-    // static constexpr Key kConfigKey_Spake2pSalt           = RT582ConfigKey(kMatterFactory_KeyBase, 0x09);
-    // static constexpr Key kConfigKey_Spake2pVerifier       = RT582ConfigKey(kMatterFactory_KeyBase, 0x0A);
-    // static constexpr Key kConfigKey_SoftwareVersion       = RT582ConfigKey(kMatterFactory_KeyBase, 0x0B);
 
-    static constexpr Key kConfigKey_SerialNum             = 0x00;
-    static constexpr Key kConfigKey_MfrDeviceId           = 0x01;
-    static constexpr Key kConfigKey_MfrDeviceCert         = 0x02;
-    static constexpr Key kConfigKey_MfrDevicePrivateKey   = 0x03;
-    static constexpr Key kConfigKey_ManufacturingDate     = 0x04;
-    static constexpr Key kConfigKey_SetupPinCode          = 0x05;
-    static constexpr Key kConfigKey_MfrDeviceICACerts     = 0x06;
-    static constexpr Key kConfigKey_SetupDiscriminator    = 0x07;
-    static constexpr Key kConfigKey_Spake2pIterationCount = 0x08;
-    static constexpr Key kConfigKey_Spake2pSalt           = 0x09;
-    static constexpr Key kConfigKey_Spake2pVerifier       = 0x0A;
-    static constexpr Key kConfigKey_SoftwareVersion       = 0x0B;
+    /** Config keys, which should be droped after a factory reset */
+    static constexpr const char * kConfigKey_FabricId                    = ("fabric-id");
+    static constexpr const char * kConfigKey_ServiceConfig               = ("service-config");
+    static constexpr const char * kConfigKey_PairedAccountId             = ("account-id");
+    static constexpr const char * kConfigKey_ServiceId                   = ("service-id");
+    static constexpr const char * kConfigKey_FabricSecret                = ("fabric-secret");
+    static constexpr const char * kConfigKey_HardwareVersion             = ("hardware-ver");
+    static constexpr const char * kConfigKey_LastUsedEpochKeyId          = ("last-ek-id");
+    static constexpr const char * kConfigKey_FailSafeArmed               = ("fail-safe-armed");
+    static constexpr const char * kConfigKey_OperationalDeviceId         = ("op-device-id");
+    static constexpr const char * kConfigKey_OperationalDeviceCert       = ("op-device-cert");
+    static constexpr const char * kConfigKey_OperationalDeviceICACerts   = ("op-device-ca-certs");
+    static constexpr const char * kConfigKey_OperationalDevicePrivateKey = ("op-device-key");
+    static constexpr const char * kConfigKey_RegulatoryLocation          = ("regulatory-location");
+    static constexpr const char * kConfigKey_CountryCode                 = ("country-code");
+    static constexpr const char * kConfigKey_ActiveLocale                = ("active-locale");
+    static constexpr const char * kConfigKey_Breadcrumb                  = ("breadcrumb");
+    static constexpr const char * kConfigKey_GroupKeyIndex               = ("group-key-index");
 
-    // Matter Config Keys
-    // static constexpr Key kConfigKey_ServiceConfig      = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    // static constexpr Key kConfigKey_PairedAccountId    = RT582ConfigKey(kMatterConfig_KeyBase, 0x01);
-    // static constexpr Key kConfigKey_ServiceId          = RT582ConfigKey(kMatterConfig_KeyBase, 0x02);
-
-    // static constexpr Key kConfigKey_LastUsedEpochKeyId = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    // static constexpr Key kConfigKey_FailSafeArmed      = RT582ConfigKey(kMatterConfig_KeyBase, 0x01);
-    // static constexpr Key kConfigKey_GroupKey           = RT582ConfigKey(kMatterConfig_KeyBase, 0x02);
-    // static constexpr Key kConfigKey_HardwareVersion    = RT582ConfigKey(kMatterConfig_KeyBase, 0x03);
-    // static constexpr Key kConfigKey_RegulatoryLocation = RT582ConfigKey(kMatterConfig_KeyBase, 0x04);
-    // static constexpr Key kConfigKey_CountryCode        = RT582ConfigKey(kMatterConfig_KeyBase, 0x05);
-    // static constexpr Key kConfigKey_RebootCount        = RT582ConfigKey(kMatterConfig_KeyBase, 0x06);
-    // static constexpr Key kConfigKey_UniqueId           = RT582ConfigKey(kMatterConfig_KeyBase, 0x07);
-
-    static constexpr Key kConfigKey_LastUsedEpochKeyId = 0x0C;
-    static constexpr Key kConfigKey_FailSafeArmed      = 0x0D;
-    static constexpr Key kConfigKey_GroupKey           = 0x0E;
-    static constexpr Key kConfigKey_HardwareVersion    = 0x0F;
-    static constexpr Key kConfigKey_RegulatoryLocation = 0x10;
-    static constexpr Key kConfigKey_CountryCode        = 0x11;
-    static constexpr Key kConfigKey_RebootCount        = 0x12;
-    static constexpr Key kConfigKey_UniqueId           = 0x13;
-
-    // static constexpr Key kConfigKey_LockUser           = RT582ConfigKey(kMatterConfig_KeyBase, 0x0B);
-    // static constexpr Key kConfigKey_Credential         = RT582ConfigKey(kMatterConfig_KeyBase, 0x08);
-    // static constexpr Key kConfigKey_LockUserName       = RT582ConfigKey(kMatterConfig_KeyBase, 0x0D);
-    // static constexpr Key kConfigKey_CredentialData     = RT582ConfigKey(kMatterConfig_KeyBase, 0x09);
-    // static constexpr Key kConfigKey_UserCredentials    = RT582ConfigKey(kMatterConfig_KeyBase, 0x0A);
-    // static constexpr Key kConfigKey_WeekDaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x10);
-    // static constexpr Key kConfigKey_YearDaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x11);
-    // static constexpr Key kConfigKey_HolidaySchedules   = RT582ConfigKey(kMatterConfig_KeyBase, 0x12);
-    // static constexpr Key kConfigKey_BootReason         = RT582ConfigKey(kMatterConfig_KeyBase, 0x13);
-
-    // static constexpr Key kConfigKey_GroupKeyBase       = RT582ConfigKey(kMatterConfig_KeyBase, 0x1F);
-    // // Allows 16 Group Keys to be created.    
-    // static constexpr Key kConfigKey_GroupKeyMax        = RT582ConfigKey(kMatterKvs_KeyValue, 0x2F); 
-
-    // static constexpr Key kMinConfigKey_MatterFactory = RT582ConfigKey(kMatterFactory_KeyBase, 0x00);
-    // static constexpr Key kMaxConfigKey_MatterFactory = RT582ConfigKey(kMatterFactory_KeyBase, 0x0B);
-    // static constexpr Key kMinConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x00);
-    // static constexpr Key kMaxConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x07);
-
-    static constexpr Key kMinConfigKey_MatterFactory = 0x14;
-    static constexpr Key kMaxConfigKey_MatterFactory = 0x1f;
-    static constexpr Key kMinConfigKey_MatterConfig  = 0x20;
-    static constexpr Key kMaxConfigKey_MatterConfig  = 0x2B;
-
-    // static constexpr Key kMaxConfigKey_MatterConfig  = RT582ConfigKey(kMatterConfig_KeyBase, 0x0F);
-
-    // static constexpr Key kMinConfigKey_KVSKey      = RT582ConfigKey(kMatterKvs_KeyBase, 0x00);
-    // static constexpr Key kMaxConfigKey_KVSKey      = RT582ConfigKey(kMatterKvs_KeyBase, 0x3e);
-    // static constexpr Key kMinConfigKey_KVSValue    = RT582ConfigKey(kMatterKvs_KeyValue, 0x00);
-    // static constexpr Key kMaxConfigKey_KVSValue    = RT582ConfigKey(kMatterKvs_KeyValue, 0x3e);  
-
-    static constexpr Key kMinConfigKey_KVSKey      = 0x2C;
-    static constexpr Key kMaxConfigKey_KVSKey      = 0x95;
-    static constexpr Key kMinConfigKey_KVSValue    = 0x96;
-    static constexpr Key kMaxConfigKey_KVSValue    = 0xFE;   
-
+    /** Counter Keys, diagnostic information  */
+    static constexpr const char * kCounterKey_RebootCount           = ("reboot-count");
+    static constexpr const char * kCounterKey_TotalOperationalHours = ("total-hours");
+    static constexpr const char * kCounterKey_UpTime                = ("up-time");  
 
     static CHIP_ERROR Init(void);
     // Configuration methods used by the GenericConfigurationManagerImpl<> template.
@@ -324,66 +95,10 @@ public:
     static CHIP_ERROR FactoryResetConfig(void);
     static void RunConfigUnitTest(void);
 
-    static uint32_t RT582KeyaddrPasser(uint32_t id)
-    {
-        // uint32_t index = id;
-
-        // do
-        // {
-            // if (id >= kMinConfigKey_MatterFactory) {
-            //     index = (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) +
-            //             (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-            //             (id - kMinConfigKey_MatterFactory);
-            // }
-            // else if (id >= kMinConfigKey_MatterConfig) {
-            //     index = (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) +
-            //             (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-            //             (id - kMinConfigKey_MatterConfig);
-            // }
-            // else if (id >= kMinConfigKey_KVSKey) {
-            //     index = (kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) +
-            //             (id - kMinConfigKey_KVSKey);
-            // }
-            // else if (id >= kMinConfigKey_KVSValue) {
-            //     index = id - kMinConfigKey_KVSValue;
-            // }
-            
-            // if (id >= kMinConfigKey_KVSValue)
-            // {
-            //     index = ((kMaxConfigKey_KVSKey - kMinConfigKey_KVSKey) + 
-            //             (kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) + 
-            //             (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_KVSValue));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_KVSKey)
-            // {
-            //     index = ((kMaxConfigKey_MatterConfig - kMinConfigKey_MatterConfig) + 
-            //             (kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_KVSKey));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_MatterConfig)
-            // {
-            //     index = ((kMaxConfigKey_MatterFactory - kMinConfigKey_MatterFactory) +
-            //             (id - kMinConfigKey_MatterConfig));
-            //     break;
-            // }
-
-            // if (id >= kMinConfigKey_MatterFactory)
-            // {
-            //     index = (id - kMinConfigKey_MatterFactory);
-            //     break;
-            // }              
-
-        // } while (0);
-        
-        return (id + 1);
-    }
-
+    // internal to the platform for KeyValueStoreManagerImpl.cpp
+    static CHIP_ERROR ReadKVS(const char * key, void * value, size_t value_size, size_t * read_bytes_size, size_t offset_bytes);
+    static CHIP_ERROR WriteKVS(const char * key, const void * value, size_t value_size);
+    static CHIP_ERROR ClearKVS(const char * key);
 protected:
 
 private:    
@@ -391,5 +106,3 @@ private:
 } // namespace Internal
 } // namespace DeviceLayer
 } // namespace chip
-
-#endif

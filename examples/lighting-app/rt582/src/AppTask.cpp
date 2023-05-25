@@ -553,6 +553,8 @@ CHIP_ERROR AppTask::Init()
     
     // chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
 
+    FactoryResetCheck();
+
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
     {
@@ -611,6 +613,7 @@ void AppTask::FactoryResetCheck()
             Delay_ms(500);
         }
         chip::Server::GetInstance().ScheduleFactoryReset();
+ 
     }
     else
     {
@@ -645,9 +648,7 @@ CHIP_ERROR AppTask::StartAppTask()
     {
         return CHIP_ERROR_NO_MEMORY;
     }
-
-    FactoryResetCheck();
-
+    
 #if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);

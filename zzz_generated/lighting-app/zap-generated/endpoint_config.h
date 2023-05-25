@@ -99,7 +99,7 @@
 
 #define ZAP_ATTRIBUTE_MASK(mask) ATTRIBUTE_MASK_##mask
 // This is an array of EmberAfAttributeMetadata structures.
-#define GENERATED_ATTRIBUTE_COUNT 271
+#define GENERATED_ATTRIBUTE_COUNT 266
 #define GENERATED_ATTRIBUTES                                                                                                       \
     {                                                                                                                              \
                                                                                                                                    \
@@ -537,13 +537,6 @@
               ZAP_MIN_MAX_DEFAULTS_INDEX(3) },                                  /* StartUpColorTemperatureMireds */                \
             { 0x0000FFFC, ZAP_TYPE(BITMAP32), 4, 0, ZAP_SIMPLE_DEFAULT(0x1F) }, /* FeatureMap */                                   \
             { 0x0000FFFD, ZAP_TYPE(INT16U), 2, 0, ZAP_SIMPLE_DEFAULT(5) },      /* ClusterRevision */                              \
-                                                                                                                                   \
-            /* Endpoint: 1, Cluster: Occupancy Sensing (server) */                                                                 \
-            { 0x00000000, ZAP_TYPE(BITMAP8), 1, 0, ZAP_EMPTY_DEFAULT() },    /* occupancy */                                       \
-            { 0x00000001, ZAP_TYPE(ENUM8), 1, 0, ZAP_EMPTY_DEFAULT() },      /* occupancy sensor type */                           \
-            { 0x00000002, ZAP_TYPE(BITMAP8), 1, 0, ZAP_EMPTY_DEFAULT() },    /* occupancy sensor type bitmap */                    \
-            { 0x0000FFFC, ZAP_TYPE(BITMAP32), 4, 0, ZAP_SIMPLE_DEFAULT(0) }, /* FeatureMap */                                      \
-            { 0x0000FFFD, ZAP_TYPE(INT16U), 2, 0, ZAP_SIMPLE_DEFAULT(3) },   /* ClusterRevision */                                 \
     }
 
 // This is an array of EmberAfCluster structures.
@@ -577,9 +570,6 @@
     const EmberAfGenericClusterFunction chipFuncArrayColorControlServer[] = {                                                      \
         (EmberAfGenericClusterFunction) emberAfColorControlClusterServerInitCallback,                                              \
     };                                                                                                                             \
-    const EmberAfGenericClusterFunction chipFuncArrayOccupancySensingServer[] = {                                                  \
-        (EmberAfGenericClusterFunction) emberAfOccupancySensingClusterServerInitCallback,                                          \
-    };
 
 // clang-format off
 #define GENERATED_COMMANDS { \
@@ -1067,17 +1057,6 @@
       .acceptedCommandList = ZAP_GENERATED_COMMANDS_INDEX( 104 ) ,\
       .generatedCommandList = nullptr ,\
     },\
-  { \
-      /* Endpoint: 1, Cluster: Occupancy Sensing (server) */ \
-      .clusterId = 0x00000406,  \
-      .attributes = ZAP_ATTRIBUTE_INDEX(266), \
-      .attributeCount = 5, \
-      .clusterSize = 9, \
-      .mask = ZAP_CLUSTER_MASK(SERVER) | ZAP_CLUSTER_MASK(INIT_FUNCTION), \
-      .functions = chipFuncArrayOccupancySensingServer, \
-      .acceptedCommandList = nullptr ,\
-      .generatedCommandList = nullptr ,\
-    },\
 }
 
 // clang-format on
@@ -1089,11 +1068,11 @@
 // This is an array of EmberAfEndpointType structures.
 #define GENERATED_ENDPOINT_TYPES                                                                                                   \
     {                                                                                                                              \
-        { ZAP_CLUSTER_INDEX(0), 22, 251 }, { ZAP_CLUSTER_INDEX(22), 7, 109 },                                                      \
+        { ZAP_CLUSTER_INDEX(0), 22, 251 }, { ZAP_CLUSTER_INDEX(22), 6, 104 },                                                      \
     }
 
 // Largest attribute size is needed for various buffers
-#define ATTRIBUTE_LARGEST (259)
+#define ATTRIBUTE_LARGEST (254)
 
 static_assert(ATTRIBUTE_LARGEST <= CHIP_CONFIG_MAX_ATTRIBUTE_STORE_ELEMENT_SIZE, "ATTRIBUTE_LARGEST larger than expected");
 

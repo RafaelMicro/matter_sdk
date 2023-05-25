@@ -67,6 +67,7 @@ using namespace ::chip::DeviceLayer;
 
 #include "cm3_mcu.h"
 #include "util_log.h"
+#include <EnhancedFlashDataset.h>
 
 extern void vPortSetupTimerInterrupt(void);
 // ================================================================================
@@ -76,7 +77,6 @@ extern "C" void vApplicationIdleHook(void)
 {
     otTaskletsSignalPending(0);
     // FreeRTOS Idle callback
-
     // Check CHIP Config nvm3 and repack flash if necessary.
     //Internal::RT582Config::RepackNvm3Flash();
 }

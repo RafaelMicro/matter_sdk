@@ -49,8 +49,6 @@ private:
     friend KeyValueStoreManager & KeyValueStoreMgr();
     friend KeyValueStoreManagerImpl & KeyValueStoreMgrImpl();
 
-    void ConvertError(CHIP_ERROR & err);
-
     static KeyValueStoreManagerImpl sInstance;
 };
 

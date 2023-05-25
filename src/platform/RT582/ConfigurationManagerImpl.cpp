@@ -81,36 +81,26 @@ void ConfigurationManagerImpl::InitiateFactoryReset()
 CHIP_ERROR ConfigurationManagerImpl::ReadPersistedStorageValue(::chip::Platform::PersistedStorage::Key persistedStorageKey,
                                                                uint32_t & value)
 {
-    CHIP_ERROR err;
-    // uintmax_t recordKey = persistedStorageKey + RT582Config::kConfigKey_GroupKeyBase;
+    char keyname[sizeof(KCONFIG_SECT_PSV) + 10];
 
-    // VerifyOrExit(recordKey <= RT582Config::kConfigKey_GroupKeyMax, err = CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    sprintf(keyname, "%s_%x", KCONFIG_SECT_PSV, persistedStorageKey);
 
-    err = ReadConfigValue(persistedStorageKey, value);
+    CHIP_ERROR err = ReadConfigValue(keyname, value);
     if (err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND)
     {
         err = CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND;
     }
-    SuccessOrExit(err);
-
-exit:
     return err;
 }
 
 CHIP_ERROR ConfigurationManagerImpl::WritePersistedStorageValue(::chip::Platform::PersistedStorage::Key persistedStorageKey,
                                                                 uint32_t value)
 {
-    CHIP_ERROR err;
+    char keyname[sizeof(KCONFIG_SECT_PSV) + 10];
 
-    // uintmax_t recordKey = persistedStorageKey + RT582Config::kConfigKey_GroupKeyBase;
+    sprintf(keyname, "%s_%d", KCONFIG_SECT_PSV, persistedStorageKey);
 
-    // VerifyOrExit(recordKey <= RT582Config::kConfigKey_GroupKeyMax, err = CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-
-    err = WriteConfigValue(persistedStorageKey, value);
-    SuccessOrExit(err);
-
-exit:
-    return err;
+    return WriteConfigValue(keyname, value);
 }
 
 CHIP_ERROR ConfigurationManagerImpl::GetRebootCount(uint32_t & rebootCount)

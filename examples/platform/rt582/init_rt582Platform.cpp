@@ -54,6 +54,8 @@ extern "C" {
 #include "uart.h"
 #include "cm3_mcu.h"
 #include "crypto_util.h"
+#include "EnhancedFlashDataset.h"
+
 
 static void init_default_pin_mux(void)
 {
@@ -82,6 +84,8 @@ void init_rt582Platform(void)
     dma_init();
     uartConsoleInit();
     crypto_lib_init();
+    enhanced_flash_dataset_init();
+    
 #if(CHIP_DEVICE_CONFIG_ENABLE_SED == 1)
     timern_t *TIMER;
     TIMER = TIMER4;

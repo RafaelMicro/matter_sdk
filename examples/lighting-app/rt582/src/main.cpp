@@ -57,8 +57,6 @@ int main(void)
     init_rt582Platform();
     init_lighting_app_rt582Platform();
 
-    //mbedtls_platform_set_calloc_free(CHIPPlatformMemoryCalloc, CHIPPlatformMemoryFree);
-
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
     {

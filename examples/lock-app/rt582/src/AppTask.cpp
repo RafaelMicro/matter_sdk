@@ -349,6 +349,7 @@ void AppTask::InitServer(intptr_t arg)
     }
     else
     {
+        chip::app::DnssdServer::Instance().StartServer();   
         sCommissioned = true;
         UpdateStatusLED();
     }

@@ -150,6 +150,8 @@ template("rt582_sdk") {
     public_configs = [ ":${sdk_target_name}_config" ]
 
     sources += [
+      "${rt582_sdk_root}/Driver/Device/GCC/gcc_startup_cm3_mcu.S",
+      "${rt582_sdk_root}/Driver/Device/system_cm3_mcu.c",
       "${rt582_sdk_root}/Driver/Peripheral/Include/flashctl.h",
       "${rt582_sdk_root}/Driver/Peripheral/dma.c",
       "${rt582_sdk_root}/Driver/Peripheral/flashctl.c",

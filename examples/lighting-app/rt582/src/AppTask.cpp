@@ -411,6 +411,8 @@ void AppTask::LightActionEventHandler(AppEvent * aEvent)
 
 void AppTask::InitServer(intptr_t arg)
 {
+    
+#if 1
     CHIP_ERROR err;
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
@@ -437,10 +439,11 @@ void AppTask::InitServer(intptr_t arg)
     }
     else
     {
+        chip::app::DnssdServer::Instance().StartServer();
         sCommissioned = true;
-        UpdateStatusLED();
+        UpdateStatusLED();        
     }
-
+#endif
     // Setup light
     err = LightMgr().Init();
     if (err != CHIP_NO_ERROR)
@@ -470,19 +473,6 @@ void AppTask::InitServer(intptr_t arg)
 #if RT582_OTA_ENABLED
     OTAConfig::Init();
 #endif
-
-
-    // reboot count usage demo
-    // uint32_t rebootCount = -1;
-    // ChipLogProgress(NotSpecified, "+++++++++++++++++++++");
-    // ConfigurationMgr().GetRebootCount(rebootCount);
-    // ChipLogProgress(NotSpecified, "Current rebootCount: %d", rebootCount);
-    // rebootCount += 1;
-    // ConfigurationMgr().StoreRebootCount(rebootCount);
-    // uint32_t modifiedCount = -1;
-    // ConfigurationMgr().GetRebootCount(modifiedCount);
-    // ChipLogProgress(NotSpecified, "Modified rebootCount: %d", modifiedCount);
-    // ChipLogProgress(NotSpecified, "+++++++++++++++++++++");
 }
 
 void AppTask::UpdateStatusLED()
@@ -520,7 +510,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     case DeviceEventType::kThreadStateChange:
         sIsThreadProvisioned = ConnectivityMgr().IsThreadProvisioned();
         sIsThreadEnabled     = ConnectivityMgr().IsThreadEnabled();
-        UpdateStatusLED();    
+        UpdateStatusLED();
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
@@ -573,7 +563,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");
     }
 
-    ChipLogError(NotSpecified, "Start Thread Task\n");
+    ChipLogProgress(NotSpecified, "Start Thread Task\n");
     err = ThreadStackMgr().StartThreadTask();
     if (err != CHIP_NO_ERROR)
     {

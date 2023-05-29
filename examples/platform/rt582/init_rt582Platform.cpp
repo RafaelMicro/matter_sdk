@@ -79,11 +79,17 @@ void init_rt582Platform(void)
 {
     NVIC_SetPriority(CommSubsystem_IRQn, 0x04);
 
+   #if LPWR_FLASH_PROTECT_ENABLE==1
+   flash_cmp_protect_init();
+   flash_vbat_protect_init();
+   #endif    
+
     init_default_pin_mux();
     Delay_Init();
     dma_init();
     uartConsoleInit();
     crypto_lib_init();
+
     enhanced_flash_dataset_init();
     
 #if(CHIP_DEVICE_CONFIG_ENABLE_SED == 1)
@@ -103,7 +109,7 @@ void init_rt582Platform(void)
     Lpm_Set_Low_Power_Level(LOW_POWER_LEVEL_SLEEP0);
     Lpm_Enable_Low_Power_Wakeup(LOW_POWER_WAKEUP_GPIO);
     Lpm_Enable_Low_Power_Wakeup(LOW_POWER_WAKEUP_32K_TIMER);
-#endif
+#endif  
 }
 
 // void kvs_init(void)

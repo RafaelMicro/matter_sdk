@@ -266,6 +266,10 @@ void AppTask::InitServer(intptr_t arg)
         PrintOnboardingCodes(chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE));
         xTaskResumeAll();
     }
+    else
+    {
+        chip::app::DnssdServer::Instance().StartServer();
+    }
     err = InitBindingHandler();
     if (err != CHIP_NO_ERROR)
     {
@@ -513,7 +517,7 @@ void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
     if (aEvent->Type == AppEvent::kEventType_Button_ON)
     {
         ChipLogProgress(NotSpecified, "SwitchState: ON");
-        gpio_pin_clear(21);
+
         BindingCommandData * data = chip::Platform::New<BindingCommandData>();
         data->commandId           = chip::app::Clusters::OnOff::Commands::On::Id;
         data->clusterId           = chip::app::Clusters::OnOff::Id;
@@ -523,7 +527,7 @@ void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
     else if (aEvent->Type == AppEvent::kEventType_Button_OFF)
     {
         ChipLogProgress(NotSpecified, "SwitchState: OFF");
-        gpio_pin_clear(21);
+
         BindingCommandData * data = chip::Platform::New<BindingCommandData>();
         data->commandId           = chip::app::Clusters::OnOff::Commands::Off::Id;
         data->clusterId           = chip::app::Clusters::OnOff::Id;

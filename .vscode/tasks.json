@@ -18,7 +18,7 @@
 
         {
             "label": "postDebugKill",
-            "command": "echo ${input:terminate}",
+            "command": "echo ${input:terminate}",``
             "type": "shell"
         },
         {

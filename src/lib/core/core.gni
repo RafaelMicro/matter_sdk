@@ -28,10 +28,10 @@ declare_args() {
   chip_progress_logging = chip_logging
 
   # Enable detail logging.
-  chip_detail_logging = chip_logging
+  chip_detail_logging = false
 
   # Enable automation logging.
-  chip_automation_logging = chip_logging
+  chip_automation_logging = false
 
   # Configure the maximum size for logged messages
   if (current_os == "linux" || current_os == "mac" || current_os == "ios") {

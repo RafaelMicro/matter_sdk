@@ -73,6 +73,7 @@ int main(void)
     info( "==================================================\r\n");
     info( "chip-rt582-lighting-example starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "==================================================\r\n");
+
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
     {

@@ -20,17 +20,6 @@ typedef struct
 } reg_bit_write_t;
 
 /*----------------------------------------------------------------------------
-  Define PMU Mode
- *----------------------------------------------------------------------------*/
-/*Define PMU mode type*/
-#define PMU_LDO_MODE 0
-#define PMU_DCDC_MODE 1
-
-#ifndef SET_PMU_MODE
-#define SET_PMU_MODE PMU_DCDC_MODE
-#endif
-
-/*----------------------------------------------------------------------------
   Define clocks
  *----------------------------------------------------------------------------*/
 #ifndef SET_SYS_CLK
@@ -133,6 +122,7 @@ void Reg_Bit_Write(reg_bit_write_t reg_write_item)
     *((uint32_t *) (reg_write_item.reg_addr)) = reg_value_buf;
 }
 
+#if 0
 void SystemPmuUpdateDig(void) /* Update PMU settings for digital configuration */
 {
     PMU->PMU_XTAL.bit.CFG_XTAL_SETTLE_TIME = 0x3F;
@@ -141,8 +131,10 @@ void SystemPmuUpdateDig(void) /* Update PMU settings for digital configuration *
     PMU->PMU_XTAL.bit.CFG_BYPASS_XTAL_SETTLE = 1;
     PMU->PMU_CLK_CTRL.bit.CFG_CHIP_EN_AUTO   = 1;
     PMU->PMU_PWR_CTRL.bit.CFG_BYP_XBUF_LDO   = 1;
-}
 
+    SYSCTRL->GPIO_AIO_CTRL = ((SYSCTRL->GPIO_AIO_CTRL & ~FLASH_DRV_SEL_MASK) | FLASH_DRV_SEL_SET);
+}
+#endif
 void SystemPmuSetMode(pmu_mode_cfg_t pmu_mode)
 {
     if (pmu_mode == PMU_MODE_DCDC)
@@ -354,6 +346,7 @@ void SystemPmuUpdateDcdc(void) /* Update PMU settings in DCDC mode */
     for (i = 0; i < reg_num; i++)
     {
         reg_write_item = pmu_mp_init_table_dcdc[i];
+
         Reg_Bit_Write(reg_write_item);
     }
 }
@@ -423,8 +416,6 @@ void SystemInit(void)
      *   So you can not use any global variable.
      *  Also,  NO  race condition issue here...
      */
-    critical_section_init();
-
     /*set PMU XTAL. 2020/10/26 add  --- set cfg_xtal_settle_time*/
     PMU->PMU_XTAL.reg = (PMU->PMU_XTAL.reg & ~0xFF) | 0x3F;
 
@@ -437,7 +428,7 @@ void SystemInit(void)
     flash_enable_qe();
 
 #if ((CHIP_VERSION == RT58X_MPA) || (CHIP_VERSION == RT58X_MPB))
-    SystemPmuUpdateDig();
+    // SystemPmuUpdateDig();
 
 #if (SET_PMU_MODE == PMU_LDO_MODE)
     SystemPmuUpdateLdo();
@@ -484,8 +475,6 @@ void SystemInit(void)
     set_ext32k_pin(EXT32K_GPIO7);              /* externl slow clock 32.768khz, select input gpio pin, gpio0~gpio7 (0~7) */
     set_slow_clock_source(EXT32K_GPIO_ENABLE); /* set slow clock(32.768khz) source form gpio */
 #endif
-
-    flash_suspend_check();
 
     return;
 }

@@ -56,7 +56,6 @@ extern "C" {
 #include "crypto_util.h"
 #include "EnhancedFlashDataset.h"
 
-
 static void init_default_pin_mux(void)
 {
     int i, j;
@@ -75,20 +74,45 @@ static void init_default_pin_mux(void)
     return;
 }
 
+static void wdt_isr(void)
+{
+    Wdt_Kick();
+}
+
+static void init_wdt_init(void)
+{
+    wdt_config_mode_t wdt_mode;
+    wdt_config_tick_t wdt_cfg_ticks;
+
+    wdt_mode.int_enable = 1;
+    wdt_mode.reset_enable = 1;
+    wdt_mode.lock_enable = 0;
+    wdt_mode.prescale = WDT_PRESCALE_32;
+
+    wdt_cfg_ticks.wdt_ticks = 1200 * 1000;
+    wdt_cfg_ticks.int_ticks = 200 * 1000;
+    wdt_cfg_ticks.wdt_min_ticks = 0;
+
+    Wdt_Start(wdt_mode, wdt_cfg_ticks, wdt_isr);
+}
+
 void init_rt582Platform(void)
 {
     NVIC_SetPriority(CommSubsystem_IRQn, 0x04);
 
-   #if LPWR_FLASH_PROTECT_ENABLE==1
-   flash_cmp_protect_init();
-   flash_vbat_protect_init();
-   #endif    
-
     init_default_pin_mux();
+#if(CHIP_DEVICE_CONFIG_ENABLE_SED != 1)    
+    init_wdt_init();
+#endif
     Delay_Init();
     dma_init();
     uartConsoleInit();
     crypto_lib_init();
+
+   #if LPWR_FLASH_PROTECT_ENABLE==1
+   flash_vbat_protect_init();
+   flash_cmp_protect_init();
+   #endif
 
     enhanced_flash_dataset_init();
     

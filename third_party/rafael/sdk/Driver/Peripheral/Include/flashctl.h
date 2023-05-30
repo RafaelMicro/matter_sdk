@@ -1,15 +1,15 @@
-/**************************************************************************//**
- * @file     flashctl.h
- * @version
- * @brief    FLASHCTL driver header file
- *
- * @copyright
- ******************************************************************************/
+/**************************************************************************/ /**
+                                                                              * @file     flashctl.h
+                                                                              * @version
+                                                                              * @brief    FLASHCTL driver header file
+                                                                              *
+                                                                              * @copyright
+                                                                              ******************************************************************************/
 /** @defgroup Flash_Drver Flash
-*  @ingroup  peripheral_group
-*  @{
-*  @brief  FLASH_Driver information
-*/
+ *  @ingroup  peripheral_group
+ *  @{
+ *  @brief  FLASH_Driver information
+ */
 #include "chip_define.h"
 #include "project_config.h"
 
@@ -17,8 +17,7 @@
 #define ___FLASHCTL_H__
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /**************************************************************************************************
@@ -29,13 +28,12 @@ extern "C"
  * @brief  Status Register definitions
  */
 
-#define  FLASH_STATUS_RW1     1       /*!< Status Register 1  */
-#define  FLASH_STATUS_RW2     2       /*!< Status Register 2  */
-#define  FLASH_STATUS_RW3     4       /*!< Status Register 3  */
+#define FLASH_STATUS_RW1 1 /*!< Status Register 1  */
+#define FLASH_STATUS_RW2 2 /*!< Status Register 2  */
+#define FLASH_STATUS_RW3 4 /*!< Status Register 3  */
 
-
-#define  FLASH_STATUS_RW1_2    (FLASH_STATUS_RW1 | FLASH_STATUS_RW2)         /*!< Status Register Byte 1 and Byte 2, this define for writing status Bytes2  */
-
+#define FLASH_STATUS_RW1_2                                                                                                         \
+    (FLASH_STATUS_RW1 | FLASH_STATUS_RW2) /*!< Status Register Byte 1 and Byte 2, this define for writing status Bytes2  */
 
 /**
  * @brief Define Secure Register address.
@@ -43,95 +41,98 @@ extern "C"
  * NOTICE: different flash has different secure page registers location and different secure page size!
  */
 
-#define  FLASH_SECREG_R0_P0   ((0<<12))            /*!< Secure Page zero, low 256 bytes.  */
-#define  FLASH_SECREG_R0_P1   ((0<<12) | 0x100)    /*!< Secure Page zero, high 256 bytes. */
+#define FLASH_SECREG_R0_P0 ((0 << 12))         /*!< Secure Page zero, low 256 bytes.  */
+#define FLASH_SECREG_R0_P1 ((0 << 12) | 0x100) /*!< Secure Page zero, high 256 bytes. */
 
-#define  FLASH_SECREG_R1_P0   ((1<<12))            /*!< Secure Page one, low 256 bytes.  */
-#define  FLASH_SECREG_R1_P1   ((1<<12) | 0x100)    /*!< Secure Page one, high 256 bytes. */
+#define FLASH_SECREG_R1_P0 ((1 << 12))         /*!< Secure Page one, low 256 bytes.  */
+#define FLASH_SECREG_R1_P1 ((1 << 12) | 0x100) /*!< Secure Page one, high 256 bytes. */
 
-#define  FLASH_SECREG_R2_P0   ((2<<12))            /*!< Secure Page two, low 256 bytes.  */
-#define  FLASH_SECREG_R2_P1   ((2<<12) | 0x100)    /*!< Secure Page two, high 256 bytes. */
+#define FLASH_SECREG_R2_P0 ((2 << 12))         /*!< Secure Page two, low 256 bytes.  */
+#define FLASH_SECREG_R2_P1 ((2 << 12) | 0x100) /*!< Secure Page two, high 256 bytes. */
 
-#define  FLASH_SECREG_R3_P0   ((3<<12))            /*!< Secure Page three, low 256 bytes. */
-#define  FLASH_SECREG_R3_P1   ((3<<12) | 0x100)    /*!< Secure Page three, high 256 bytes.*/
+#define FLASH_SECREG_R3_P0 ((3 << 12))         /*!< Secure Page three, low 256 bytes. */
+#define FLASH_SECREG_R3_P1 ((3 << 12) | 0x100) /*!< Secure Page three, high 256 bytes.*/
 
+#define FLASH_IDLE 0                           /*!<  \hideinitializer */
+#define FLASH_BUSY 1                           /*!<  \hideinitializer */
 
-#define  FLASH_IDLE                     0          /*!<  \hideinitializer */
-#define  FLASH_BUSY                     1          /*!<  \hideinitializer */
+#define FLASH_SUSPEND_STATUS 0x80
+#define FLASH_BUSY_CHECK_COUNT 10000
 
-#define FLASH_SUSPEND_STATUS            0x80
-#define FLASH_BUSY_CHECK_COUNT          10000
+#define FLASH_TYPE_ID_MAKS 0xFFFF
 
-#define FLASH_TYPE_ID_MAKS      0xFFFF
+#define FLASH_SIZE_ID_SHIFT 16
 
-#define FLASH_SIZE_ID_SHIFT     16
+// limit customer to use
+#define BOOT_LOADER_END_PROTECT_ADDR 0x7000
 
-//limit customer to use
-#define BOOT_LOADER_END_PROTECT_ADDR        0x7000
+#define FLASH_SIZE_ID_SHIFT 16
 
-#define FLASH_SIZE_ID_SHIFT     16
+#define FLASH_SIZE_SECTOR_4KB 0x0C
+#define FLASH_SIZE_ID_512KB 0x13
+#define FLASH_SIZE_ID_1MB 0x14
+#define FLASH_SIZE_ID_2MB 0x15
 
-#define FLASH_SIZE_SECTOR_4KB       0x0C
-#define FLASH_SIZE_ID_512KB     0x13
-#define FLASH_SIZE_ID_1MB       0x14
-#define FLASH_SIZE_ID_2MB       0x15
+#define LENGTH_BYTE 1
+#define LENGTH_PAGE 256
+#define LENGTH_4KB (4 * 1024)
+#define LENGTH_32KB (32 * 1024)
+#define LENGTH_64KB (64 * 1024)
 
-#define LENGTH_BYTE     1
-#define LENGTH_PAGE     256
-#define LENGTH_4KB      (4*1024)
-#define LENGTH_32KB     (32*1024)
-#define LENGTH_64KB     (64*1024)
+#define FLASH_END_PROTECT_SIZE 0x2000
 
-#define FLASH_END_PROTECT_SIZE    0x2000
+#define GDWQ_ID 0x65C8
+#define GDLQ_ID 0x60C8
+#define PUYA_ID 0x6085
 
-#define GDWQ_ID                 0x65C8
-#define GDLQ_ID                 0x60C8
-#define PUYA_ID                 0x6085
+#define GD_MANU_ID 0xC8
+#define PUYA_MANU_ID 0x85
 
-#define GD_MANU_ID              0xC8
-#define PUYA_MANU_ID            0x85
+#define RT581_FLASH_TYPE 0x1460C8
+#define RT582_FLASH_TYPE 0x1465C8
+#define RT582P512_FLASH_TYPE 0x136085
+#define RT582_2M_FLASH_TYPE 0x1565C8
 
-#define  RT581_FLASH_TYPE          0x1460C8
-#define  RT582_FLASH_TYPE          0x1465C8
-#define  RT582P512_FLASH_TYPE      0x136085
-#define  RT582_2M_FLASH_TYPE       0x1565C8
-
-#define FLASH_END_ADDR(x)               (x == FLASH_SIZE_ID_512KB ? ((1 << FLASH_SIZE_ID_512KB)-FLASH_END_PROTECT_SIZE) \
-                                                                  : (x == FLASH_SIZE_ID_1MB ? ((1 << FLASH_SIZE_ID_1MB)-FLASH_END_PROTECT_SIZE) \
-                                                                  : ((1 << FLASH_SIZE_ID_2MB)-FLASH_END_PROTECT_SIZE)))
+#define FLASH_END_ADDR(x)                                                                                                          \
+    (x == FLASH_SIZE_ID_512KB ? ((1 << FLASH_SIZE_ID_512KB) - FLASH_END_PROTECT_SIZE)                                              \
+                              : (x == FLASH_SIZE_ID_1MB ? ((1 << FLASH_SIZE_ID_1MB) - FLASH_END_PROTECT_SIZE)                      \
+                                                        : ((1 << FLASH_SIZE_ID_2MB) - FLASH_END_PROTECT_SIZE)))
 /**
  * @brief Define Flash timing
  *
  * NOTICE: different flash has different timing. We should set correct flash timing according to flash type.
  */
 
-#define GDLQ_FLASH_TDP            3       /*!< LQ type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
-#define GDLQ_FLASH_TRES1         20       /*!< LQ type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
-#define GDLQ_FLASH_TSUS          20       /*!< LQ type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
-#define GDLQ_FLASH_TRS          100       /*!< LQ type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
+#define GDLQ_FLASH_TDP 3 /*!< LQ type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
+#define GDLQ_FLASH_TRES1                                                                                                           \
+    20 /*!< LQ type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
+#define GDLQ_FLASH_TSUS 20 /*!< LQ type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
+#define GDLQ_FLASH_TRS 100 /*!< LQ type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
 
-#define GDWQ_FLASH_TDP            3       /*!< WQ type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
-#define GDWQ_FLASH_TRES1         30       /*!< WQ type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
-#define GDWQ_FLASH_TSUS          40       /*!< WQ type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
-#define GDWQ_FLASH_TRS          100       /*!< WQ type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
+#define GDWQ_FLASH_TDP 3   /*!< WQ type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
+#define GDWQ_FLASH_TRES1                                                                                                           \
+    30 /*!< WQ type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
+#define GDWQ_FLASH_TSUS 40 /*!< WQ type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
+#define GDWQ_FLASH_TRS 100 /*!< WQ type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
 
-#define PUYA_FLASH_TDP            3       /*!< PUYA type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
-#define PUYA_FLASH_TRES1         30       /*!< PUYA type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
-#define PUYA_FLASH_TSUS          40       /*!< PUYA type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
-#define PUYA_FLASH_TRS          100       /*!< PUYA type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
+#define PUYA_FLASH_TDP 3   /*!< PUYA type flash deep power down (CS# High To Deep Power-Down Mode) and the unit is us */
+#define PUYA_FLASH_TRES1                                                                                                           \
+    30 /*!< PUYA type flash release deep power down (CS# High To Standby Mode Without Electronic Signature) and the unit is us */
+#define PUYA_FLASH_TSUS 40 /*!< PUYA type flash suspend time (CS# High To Next Command After Suspend) and the unit is us */
+#define PUYA_FLASH_TRS 100 /*!< PUYA type flash resume time (Latency Between Resume And Next Suspend) and the unit is us */
 
 /**************************************************************************************************
  *    TYPEDEFS
  *************************************************************************************************/
 /**
-* @brief flash size definitions.
-*/
+ * @brief flash size definitions.
+ */
 typedef enum
 {
     FLASH_NOT_SUPPORT = 0x00,
-    FLASH_512K = 0x13,       /*!< 512K size   */
-    FLASH_1024K = 0x14,      /*!< 1024K size   */
-    FLASH_2048K = 0x15,      /*!< 1024K size   */
+    FLASH_512K        = 0x13, /*!< 512K size   */
+    FLASH_1024K       = 0x14, /*!< 1024K size   */
+    FLASH_2048K       = 0x15, /*!< 1024K size   */
 } flash_size_t;
 /**
  * @brief Erase flash size definitions.
@@ -139,11 +140,11 @@ typedef enum
 
 typedef enum
 {
-    FLASH_ERASE_PAGE,       /*!< Erase Page size   */
-    FLASH_ERASE_SECTOR,     /*!< Erase Sector size */
-    FLASH_ERASE_32K,        /*!< Erase 32K block   */
-    FLASH_ERASE_64K,        /*!< Erase 64K block   */
-    FLASH_ERASE_SECURE,     /*!< Erase Secure page */
+    FLASH_ERASE_PAGE,   /*!< Erase Page size   */
+    FLASH_ERASE_SECTOR, /*!< Erase Sector size */
+    FLASH_ERASE_32K,    /*!< Erase 32K block   */
+    FLASH_ERASE_64K,    /*!< Erase 64K block   */
+    FLASH_ERASE_SECURE, /*!< Erase Secure page */
 } flash_erase_mode_t;
 
 /**
@@ -158,10 +159,10 @@ typedef enum
  */
 typedef struct
 {
-    uint16_t   deep_pd_timing;        /*!< flash deep power down T_dp */
-    uint16_t   deep_rpd_timing;       /*!< flash release deep power down T_rdp */
-    uint16_t   suspend_timing;        /*!< flash suspend time T_sus */
-    uint16_t   resume_timing;         /*!< flash resume time T_rs */
+    uint16_t deep_pd_timing;  /*!< flash deep power down T_dp */
+    uint16_t deep_rpd_timing; /*!< flash release deep power down T_rdp */
+    uint16_t suspend_timing;  /*!< flash suspend time T_sus */
+    uint16_t resume_timing;   /*!< flash resume time T_rs */
 } flash_timing_mode_t;
 
 /**
@@ -177,25 +178,24 @@ typedef struct
 
 typedef struct
 {
-    uint8_t   require_mode;     /*!< bitwise mode to indicate read/write operation */
-    uint8_t   status1;          /*!< flash status1 for read/write */
-    uint8_t   status2;          /*!< flash status2 for read/write */
-    uint8_t   status3;          /*!< flash status3 for read/write */
+    uint8_t require_mode; /*!< bitwise mode to indicate read/write operation */
+    uint8_t status1;      /*!< flash status1 for read/write */
+    uint8_t status2;      /*!< flash status2 for read/write */
+    uint8_t status3;      /*!< flash status3 for read/write */
 } flash_status_t;
-
 
 /**************************************************************************************************
  *    GLOBAL PROTOTYPES
  *************************************************************************************************/
 /**
-* @brief Check Flash Suspend status
-*
-* @param None
-*
-* @details when the flash controller in suspend status,
-*                  the flash controller must be reset otherwise flash program/erase function will be
-*
-*/
+ * @brief Check Flash Suspend status
+ *
+ * @param None
+ *
+ * @details when the flash controller in suspend status,
+ *                  the flash controller must be reset otherwise flash program/erase function will be
+ *
+ */
 void flash_suspend_check(void);
 /**
  * @brief Set Flash timing
@@ -207,8 +207,7 @@ void flash_suspend_check(void);
  *      resume time.
  *
  */
-void flash_set_timing(flash_timing_mode_t *timing_cfg);
-
+void flash_set_timing(flash_timing_mode_t * timing_cfg);
 
 /**
  * @brief Get Flash model/type ID
@@ -221,7 +220,6 @@ void flash_set_timing(flash_timing_mode_t *timing_cfg);
  */
 
 uint32_t flash_get_deviceinfo(void);
-
 
 /**
  * @brief Get flash status register
@@ -239,8 +237,7 @@ uint32_t flash_get_deviceinfo(void);
  *       Current flash does NOT have status3 byte, it reserved for future.
  */
 
-uint32_t flash_get_status_reg(flash_status_t *status);
-
+uint32_t flash_get_status_reg(flash_status_t * status);
 
 /**
  * @brief Set flash status register
@@ -268,8 +265,7 @@ uint32_t flash_get_status_reg(flash_status_t *status);
  *       data in status.status1.
  */
 
-uint32_t flash_set_status_reg(const flash_status_t *status);
-
+uint32_t flash_set_status_reg(const flash_status_t * status);
 
 /**
  * @brief Read flash page data in nonblocking mode
@@ -344,7 +340,7 @@ uint8_t flash_read_byte(uint32_t read_addr);
  * @details  read one byte from flash address "read_addr".
  *            This function is BLOCK function.
  */
-uint32_t flash_read_byte_check_addr(uint32_t *buf_addr, uint32_t read_addr);
+uint32_t flash_read_byte_check_addr(uint32_t * buf_addr, uint32_t read_addr);
 /*write/program flash page data*/
 /**
  * @brief Write/Program flash page data
@@ -439,7 +435,8 @@ uint32_t flash_read_sec_register(uint32_t buf_addr, uint32_t read_reg_addr);
  * @return
  * @retval   STATUS_INVALID_PARAM   mode is invalid value.
  * @retval   STATUS_SUCCESS         erase opertation start to processing.
- * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current operation.
+ * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current
+ * operation.
  *
  *
  * @details  This function is asynchronous NON-BLOCKING mode. That is,
@@ -463,10 +460,12 @@ uint32_t flash_erase(flash_erase_mode_t mode, uint32_t flash_addr);
  *
  * @return
  * @retval   STATUS_SUCCESS         erase opertation start to processing.
- * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current operation.
+ * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current
+ * operation.
  *
  * @details  this function will write "singlebyte" data to flash address "write_addr".
- *           This function is non-block function. So user shoould check flash_check_busy() to become idle before any other flash API called.
+ *           This function is non-block function. So user shoould check flash_check_busy() to become idle before any other flash API
+ * called.
  */
 
 uint32_t flash_write_byte(uint32_t write_addr, uint8_t singlebyte);
@@ -479,7 +478,8 @@ uint32_t flash_write_byte(uint32_t write_addr, uint8_t singlebyte);
  *
  * @return
  * @retval   STATUS_SUCCESS         erase opertation start to processing.
- * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current operation.
+ * @retval   STATUS_EBUSY           flash controller is busying, please call this function again when flash finish current
+ * operation.
  *
  * @details  This function is asynchronous NON-BLOCKING mode. That is,
  *      when this function returns, it does NOT mean the operation
@@ -599,10 +599,10 @@ __STATIC_INLINE uint32_t flash_get_crc()
 
 __STATIC_INLINE void flash_enable_qe(void)
 {
-#if   (CHIP_VERSION > RT58X_SHUTTLE)
-    FLASH->CONTROL_SET = 0x3EF;     /*This setting is for MP IC*/
+#if (CHIP_VERSION > RT58X_SHUTTLE)
+    FLASH->CONTROL_SET = 0x3EF; /*This setting is for MP IC*/
 #else
-    FLASH->CONTROL_SET = 0x1EF;   /*This setting is for shutter test IC...*/
+    FLASH->CONTROL_SET = 0x1EF; /*This setting is for shutter test IC...*/
 #endif
 }
 
@@ -644,7 +644,27 @@ __STATIC_INLINE void flush_cache(void)
     CACHE->CCR.reg = CACHE->CCR.reg | (3 << 8);
 }
 
-
+/**
+ * @brief set vbat comparator when the vat voltage low than 2.2v will start wdt to reboot system;
+ *
+ * @param[in] NONE
+ *
+ * @retval    NONE
+ * @retval    NONE
+ *
+ */
+void flash_cmp_protect_init(void);
+/**
+ * @brief read sadc vbat voltage to check vbat voltage
+ *
+ * @param[in] NONE
+ *
+ * @retval    NONE
+ * @retval    NONE
+ *
+ */
+void flash_vbat_protect_init(void);
+uint32_t flash_vbat_read(void);
 /*@}*/ /* end of peripheral_group Flash_Drver */
 
 #ifdef __cplusplus

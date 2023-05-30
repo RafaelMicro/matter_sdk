@@ -4,11 +4,11 @@
  *
  */
 /**
-* @defgroup sadc_group SADC
-* @ingroup peripheral_group
-* @{
-* @brief Define SADC definitions, structures, and functions.
-*/
+ * @defgroup sadc_group SADC
+ * @ingroup peripheral_group
+ * @{
+ * @brief Define SADC definitions, structures, and functions.
+ */
 #ifndef __SADC_H__
 #define __SADC_H__
 
@@ -16,30 +16,27 @@
  *    INCLUDES
  *************************************************************************************************/
 
-
 /**************************************************************************************************
  *    MACROS
  *************************************************************************************************/
 
-
 /**************************************************************************************************
  *    CONSTANTS AND DEFINES
  *************************************************************************************************/
-#define SADC_NEW_DRV          1
+#define SADC_NEW_DRV 1
 #define SADC_NEW_TEMP_CALIBRATION 1
 
-#define SADC_PNSEL_CH_REG_DEFAULT      0x240000FF
-#define SADC_SET_CH_REG_DEFAULT        0x80000000
-#define SADC_THD_CH_REG_DEFAULT        0x3FFF0000
+#define SADC_PNSEL_CH_REG_DEFAULT 0x240000FF
+#define SADC_SET_CH_REG_DEFAULT 0x80000000
+#define SADC_THD_CH_REG_DEFAULT 0x3FFF0000
 
-#define SADC_MONITOR_LOW_THD_DEFAULT   0
-#define SADC_MONITOR_HIGH_THD_DEFAULT  0x3FFF
+#define SADC_MONITOR_LOW_THD_DEFAULT 0
+#define SADC_MONITOR_HIGH_THD_DEFAULT 0x3FFF
 
-#define SADC_CH_REG_OFFSET      4    /*unit: 4-bytes*/
+#define SADC_CH_REG_OFFSET 4 /*unit: 4-bytes*/
 
-#define SADC_INT_DISABLE_ALL    0xFFFFFFFF
-#define SADC_INT_CLEAR_ALL      0xFFFFFFFF
-
+#define SADC_INT_DISABLE_ALL 0xFFFFFFFF
+#define SADC_INT_CLEAR_ALL 0xFFFFFFFF
 
 /**************************************************************************************************
  *    TYPEDEFS
@@ -48,50 +45,50 @@ typedef int32_t sadc_value_t;
 
 typedef enum
 {
-    SADC_RES_8BIT  = 0,             /**< 8 bit resolution. */
-    SADC_RES_10BIT = 1,             /**< 10 bit resolution. */
-    SADC_RES_12BIT = 2,             /**< 12 bit resolution. */
-    SADC_RES_14BIT = 3,             /**< 14 bit resolution. */
+    SADC_RES_8BIT  = 0, /**< 8 bit resolution. */
+    SADC_RES_10BIT = 1, /**< 10 bit resolution. */
+    SADC_RES_12BIT = 2, /**< 12 bit resolution. */
+    SADC_RES_14BIT = 3, /**< 14 bit resolution. */
 } sadc_config_resolution_t;
 
 typedef enum
 {
-    SADC_OVERSAMPLE_0 = 0,          /**< No oversampling*/
-    SADC_OVERSAMPLE_2 = 1,          /**< Oversampling ratio multiple 2*/
-    SADC_OVERSAMPLE_4 = 2,          /**< Oversampling ratio multiple 4*/
-    SADC_OVERSAMPLE_8 = 3,          /**< Oversampling ratio multiple 8*/
-    SADC_OVERSAMPLE_16 = 4,         /**< Oversampling ratio multiple 16*/
-    SADC_OVERSAMPLE_32 = 5,         /**< Oversampling ratio multiple 32*/
-    SADC_OVERSAMPLE_64 = 6,         /**< Oversampling ratio multiple 64*/
-    SADC_OVERSAMPLE_128 = 7,        /**< Oversampling ratio multiple 128*/
-    SADC_OVERSAMPLE_256 = 8,        /**< Oversampling ratio multiple 256*/
+    SADC_OVERSAMPLE_0   = 0, /**< No oversampling*/
+    SADC_OVERSAMPLE_2   = 1, /**< Oversampling ratio multiple 2*/
+    SADC_OVERSAMPLE_4   = 2, /**< Oversampling ratio multiple 4*/
+    SADC_OVERSAMPLE_8   = 3, /**< Oversampling ratio multiple 8*/
+    SADC_OVERSAMPLE_16  = 4, /**< Oversampling ratio multiple 16*/
+    SADC_OVERSAMPLE_32  = 5, /**< Oversampling ratio multiple 32*/
+    SADC_OVERSAMPLE_64  = 6, /**< Oversampling ratio multiple 64*/
+    SADC_OVERSAMPLE_128 = 7, /**< Oversampling ratio multiple 128*/
+    SADC_OVERSAMPLE_256 = 8, /**< Oversampling ratio multiple 256*/
 } sadc_config_oversample_t;
 
 typedef enum
 {
-    SADC_SAMPLE_START = 0,          /**< SADC conversion is started by software SADC start in SADC sample one shot mode*/
-    SADC_SAMPLE_TIMER = 1,          /**< SADC conversion is started by Timer in SADC sample timer mode*/
+    SADC_SAMPLE_START = 0, /**< SADC conversion is started by software SADC start in SADC sample one shot mode*/
+    SADC_SAMPLE_TIMER = 1, /**< SADC conversion is started by Timer in SADC sample timer mode*/
 } sadc_config_sample_t;
 
 typedef enum
 {
-    SADC_TIMER_SYSTEM_CLK = 0,      /**< Select timer clock source to system clock(48MHz/32MHz) in SADC sample timer mode*/
-    SADC_TIMER_SLOW_CLK = 1,        /**< Select timer clock source to slow clock (32KHz) in SADC sample timer mode*/
+    SADC_TIMER_SYSTEM_CLK = 0, /**< Select timer clock source to system clock(48MHz/32MHz) in SADC sample timer mode*/
+    SADC_TIMER_SLOW_CLK   = 1, /**< Select timer clock source to slow clock (32KHz) in SADC sample timer mode*/
 } sadc_config_timer_clk_t;
 
 typedef enum
 {
-    SADC_CHANNEL_0      = 0,   /**< Channel 0. */
-    SADC_CHANNEL_1      = 1,   /**< Channel 1. */
-    SADC_CHANNEL_2      = 2,   /**< Channel 2. */
-    SADC_CHANNEL_3      = 3,   /**< Channel 3. */
-    SADC_CHANNEL_4      = 4,   /**< Channel 4. */
-    SADC_CHANNEL_5      = 5,   /**< Channel 5. */
-    SADC_CHANNEL_6      = 6,   /**< Channel 6. */
-    SADC_CHANNEL_7      = 7,   /**< Channel 7. */
-    SADC_CHANNEL_8      = 8,   /**< Channel 8. */
-    SADC_CHANNEL_9      = 9,   /**< Channel 9. */
-    SADC_CHANNEL_MAX    = 10,   /**< Max Channel 10. */
+    SADC_CHANNEL_0   = 0,  /**< Channel 0. */
+    SADC_CHANNEL_1   = 1,  /**< Channel 1. */
+    SADC_CHANNEL_2   = 2,  /**< Channel 2. */
+    SADC_CHANNEL_3   = 3,  /**< Channel 3. */
+    SADC_CHANNEL_4   = 4,  /**< Channel 4. */
+    SADC_CHANNEL_5   = 5,  /**< Channel 5. */
+    SADC_CHANNEL_6   = 6,  /**< Channel 6. */
+    SADC_CHANNEL_7   = 7,  /**< Channel 7. */
+    SADC_CHANNEL_8   = 8,  /**< Channel 8. */
+    SADC_CHANNEL_9   = 9,  /**< Channel 9. */
+    SADC_CHANNEL_MAX = 10, /**< Max Channel 10. */
 } sadc_config_channel_t;
 
 /**
@@ -100,62 +97,62 @@ typedef enum
  */
 typedef enum
 {
-    SADC_AIN_0        = 0,   /**< Input 0. */
-    SADC_AIN_1        = 1,   /**< Input 1. */
-    SADC_AIN_2        = 2,   /**< Input 2. */
-    SADC_AIN_3        = 3,   /**< Input 3. */
-    SADC_AIN_4        = 4,   /**< Input 4. */
-    SADC_AIN_5        = 5,   /**< Input 5. */
-    SADC_AIN_6        = 6,   /**< Input 6. */
-    SADC_AIN_7        = 7,   /**< Input 7. */
-    SADC_AIN_8        = 8,   /**< Input 8. Temperature Sensor */
-    SADC_TEMPERATURE  = 8,   /**< Input 8. Temperature Sensor */
-    SADC_AIN_9        = 9,   /**< Input 9. Bypass VGA */
-    SADC_BYPASS_VGA   = 9,   /**< Input 9. Bypass VGA */
-    SADC_AIN_10       = 10,  /**< Input 10. VBAT */
-    SADC_VBAT         = 10,  /**< Input 10. VBAT */
-    SADC_VBAT_0VADC   = 10,  /**< Input 10. VBAT */
-    SADC_AIN_DISABLED = 11,  /**< No input selected. */
+    SADC_AIN_0        = 0,  /**< Input 0. */
+    SADC_AIN_1        = 1,  /**< Input 1. */
+    SADC_AIN_2        = 2,  /**< Input 2. */
+    SADC_AIN_3        = 3,  /**< Input 3. */
+    SADC_AIN_4        = 4,  /**< Input 4. */
+    SADC_AIN_5        = 5,  /**< Input 5. */
+    SADC_AIN_6        = 6,  /**< Input 6. */
+    SADC_AIN_7        = 7,  /**< Input 7. */
+    SADC_AIN_8        = 8,  /**< Input 8. Temperature Sensor */
+    SADC_TEMPERATURE  = 8,  /**< Input 8. Temperature Sensor */
+    SADC_AIN_9        = 9,  /**< Input 9. Bypass VGA */
+    SADC_BYPASS_VGA   = 9,  /**< Input 9. Bypass VGA */
+    SADC_AIN_10       = 10, /**< Input 10. VBAT */
+    SADC_VBAT         = 10, /**< Input 10. VBAT */
+    SADC_VBAT_0VADC   = 10, /**< Input 10. VBAT */
+    SADC_AIN_DISABLED = 11, /**< No input selected. */
 } sadc_config_input_t;
 
 #if (SADC_NEW_DRV == 1)
 typedef enum
 {
-    SADC_CH_AIN0          = 0,   /**< Input AIO0. */
-    SADC_CH_AIN1          = 1,   /**< Input AIO1. */
-    SADC_CH_AIN2          = 2,   /**< Input AIO2. */
-    SADC_CH_AIN3          = 3,   /**< Input AIO3. */
-    SADC_CH_AIN4          = 4,   /**< Input AIO4. */
-    SADC_CH_AIN5          = 5,   /**< Input AIO5. */
-    SADC_CH_AIN6          = 6,   /**< Input AIO6. */
-    SADC_CH_AIN7          = 7,   /**< Input AIO7. */
-    SADC_CH_VBAT          = 8,   /**< Input VBAT. */
-    SADC_CH_NC            = 13,  /**< Input No Connect. */
-    SADC_COMP_VBAT        = 9,   /**< Input VBAT. */
-    SADC_COMP_TEMPERATURE = 10,  /**< Input TEMPERATURE. */
-    SADC_COMP_VCM         = 11,  /**< Input VCM. */
-    SADC_0VADC            = 12,  /**< Input VBAT 0V. */
+    SADC_CH_AIN0          = 0,  /**< Input AIO0. */
+    SADC_CH_AIN1          = 1,  /**< Input AIO1. */
+    SADC_CH_AIN2          = 2,  /**< Input AIO2. */
+    SADC_CH_AIN3          = 3,  /**< Input AIO3. */
+    SADC_CH_AIN4          = 4,  /**< Input AIO4. */
+    SADC_CH_AIN5          = 5,  /**< Input AIO5. */
+    SADC_CH_AIN6          = 6,  /**< Input AIO6. */
+    SADC_CH_AIN7          = 7,  /**< Input AIO7. */
+    SADC_CH_VBAT          = 8,  /**< Input VBAT. */
+    SADC_CH_NC            = 13, /**< Input No Connect. */
+    SADC_COMP_VBAT        = 9,  /**< Input VBAT. */
+    SADC_COMP_TEMPERATURE = 10, /**< Input TEMPERATURE. */
+    SADC_COMP_VCM         = 11, /**< Input VCM. */
+    SADC_0VADC            = 12, /**< Input VBAT 0V. */
 } sadc_input_ch_t;
 #endif
 
 typedef enum
 {
-    SADC_TACQ_EDLY_TIME_0P3US      = 0,
-    SADC_TACQ_EDLY_TIME_1US        = 1,
-    SADC_TACQ_EDLY_TIME_2US        = 2,
-    SADC_TACQ_EDLY_TIME_3US        = 3,
-    SADC_TACQ_EDLY_TIME_4US        = 4,
-    SADC_TACQ_EDLY_TIME_8US        = 5,
-    SADC_TACQ_EDLY_TIME_12US       = 6,
-    SADC_TACQ_EDLY_TIME_16US       = 7,
+    SADC_TACQ_EDLY_TIME_0P3US = 0,
+    SADC_TACQ_EDLY_TIME_1US   = 1,
+    SADC_TACQ_EDLY_TIME_2US   = 2,
+    SADC_TACQ_EDLY_TIME_3US   = 3,
+    SADC_TACQ_EDLY_TIME_4US   = 4,
+    SADC_TACQ_EDLY_TIME_8US   = 5,
+    SADC_TACQ_EDLY_TIME_12US  = 6,
+    SADC_TACQ_EDLY_TIME_16US  = 7,
 } sadc_config_tacq_edly_t;
 /**
  * @brief SADC burst enablg types.
  */
 typedef enum
 {
-    SADC_BURST_DISABLE    = 0,
-    SADC_BURST_ENABLE     = 1,
+    SADC_BURST_DISABLE = 0,
+    SADC_BURST_ENABLE  = 1,
 } sadc_config_burst_t;
 
 /**
@@ -163,8 +160,8 @@ typedef enum
  */
 typedef enum
 {
-    SADC_CB_DONE,    /**< CB generated when the buffer is filled with samples. */
-    SADC_CB_SAMPLE,  /**< CB generated when the requested channel is sampled. */
+    SADC_CB_DONE,   /**< CB generated when the buffer is filled with samples. */
+    SADC_CB_SAMPLE, /**< CB generated when the requested channel is sampled. */
 } sadc_cb_type_t;
 
 /**
@@ -172,7 +169,7 @@ typedef enum
  */
 typedef enum
 {
-    SADC_CONVERT_IDLE  = 0,
+    SADC_CONVERT_IDLE = 0,
     SADC_CONVERT_START,
     SADC_CONVERT_DONE,
 } sadc_convert_state_t;
@@ -182,7 +179,7 @@ typedef enum
  */
 typedef enum
 {
-    SADC_CALIBRATION_VBAT  = 0,
+    SADC_CALIBRATION_VBAT = 0,
     SADC_CALIBRATION_AIO,
 } sadc_cal_type_t;
 
@@ -207,27 +204,27 @@ typedef struct
  */
 typedef struct
 {
-    //uint8_t interrupt_priority;                 /**< Priority of SADC interrupt*/
-    sadc_int_t                sadc_int_mask;
-    sadc_config_resolution_t  sadc_resolution;    /**< SADC resolution*/
-    sadc_config_oversample_t  sadc_oversample;    /**< SADC oversample*/
-    sadc_config_xdma_t        sadc_xdma;          /**< SADC XDMA*/
-    sadc_config_sample_t      sadc_sample_mode;   /**< SADC sample mode*/
-    sadc_config_timer_t       sadc_timer;         /**< SADC timer*/
+    // uint8_t interrupt_priority;                 /**< Priority of SADC interrupt*/
+    sadc_int_t sadc_int_mask;
+    sadc_config_resolution_t sadc_resolution; /**< SADC resolution*/
+    sadc_config_oversample_t sadc_oversample; /**< SADC oversample*/
+    sadc_config_xdma_t sadc_xdma;             /**< SADC XDMA*/
+    sadc_config_sample_t sadc_sample_mode;    /**< SADC sample mode*/
+    sadc_config_timer_t sadc_timer;           /**< SADC timer*/
 } sadc_config_t;
 
 typedef struct
 {
-    sadc_config_channel_t    ch_sel;              /**< SADC AIN0~AIN9 channel Selection*/
-    sadc_config_input_t      pi_sel;              /**< SADC AIN0~AIN9 P channel  Selection*/
-    sadc_config_input_t      ni_sel;              /**< SADC AIN0~AIN9 N channel  Selection*/
-    uint32_t                 gain;                /**< SADC AIN0~AIN9 Gain settings*/
-    uint32_t                 pull;                /**< SADC AIN0~AIN9 Pull high or low*/
-    sadc_config_tacq_edly_t  tacq;                /**< SADC result acquisition time for system clock 32M*/
-    sadc_config_tacq_edly_t  edly;                /**< SADC end delay time for system clock 32M */
-    sadc_config_burst_t      burst;               /**< SADC Burst mode selection*/
-    uint32_t                 low_thd;             /**< SADC Low threshold*/
-    uint32_t                 high_thd;            /**< SADC High threshold*/
+    sadc_config_channel_t ch_sel; /**< SADC AIN0~AIN9 channel Selection*/
+    sadc_config_input_t pi_sel;   /**< SADC AIN0~AIN9 P channel  Selection*/
+    sadc_config_input_t ni_sel;   /**< SADC AIN0~AIN9 N channel  Selection*/
+    uint32_t gain;                /**< SADC AIN0~AIN9 Gain settings*/
+    uint32_t pull;                /**< SADC AIN0~AIN9 Pull high or low*/
+    sadc_config_tacq_edly_t tacq; /**< SADC result acquisition time for system clock 32M*/
+    sadc_config_tacq_edly_t edly; /**< SADC end delay time for system clock 32M */
+    sadc_config_burst_t burst;    /**< SADC Burst mode selection*/
+    uint32_t low_thd;             /**< SADC Low threshold*/
+    uint32_t high_thd;            /**< SADC High threshold*/
 } sadc_channel_config_t;
 
 /**
@@ -235,8 +232,8 @@ typedef struct
  */
 typedef struct
 {
-    sadc_value_t *p_buffer;  /**< Pointer to buffer with converted samples. */
-    uint16_t      size;      /**< Number of samples in the buffer. */
+    sadc_value_t * p_buffer; /**< Pointer to buffer with converted samples. */
+    uint16_t size;           /**< Number of samples in the buffer. */
 } sadc_done_cb_t;
 
 /**
@@ -245,16 +242,16 @@ typedef struct
 #if (SADC_NEW_DRV == 1)
 typedef struct
 {
-    sadc_value_t  conversion_value;      /**< Converted sample. */
-    sadc_value_t  compensation_value;    /**< Compensation sample. */
-    sadc_value_t  calibration_value;     /**< Calibration sample. */
+    sadc_value_t conversion_value;   /**< Converted sample. */
+    sadc_value_t compensation_value; /**< Compensation sample. */
+    sadc_value_t calibration_value;  /**< Calibration sample. */
 } sadc_raw_cb_t;
 #endif
 
 typedef struct
 {
-    sadc_value_t  value;    /**< Converted sample. */
-    uint32_t      channel;
+    sadc_value_t value; /**< Converted sample. */
+    uint32_t channel;
 } sadc_sample_cb_t;
 
 /**
@@ -262,13 +259,13 @@ typedef struct
  */
 typedef struct
 {
-    sadc_cb_type_t type;     /**< CB type. */
+    sadc_cb_type_t type; /**< CB type. */
 #if (SADC_NEW_DRV == 1)
     sadc_raw_cb_t raw;
 #endif
     union
     {
-        sadc_done_cb_t   done;   /**< Data for DONE cb. */
+        sadc_done_cb_t done;     /**< Data for DONE cb. */
         sadc_sample_cb_t sample; /**< Data for SAMPLE cb. */
     } data;
 } sadc_cb_t;
@@ -280,39 +277,45 @@ typedef struct
  *
  * @param p_cb CB.
  */
-typedef void (*sadc_isr_handler_t)(sadc_cb_t *p_cb);
+typedef void (*sadc_isr_handler_t)(sadc_cb_t * p_cb);
 
 /**************************************************************************************************
  *    MACROS
  *************************************************************************************************/
-#define SADC_RESET()                      (SADC->SADC_CTL1.bit.CFG_SADC_RST = ENABLE)           /**< Reset the SADC module*/
-#define SADC_ENABLE()                     (SADC->SADC_CTL0.bit.CFG_SADC_ENA = ENABLE)           /**< Enable the SADC module*/
-#define SADC_DISABLE()                    (SADC->SADC_CTL0.bit.CFG_SADC_ENA = DISABLE)          /**< Disable the SADC module*/
-#define SADC_START()                      (SADC->SADC_CTL2.bit.CFG_SADC_START = ENABLE)         /**< Start the SADC module to trigger SADC conversion*/
-#define SADC_RES_BIT(para_set)            (SADC->SADC_SET1.bit.CFG_SADC_BIT = para_set)         /**< Configure the SADC resolution*/
-#define SADC_OVERSAMPLE_RATE(para_set)    (SADC->SADC_SET1.bit.CFG_SADC_OSR = para_set)         /**< Configure the SADC oversample time value*/
-#define SADC_SAMPLE_MODE(para_set)        (SADC->SADC_SET0.bit.CFG_SADC_SMP_MODE = para_set)    /**< Configure the SADC sample rate mode (one shot mode and timer mode)*/
-#define SADC_GET_SAMPLE_MODE()            (SADC->SADC_SET0.bit.CFG_SADC_SMP_MODE)               /**< Return the SADC sample rate mode (one shot mode and timer mode)*/
-#define SADC_TIMER_CLOCK(para_set)        (SADC->SADC_SET0.bit.CFG_SADC_TMR_CKSEL = para_set)   /**< Select timer clock source in SADC sample timer mode*/
-#define SADC_TIMER_CLOCK_DIV(para_set)    (SADC->SADC_SET0.bit.CFG_SADC_TMR_CKDIV = para_set)   /**< Configure timer clock divisor (1~65535) in SADC sample timer mode*/
-#define SADC_GET_ADC_VALUE()              (SADC->SADC_R0.bit.SADC_O)                            /**< Return the last SADC conversion result data for regular channel*/
-#define SADC_GET_ADC_CHANNEL()            (SADC->SADC_R0.bit.SADC_O_CHX)                        /**< Return the last SADC conversion channel*/
-#define SADC_GET_XDMA_START_ADDRESS()     (SADC->SADC_WDMA_SET1)                                /**< Return the XDMA buffer address*/
-#define SADC_GET_XDMA_NEXT_ADDRESS()      (SADC->SADC_WDMA_R0)                                  /**< Return the status of XDMA next pointer address*/
-#define SADC_GET_XDMA_RESULT_NUMBER()     (SADC->SADC_R1.bit.SADC_NUM_RES)                      /**< Return the number of SADC result write into WDMA since last SADC start*/
-#define SADC_GET_RES_BIT()                (SADC->SADC_SET1.bit.CFG_SADC_BIT)                    /**< Return the SADC resolution*/
-#define SADC_SET_XDMA_START()             (SADC->SADC_WDMA_CTL0.bit.CFG_SADC_WDMA_CTL0 = ENABLE)/**< Set the XDMA start*/
+#define SADC_RESET() (SADC->SADC_CTL1.bit.CFG_SADC_RST = ENABLE)             /**< Reset the SADC module*/
+#define SADC_ENABLE() (SADC->SADC_CTL0.bit.CFG_SADC_ENA = ENABLE)            /**< Enable the SADC module*/
+#define SADC_DISABLE() (SADC->SADC_CTL0.bit.CFG_SADC_ENA = DISABLE)          /**< Disable the SADC module*/
+#define SADC_START() (SADC->SADC_CTL2.bit.CFG_SADC_START = ENABLE)           /**< Start the SADC module to trigger SADC conversion*/
+#define SADC_RES_BIT(para_set) (SADC->SADC_SET1.bit.CFG_SADC_BIT = para_set) /**< Configure the SADC resolution*/
+#define SADC_OVERSAMPLE_RATE(para_set) (SADC->SADC_SET1.bit.CFG_SADC_OSR = para_set) /**< Configure the SADC oversample time       \
+                                                                                        value*/
+#define SADC_SAMPLE_MODE(para_set)                                                                                                 \
+    (SADC->SADC_SET0.bit.CFG_SADC_SMP_MODE = para_set)  /**< Configure the SADC sample rate mode (one shot mode and timer mode)*/
+#define SADC_GET_SAMPLE_MODE()                                                                                                     \
+    (SADC->SADC_SET0.bit.CFG_SADC_SMP_MODE)             /**< Return the SADC sample rate mode (one shot mode and timer mode)*/
+#define SADC_TIMER_CLOCK(para_set)                                                                                                 \
+    (SADC->SADC_SET0.bit.CFG_SADC_TMR_CKSEL = para_set) /**< Select timer clock source in SADC sample timer mode*/
+#define SADC_TIMER_CLOCK_DIV(para_set)                                                                                             \
+    (SADC->SADC_SET0.bit.CFG_SADC_TMR_CKDIV = para_set) /**< Configure timer clock divisor (1~65535) in SADC sample timer mode*/
+#define SADC_GET_ADC_VALUE() (SADC->SADC_R0.bit.SADC_O) /**< Return the last SADC conversion result data for regular channel*/
+#define SADC_GET_ADC_CHANNEL() (SADC->SADC_R0.bit.SADC_O_CHX) /**< Return the last SADC conversion channel*/
+#define SADC_GET_XDMA_START_ADDRESS() (SADC->SADC_WDMA_SET1)  /**< Return the XDMA buffer address*/
+#define SADC_GET_XDMA_NEXT_ADDRESS() (SADC->SADC_WDMA_R0)     /**< Return the status of XDMA next pointer address*/
+#define SADC_GET_XDMA_RESULT_NUMBER()                                                                                              \
+    (SADC->SADC_R1.bit.SADC_NUM_RES) /**< Return the number of SADC result write into WDMA since last SADC start*/
+#define SADC_GET_RES_BIT() (SADC->SADC_SET1.bit.CFG_SADC_BIT)                        /**< Return the SADC resolution*/
+#define SADC_SET_XDMA_START() (SADC->SADC_WDMA_CTL0.bit.CFG_SADC_WDMA_CTL0 = ENABLE) /**< Set the XDMA start*/
 
-#define SADC_TEST_CONTROL(para_set)       (SADC->SADC_SET1.bit.CFG_SADC_TST = para_set)         /**< Configure the SADC test mode*/
-#define SADC_MANUAL_MODE()                (SADC_TEST_CONTROL(8))                                /**< Set the SADC to manual mode*/
-#define SADC_VGA_ENABLE()                 (SADC->SADC_CTL0.bit.CFG_SADC_VGA_ENA = ENABLE)       /**< Enable the SADC VGA*/
-#define SADC_VGA_DISABLE()                (SADC->SADC_CTL0.bit.CFG_SADC_VGA_ENA = DISABLE)      /**< Disable the SADC VGA*/
-#define SADC_LDO_ENABLE()                 (SADC->SADC_CTL0.bit.CFG_SADC_LDO_ENA = ENABLE)       /**< Enable the SADC LDO*/
-#define SADC_LDO_DISABLE()                (SADC->SADC_CTL0.bit.CFG_SADC_LDO_ENA = DISABLE)      /**< Disable the SADC LDO*/
+#define SADC_TEST_CONTROL(para_set) (SADC->SADC_SET1.bit.CFG_SADC_TST = para_set)    /**< Configure the SADC test mode*/
+#define SADC_MANUAL_MODE() (SADC_TEST_CONTROL(8))                                    /**< Set the SADC to manual mode*/
+#define SADC_VGA_ENABLE() (SADC->SADC_CTL0.bit.CFG_SADC_VGA_ENA = ENABLE)            /**< Enable the SADC VGA*/
+#define SADC_VGA_DISABLE() (SADC->SADC_CTL0.bit.CFG_SADC_VGA_ENA = DISABLE)          /**< Disable the SADC VGA*/
+#define SADC_LDO_ENABLE() (SADC->SADC_CTL0.bit.CFG_SADC_LDO_ENA = ENABLE)            /**< Enable the SADC LDO*/
+#define SADC_LDO_DISABLE() (SADC->SADC_CTL0.bit.CFG_SADC_LDO_ENA = DISABLE)          /**< Disable the SADC LDO*/
 
-#define SADC_TEST_ENABLE()                (SADC->SADC_SET1.bit.CFG_SADC_TST = 1)                /**< Enable the SADC test mode*/
-#define SADC_TEST_ADJUST_VALUE(para_set)  (SADC->SADC_SET1.bit.CFG_SADC_VAL_TST = para_set)     /**< Set the SADC test mode adjust value*/
-
+#define SADC_TEST_ENABLE() (SADC->SADC_SET1.bit.CFG_SADC_TST = 1)                    /**< Enable the SADC test mode*/
+#define SADC_TEST_ADJUST_VALUE(para_set)                                                                                           \
+    (SADC->SADC_SET1.bit.CFG_SADC_VAL_TST = para_set)                                /**< Set the SADC test mode adjust value*/
 
 /**************************************************************************************************
  *    GLOBAL PROTOTYPES
@@ -363,7 +366,7 @@ void Sadc_Int_Disable(void);
  *            \arg high_thd SADC High threshold
  * @return None
  */
-void Sadc_Channel_Enable(sadc_channel_config_t *config_channel);
+void Sadc_Channel_Enable(sadc_channel_config_t * config_channel);
 
 /*
  * @brief SADC Channel Enable
@@ -380,9 +383,7 @@ void Sadc_Channel_Disable(sadc_config_channel_t ch_sel);
  * @param[in] xdma_blk_size   config xdma block size
  * @return None
  */
-void Sadc_Xdma_Config(uint32_t xdma_start_addr,
-                      uint16_t xdma_seg_size,
-                      uint16_t xdma_blk_size);
+void Sadc_Xdma_Config(uint32_t xdma_start_addr, uint16_t xdma_seg_size, uint16_t xdma_blk_size);
 
 /*
  * @brief SADC Temperature Enable
@@ -408,7 +409,7 @@ void Sadc_Temperature_Disable(void);
  * @param[in] sadc_int_callback config the interrupt service routine callback function
  * @return None
  */
-uint32_t Sadc_Init(sadc_config_t *p_config, sadc_isr_handler_t sadc_int_callback);
+uint32_t Sadc_Init(sadc_config_t * p_config, sadc_isr_handler_t sadc_int_callback);
 
 /*
  * @brief SADC Disable
@@ -438,7 +439,7 @@ void Sadc_Start(void);
  * @retval STATUS_SUCCESS SADC value resolution compensation is successful
  * @retval STATUS_INVALID_PARAM Wrong parameter, SADC value is invalid
  */
-uint32_t Sadc_Resolution_Compensation(sadc_value_t *p_data);
+uint32_t Sadc_Resolution_Compensation(sadc_value_t * p_data);
 
 /*
  * @brief Get SADC convert state
@@ -538,9 +539,12 @@ void Sadc_Compensation_Init(uint32_t xPeriodicTimeInSec);
  */
 void Sadc_Compensation_Deinit(void);
 
+void Sadc_Config_Enable_Vbat(sadc_config_resolution_t res, sadc_config_oversample_t os, sadc_isr_handler_t sadc_int_callback);
+uint32_t Sadc_Channel_Read_Vbat(sadc_input_ch_t ch);
+uint32_t Sadc_Init_vBAT(sadc_config_t * p_config, sadc_isr_handler_t sadc_int_callback);
+
 #endif
 
-#endif /* end of _SADC_H_ */
+#endif    /* end of _SADC_H_ */
 
 /** @} */ /* End of Peripheral Group */
-

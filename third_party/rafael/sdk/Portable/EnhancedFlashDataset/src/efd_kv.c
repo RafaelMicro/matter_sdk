@@ -1417,6 +1417,9 @@ static void gc_collect(void)
     struct sector_meta_data sector;
     size_t empty_sec = 0;
 
+    if (flash_vbat_read() < 2500)
+        return;
+
     /* GC check the empty sector number */
     sector_iterator(&sector, SECTOR_STORE_EMPTY, &empty_sec, NULL, gc_check_cb, false);
 
@@ -1424,7 +1427,9 @@ static void gc_collect(void)
     // info("The remain empty sector is %d, GC threshold is %d.\n", empty_sec, EFD_GC_EMPTY_SEC_THRESHOLD);
     if (empty_sec <= EFD_GC_EMPTY_SEC_THRESHOLD)
     {
+        Comp_Int_Disable();
         sector_iterator(&sector, SECTOR_STORE_UNUSED, NULL, NULL, do_gc, false);
+        Comp_Int_Enable();
     }
 
     gc_request = false;

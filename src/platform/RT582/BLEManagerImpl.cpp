@@ -32,6 +32,7 @@
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
+#include <crypto/RandUtils.h>
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
@@ -98,9 +99,9 @@ TimerHandle_t sbleAdvTimeoutTimer;
 static const uint8_t         DEVICE_NAME_STR[] = {DEVICE_NAME};
 
 // Device BLE Address
-static const ble_gap_addr_t  DEVICE_ADDR = {.addr_type = RANDOM_STATIC_ADDR,
-                                            .addr = {0x21, 0x21, 0x23, 0x24, 0x25, 0xC6 }
-                                           };
+static ble_gap_addr_t  DEVICE_ADDR = {.addr_type = RANDOM_STATIC_ADDR,
+                                        .addr = {0x21, 0x21, 0x23, 0x24, 0x25, 0xC6 }
+                                        };
 
 
 static TaskHandle_t BluetoothEventTaskHandle;
@@ -684,6 +685,7 @@ int BLEManagerImpl::ble_init(void)
         }
         else
         {
+            for(int i=0;i<5;i++) DEVICE_ADDR.addr[i] = static_cast<int>(chip::Crypto::GetRandU8());
             status = ble_cmd_device_addr_set((ble_gap_addr_t *)&DEVICE_ADDR);
             if (status != BLE_ERR_OK)
             {

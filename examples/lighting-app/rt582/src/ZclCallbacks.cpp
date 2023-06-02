@@ -34,6 +34,8 @@
 #include <assert.h>
 #include <lib/support/logging/CHIPLogging.h>
 
+#include "util_log.h"
+
 using namespace ::chip;
 using namespace ::chip::app::Clusters;
 
@@ -43,6 +45,84 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     EndpointId endpoint     = attributePath.mEndpointId;
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
+
+    DeviceLayer::ChipDeviceEvent event;
+
+    static bool getH = false;
+    static bool getS = false;
+
+    info("===> endpoint: %x\r\n", endpoint);
+    info("===> cluster: %x\r\n", clusterId);
+    info("===> attribute: %x\r\n", attributeId);
+
+    switch (clusterId)
+    {
+        case OnOff::Id:
+            // info("===> OnOff attribute changed\r\n");
+            if (attributeId == OnOff::Attributes::OnOff::Id) 
+            {
+                event.Type = DeviceLayer::DeviceEventType::kOnOffAttributeChanged;
+                // event.OnOffChanged.state = *value;
+                DeviceLayer::PlatformMgr().PostEvent(&event);
+            }
+            break;
+        case LevelControl::Id:
+            // info("===> LevelControl attribute changed\r\n");
+            if (attributeId == LevelControl::Attributes::CurrentLevel::Id && size == 1)
+            {
+                event.Type = DeviceLayer::DeviceEventType::kLevelControlAttributeChanged;
+                DeviceLayer::PlatformMgr().PostEvent(&event);
+            }
+            break;
+        case ColorControl::Id:
+            // info("===> ColorControl attribute changed\r\n");
+            if (attributeId == ColorControl::Attributes::CurrentX::Id || 
+                attributeId == ColorControl::Attributes::CurrentY::Id)
+            {
+                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeXYChanged;
+                DeviceLayer::PlatformMgr().PostEvent(&event);
+            }
+            else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
+                     attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
+                     attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
+            {
+                HsvColor_t hsv;
+
+                if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
+                {
+                    // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
+                    hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
+                    // get saturation from cluster value storage
+                    EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                    assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                }
+                else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
+                {
+                    hsv.h = *value;
+                    // get saturation from cluster value storage
+                    EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                    assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                }
+                else if (attributeId == ColorControl::Attributes::CurrentSaturation::Id)
+                {
+                    hsv.s = *value;
+                    // get hue from cluster value storage
+                    EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
+                    assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                }
+
+                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
+                DeviceLayer::PlatformMgr().PostEvent(&event);
+            }
+            else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
+            {
+                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
+                DeviceLayer::PlatformMgr().PostEvent(&event);
+            }
+            break;
+        default:
+            break;
+    }
 
     if (clusterId == OnOff::Id && attributeId == OnOff::Attributes::OnOff::Id)
     {
@@ -63,6 +143,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     else if (clusterId == ColorControl::Id)
     {
         /* ignore several attributes that are currently not processed */
+
         if ((attributeId == ColorControl::Attributes::RemainingTime::Id) ||
             (attributeId == ColorControl::Attributes::EnhancedColorMode::Id) ||
             (attributeId == ColorControl::Attributes::ColorMode::Id))
@@ -94,7 +175,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
                 assert(status == EMBER_ZCL_STATUS_SUCCESS);
             }
 
-            ChipLogProgress(Zcl, "New XY color: %u|%u", xy.x, xy.y);
+            // ChipLogProgress(Zcl, "New XY color: %u|%u", xy.x, xy.y);
+            // info("===> X: %u, Y: %u\r\n", xy.x, xy.y);
             LightMgr().InitiateAction(LightingManager::COLOR_ACTION_XY, 0, sizeof(xy), (uint8_t *) &xy);
         }
         /* HSV color space */
@@ -112,31 +194,53 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             {
                 // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
                 hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
+                getH = true;
+
                 // get saturation from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
             }
             else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
             {
                 hsv.h = *value;
+                getH = true;
+
+                info("===> H: %d\r\n", hsv.h);
                 // get saturation from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
             }
             else if (attributeId == ColorControl::Attributes::CurrentSaturation::Id)
             {
                 hsv.s = *value;
+                getS = true;
+
+                info("===> S: %d\r\n", hsv.s);
                 // get hue from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
-                assert(status == EMBER_ZCL_STATUS_SUCCESS);
+                // EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
+
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
             }
-            ChipLogProgress(Zcl, "New HSV color: %u|%u", hsv.h, hsv.s);
-            LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, 0, sizeof(hsv), (uint8_t *) &hsv);
+
+            // ChipLogProgress(Zcl, "New HSV color: %u|%u", hsv.h, hsv.s);
+            // info("===> [%s] H: %d, S: %d\r\n", __FUNCTION__, hsv.h, hsv.s);
+            info("getH: %d, getS: %d\r\n", getH, getS);
+            if (getH && getS) 
+            {
+                info("===> [%s] H: %d, S: %d\r\n", __FUNCTION__, hsv.h, hsv.s);
+                LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, 0, sizeof(hsv), (uint8_t *) &hsv);
+                getH = getS = false;
+            }
         }
         else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
         {
             CtColor_t ct;
+
             ct.ctMireds = *reinterpret_cast<uint16_t *>(value);
+            // info("===> CT color: %u\r\n", ct.ctMireds);
+            
             ChipLogProgress(Zcl, "New CT color: %u", ct.ctMireds);
             LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, 0, sizeof(ct), (uint8_t *) &ct.ctMireds);
         }

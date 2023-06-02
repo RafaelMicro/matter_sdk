@@ -218,22 +218,30 @@ void LightingManager::SetColor(uint16_t x, uint16_t y)
     UpdateLight();
 }
 
-void LightingManager::SetColor(uint16_t hue, uint8_t saturation)
+void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 {
-    mHSV.h = (uint16_t)((hue * 360)/254);
-    mHSV.s = (saturation * 100)/254;
+    // mHSV.h = (uint16_t)(((float)hue * 360.0)/254.0);
+    // mHSV.s = (uint16_t)((float)saturation * 100.0)/254.0;
+    mHSV.h = hue;
+    mHSV.s = saturation;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
 
-    ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
-    mRGB   = HsvToRgb(mHSV);
+    // ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
+
+    mRGB = HsvToRgb(mHSV);
+
+    info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+
     UpdateLight();
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
 {
     mCT  = ct;
-    mRGB = CTToRgb(ct);
-    UpdateLight();
+    mXY = CTToXY(mCT);
+
+    // info("===> X: %d, Y: %d\r\n", mXY.x, mXY.y);
+    // UpdateLight();
 }
 
 void LightingManager::Set(bool aOn)
@@ -251,10 +259,12 @@ void LightingManager::Set(bool aOn)
 
 void LightingManager::UpdateLight()
 {
-    ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
+    // ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
 
-    if(mState == kState_On && mLevel > 1)
+    if (mState == kState_On && mLevel > 1)
     {
+        // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+
         rt582_led_level_ctl(2, mRGB.b);
         rt582_led_level_ctl(3, mRGB.r);
         rt582_led_level_ctl(4, mRGB.g);

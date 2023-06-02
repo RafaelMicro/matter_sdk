@@ -514,22 +514,35 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
-
     case DeviceEventType::kCHIPoBLEConnectionEstablished:
         sHaveBLEConnections = true;
         UpdateStatusLED(); 
         break;
-
     case DeviceEventType::kCommissioningComplete:
         sCommissioned = true;
         UpdateStatusLED();
+        info("===> Commissioning complete\r\n");
         break;
     case DeviceEventType::kRemoveFabricEvent:
-        // info("===> Commissioned Fabric: %d\r\n", chip::Server::GetInstance().GetFabricTable().FabricCount());
         if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
         {
             chip::Server::GetInstance().ScheduleFactoryReset();
         }
+        break;
+    case DeviceEventType::kOnOffAttributeChanged:
+        info("===> Get OnOff attribute changed event\r\n");
+        break;
+    case DeviceEventType::kLevelControlAttributeChanged:
+        info("===> Get Level attribute changed event\r\n");
+        break;
+    case DeviceEventType::kColorControlAttributeXYChanged:
+        info("===> Get XY attribute changed event\r\n");
+        break;
+    case DeviceEventType::kColorControlAttributeHSVChanged:
+        info("===> Get HSV attribute changed event\r\n");
+        break;
+    case DeviceEventType::kColorControlAttributeCTChanged:
+        info("===> Get CT attribute changed event\r\n");
         break;
     default:
         break;

@@ -17,7 +17,6 @@
  */
 
 #include "ColorFormat.h"
-
 #include <math.h>
 
 // define a clamp macro to substitute the std::clamp macro which is available from C++17 onwards
@@ -27,50 +26,59 @@ RgbColor_t HsvToRgb(HsvColor_t hsv)
 {
     RgbColor_t rgb;
 
-    uint16_t i       = hsv.h / 60;
-    uint16_t rgb_max = hsv.v;
-    uint16_t rgb_min = (uint16_t)(rgb_max * (100 - hsv.s)) / 100;
-    uint16_t diff    = hsv.h % 60;
-    uint16_t rgb_adj = (uint16_t)((rgb_max - rgb_min) * diff) / 60;
+    double S = (double)hsv.s / 254.0;
+    double V = (double)hsv.v / 254.0;
+    double H = (double)hsv.h * 360.0 / 254.0;
+    double C = S * V;
+    double X = C * (1 - abs(fmod((double)(H / 60.0), 2) - 1));
+    double m = V - C;
+    double r, g, b;
 
-    switch (i)
+    if (H >= 0.0 && H < 60.0)
     {
-    case 0:
-        rgb.r = (uint8_t) rgb_max;
-        rgb.g = (uint8_t)(rgb_min + rgb_adj);
-        rgb.b = (uint8_t) rgb_min;
-        break;
-    case 1:
-        rgb.r = (uint8_t)(rgb_max - rgb_adj);
-        rgb.g = (uint8_t) rgb_max;
-        rgb.b = (uint8_t) rgb_min;
-        break;
-    case 2:
-        rgb.r = (uint8_t) rgb_min;
-        rgb.g = (uint8_t) rgb_max;
-        rgb.b = (uint8_t)(rgb_min + rgb_adj);
-        break;
-    case 3:
-        rgb.r = (uint8_t) rgb_min;
-        rgb.g = (uint8_t)(rgb_max - rgb_adj);
-        rgb.b = (uint8_t) rgb_max;
-        break;
-    case 4:
-        rgb.r = (uint8_t)(rgb_min + rgb_adj);
-        rgb.g = (uint8_t) rgb_min;
-        rgb.b = (uint8_t) rgb_max;
-        break;
-    default:
-        rgb.r = (uint8_t) rgb_max;
-        rgb.g = (uint8_t) rgb_min;
-        rgb.b = (uint8_t)(rgb_max - rgb_adj);
-        break;
+        r = C;
+        g = X;
+        b = 0;
     }
+    else if (H >= 60.0 && H < 120.0)
+    {
+        r = X;
+        g = C;
+        b = 0;
+    }
+    else if (H >= 120.0 && H < 180.0)
+    {
+        r = 0;
+        g = C;
+        b = X;
+    }
+    else if (H >= 180.0 && H < 240.0)
+    {
+        r = 0;
+        g = X;
+        b = C;
+    }
+    else if (H >= 240.0 && H < 300.0)
+    {
+        r = X;
+        g = 0;
+        b = C;
+    }
+    else
+    {
+        r = C;
+        g = 0;
+        b = X;
+    }
+
+    rgb.r = (uint8_t)((r + m) * 255.0);
+    rgb.g = (uint8_t)((g + m) * 255.0);
+    rgb.b = (uint8_t)((b + m) * 255.0);
 
     return rgb;
 }
 
-RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY)
+RgbColor_t XYToRgb(uint8_t level, uint16_t currentX, uint16_t currentY)
 {
     // convert xyY color space to RGB
 
@@ -98,7 +106,7 @@ RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY)
     // Calculate XYZ values
 
     // Y - given brightness in 0 - 1 range
-    Y = ((float) Level) / 254.0f;
+    Y = ((float) level) / 254.0f;
     X = (Y / y) * x;
     Z = (Y / y) * z;
 
@@ -131,55 +139,29 @@ RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY)
     return rgb;
 }
 
-RgbColor_t CTToRgb(CtColor_t ct)
+XyColor_t CTToXY(CtColor_t ct)
 {
-    RgbColor_t rgb;
-    float r, g, b;
+    XyColor_t xy;
 
-    // Algorithm credits to Tanner Helland: https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+    double ctKelvin = 1000000 / ct.ctMireds;
+    double diff = 6500.0 - 2700.0;
+    double X = 0.0;
+    double Y = 0.0;
 
-    // Convert Mireds to centiKelvins. k = 1,000,000/mired
-    float ctCentiKelvin = 10000 / ct.ctMireds;
-
-    // Red
-    if (ctCentiKelvin <= 66)
+    if (ctKelvin < 2700.0) 
     {
-        r = 255;
+        ctKelvin = 2700.0;
     }
-    else
+    else if (ctKelvin > 6500.0)
     {
-        r = 329.698727446f * pow(ctCentiKelvin - 60, -0.1332047592f);
+        ctKelvin = 6500.0;
     }
 
-    // Green
-    if (ctCentiKelvin <= 66)
-    {
-        g = 99.4708025861f * log(ctCentiKelvin) - 161.1195681661f;
-    }
-    else
-    {
-        g = 288.1221695283f * pow(ctCentiKelvin - 60, -0.0755148492f);
-    }
+    X = (ctKelvin - 2700.0) / diff;
+    Y = (6500.0 - ctKelvin) / diff;
+    
+    xy.x = (uint16_t)X;
+    xy.y = (uint16_t)Y;
 
-    // Blue
-    if (ctCentiKelvin >= 66)
-    {
-        b = 255;
-    }
-    else
-    {
-        if (ctCentiKelvin <= 19)
-        {
-            b = 0;
-        }
-        else
-        {
-            b = 138.5177312231 * log(ctCentiKelvin - 10) - 305.0447927307;
-        }
-    }
-    rgb.r = (uint8_t) clamp(r, 0, 255);
-    rgb.g = (uint8_t) clamp(g, 0, 255);
-    rgb.b = (uint8_t) clamp(b, 0, 255);
-
-    return rgb;
+    return xy;
 }

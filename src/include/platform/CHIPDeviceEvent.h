@@ -230,6 +230,13 @@ enum PublicEventTypes
      * Signals that receives remove fabric command
      */
     kRemoveFabricEvent,
+
+
+    kOnOffAttributeChanged,
+    kLevelControlAttributeChanged,
+    kColorControlAttributeXYChanged,
+    kColorControlAttributeHSVChanged,
+    kColorControlAttributeCTChanged,
 };
 
 /**

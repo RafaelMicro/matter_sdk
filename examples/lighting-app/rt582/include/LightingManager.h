@@ -78,7 +78,7 @@ private:
     void Set(bool aOn);
     void SetLevel(uint8_t aLevel);
     void SetColor(uint16_t x, uint16_t y);
-    void SetColor(uint16_t hue, uint8_t saturation);
+    void SetColor(uint8_t hue, uint8_t saturation);
     void SetColorTemperature(CtColor_t ct);
 
     void UpdateLight();

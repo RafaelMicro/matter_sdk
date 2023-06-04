@@ -31,7 +31,7 @@
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
 // initialization values for Blue in HSV color space
-constexpr HsvColor_t kHSV = { 60, 0, 254 };
+constexpr HsvColor_t kHSV = { 60, 0, 0 };
 
 using namespace chip;
 using namespace chip::DeviceLayer;
@@ -230,7 +230,7 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 
     mRGB = HsvToRgb(mHSV);
 
-    info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+    // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 
     UpdateLight();
 }

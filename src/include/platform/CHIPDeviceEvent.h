@@ -515,6 +515,28 @@ struct ChipDeviceEvent final
         {
 
         } RemoveFabric;
+
+        struct 
+        {
+            uint8_t value;
+        } OnOffChanged;
+
+        struct 
+        {
+            uint8_t level;
+        } LevelControlChanged;
+
+        struct 
+        {
+            uint8_t hue;
+            uint8_t saturation;    
+            uint8_t value;
+        } ColorControlHSVChanged;
+
+        struct 
+        {
+            uint16_t ctMireds;
+        } ColorControlCTChanged;
     };
 
     void Clear() { memset(this, 0, sizeof(*this)); }

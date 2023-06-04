@@ -456,20 +456,21 @@ void AppTask::InitServer(intptr_t arg)
     uint8_t current_level = 0;
     RgbColor_t RGB;
 
-    if (LightMgr().IsTurnedOn())
-    {
-        current_level = LightMgr().GetLevel();
-        RGB = LightMgr().GetRgb();
-        rt582_led_level_ctl(2, RGB.b);
-        rt582_led_level_ctl(3, RGB.r);
-        rt582_led_level_ctl(4, RGB.g);
-    }
-    else
-    {
-        rt582_led_level_ctl(2, 0); 
-        rt582_led_level_ctl(3, 0); 
-        rt582_led_level_ctl(4, 0);      
-    }
+    // if (LightMgr().IsTurnedOn())
+    // {
+    //     current_level = LightMgr().GetLevel();
+    //     RGB = LightMgr().GetRgb();
+    //     rt582_led_level_ctl(2, RGB.b);
+    //     rt582_led_level_ctl(3, RGB.r);
+    //     rt582_led_level_ctl(4, RGB.g);
+    // }
+    // else
+    // {
+    //     rt582_led_level_ctl(2, 0); 
+    //     rt582_led_level_ctl(3, 0); 
+    //     rt582_led_level_ctl(4, 0);      
+    // }
+
 #if RT582_OTA_ENABLED
     OTAConfig::Init();
 #endif
@@ -521,7 +522,6 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     case DeviceEventType::kCommissioningComplete:
         sCommissioned = true;
         UpdateStatusLED();
-        info("===> Commissioning complete\r\n");
         break;
     case DeviceEventType::kRemoveFabricEvent:
         if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
@@ -530,19 +530,28 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         }
         break;
     case DeviceEventType::kOnOffAttributeChanged:
-        info("===> Get OnOff attribute changed event\r\n");
+        LightMgr().InitiateAction(aEvent->OnOffChanged.value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, 
+                                  0, 
+                                  sizeof(aEvent->OnOffChanged.value), 
+                                  (uint8_t *)&aEvent->OnOffChanged.value);
         break;
     case DeviceEventType::kLevelControlAttributeChanged:
-        info("===> Get Level attribute changed event\r\n");
-        break;
-    case DeviceEventType::kColorControlAttributeXYChanged:
-        info("===> Get XY attribute changed event\r\n");
+        LightMgr().InitiateAction(LightingManager::LEVEL_ACTION, 
+                                  0, 
+                                  sizeof(aEvent->LevelControlChanged.level), 
+                                  (uint8_t *)&aEvent->LevelControlChanged.level);
         break;
     case DeviceEventType::kColorControlAttributeHSVChanged:
-        info("===> Get HSV attribute changed event\r\n");
+        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, 
+                                  0, 
+                                  sizeof(aEvent->ColorControlHSVChanged), 
+                                  (uint8_t *)&aEvent->ColorControlHSVChanged);
         break;
     case DeviceEventType::kColorControlAttributeCTChanged:
-        info("===> Get CT attribute changed event\r\n");
+        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, 
+                                  0, 
+                                  sizeof(aEvent->ColorControlCTChanged.ctMireds), 
+                                  (uint8_t *)&aEvent->ColorControlCTChanged.ctMireds);
         break;
     default:
         break;

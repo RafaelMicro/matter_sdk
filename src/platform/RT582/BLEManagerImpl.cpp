@@ -571,7 +571,10 @@ void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
 
         case BLESERVICE_MATTER_CLIENT_RX_BUFFER_INDICATE_CONFIRM_EVENT:
         {
-            //ChipLogDetail(DeviceLayer, "get matter indicate confirm"); 
+            ChipDeviceEvent event;       
+            event.Type                          = DeviceEventType::kCHIPoBLEIndicateConfirm;
+            event.CHIPoBLEIndicateConfirm.ConId = p_param->host_id;
+            PlatformMgr().PostEvent(&event);                
         }
         break;
 
@@ -1355,14 +1358,6 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
         ChipLogError(DeviceLayer, "BLEManagerImpl::SendIndication() failed: %d", status);
         return false;
     }
-
-    {
-        ChipDeviceEvent event;       
-        event.Type                          = DeviceEventType::kCHIPoBLEIndicateConfirm;
-        event.CHIPoBLEIndicateConfirm.ConId = conId;
-        err                                 = PlatformMgr().PostEvent(&event);
-    }
-
     return true;
 }
 

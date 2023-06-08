@@ -37,6 +37,30 @@ struct FactoryDataString
     size_t len;
 };
 
+struct FactoryDataManualcode
+{
+    uint8_t data[32];
+    size_t len;
+};
+
+struct FactoryDataQrcode
+{
+    uint8_t data[192];
+    size_t len;
+};
+
+struct FactoryDataSalt
+{
+    uint8_t data[48];
+    size_t len;
+};
+
+struct FactoryDataVerifier
+{
+    uint8_t data[256];
+    size_t len;
+};
+
 struct rtcbor_string
 {
     uint16_t * value;
@@ -60,11 +84,14 @@ struct FactoryData
     struct FactoryDataCert dac_cert;
     struct FactoryDataCert dac_privkey;
     struct FactoryDataCert pai_cert;
+    struct FactoryDataCert cd;
+    struct FactoryDataManualcode manualcode;
+    struct FactoryDataQrcode qrcode;
     uint32_t spake2_it;
-    struct FactoryDataString spake2_salt;
-    struct FactoryDataString spake2_verifier;
-    uint16_t discriminator;
-    uint32_t passcode;
+    struct FactoryDataSalt spake2_salt;
+    struct FactoryDataVerifier spake2_verifier;
+    uint32_t discriminator;
+    uint64_t passcode;
     // struct FactoryDataString enable_key;
     // struct FactoryDataString user;
 

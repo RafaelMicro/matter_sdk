@@ -126,8 +126,8 @@ else
                 echo "RT582 is not implemented DAC/PAI yet./"
                 exit 1
             fi
-            optArgs+="chip_build_platform_attestation_credentials_provider=true "
-            # optArgs+="chip_build_platform_attestation_credentials_provider=true chip_use_transitional_commissionable_data_provider=false "
+            # optArgs+="chip_build_platform_attestation_credentials_provider=true "
+            optArgs+="chip_build_platform_attestation_credentials_provider=true chip_use_transitional_commissionable_data_provider=false "
             shift
             ;;
         *)

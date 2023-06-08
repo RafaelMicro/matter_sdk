@@ -58,92 +58,107 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
 
     switch (clusterId)
     {
-        case OnOff::Id:
-            if (attributeId == OnOff::Attributes::OnOff::Id) 
-            {
-                event.Type = DeviceLayer::DeviceEventType::kOnOffAttributeChanged;
-                event.OnOffChanged.value = *value;
+    case OnOff::Id:
+        if (attributeId == OnOff::Attributes::OnOff::Id) 
+        {
+            event.Type = DeviceLayer::DeviceEventType::kOnOffAttributeChanged;
+            event.OnOffChanged.value = *value;
 
+            DeviceLayer::PlatformMgr().PostEvent(&event);
+        }
+        break;
+    case LevelControl::Id:
+        if (attributeId == LevelControl::Attributes::CurrentLevel::Id && size == 1)
+        {
+            event.Type = DeviceLayer::DeviceEventType::kLevelControlAttributeChanged;
+            event.LevelControlChanged.level = *value;
+            if (powerOnZCLInitLevelControl) 
+            {
+                powerOnZCLInitLevelControl = false;
+                break;
+            }
+            DeviceLayer::PlatformMgr().PostEvent(&event);
+        }
+        break;
+    case ColorControl::Id:
+        if (attributeId == ColorControl::Attributes::RemainingTime::Id)
+        {
+            uint16_t RemainingTime = *reinterpret_cast<uint16_t *>(value);
+            return;
+        }
+        else if (attributeId == ColorControl::Attributes::ColorMode::Id)
+        {
+            uint8_t ColorMode = *reinterpret_cast<uint8_t *>(value);
+            return;
+        }
+        else if (attributeId == ColorControl::Attributes::EnhancedColorMode::Id)
+        {
+            uint8_t EnhancedColorMode = *reinterpret_cast<uint8_t *>(value);
+            return;
+        }
+        else if (attributeId == ColorControl::Attributes::CurrentX::Id || 
+            attributeId == ColorControl::Attributes::CurrentY::Id)
+        {
+            event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeXYChanged;
+            DeviceLayer::PlatformMgr().PostEvent(&event);
+        }
+        else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
+                    attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
+                    attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
+        {
+            if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
+            {
+                // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
+                hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
+                // get saturation from cluster value storage
+                // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
+
+                getH = true;
+            }
+            else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
+            {
+                hsv.h = *value;
+                // get saturation from cluster value storage
+                // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
+
+                getH = true;
+            }
+            else if (attributeId == ColorControl::Attributes::CurrentSaturation::Id)
+            {
+                hsv.s = *value;
+                // get hue from cluster value storage
+                // EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
+                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
+
+                getS = true;
+            }
+
+            if (getH && getS) 
+            {
+                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
+                event.ColorControlHSVChanged.hue = hsv.h;
+                event.ColorControlHSVChanged.saturation = hsv.s;
+
+                getH = getS = false;
                 DeviceLayer::PlatformMgr().PostEvent(&event);
             }
-            break;
-        case LevelControl::Id:
-            if (attributeId == LevelControl::Attributes::CurrentLevel::Id && size == 1)
+        }
+        else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
+        {
+            event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
+            event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);                    
+            if (powerOnZCLInitColortemperature) 
             {
-                event.Type = DeviceLayer::DeviceEventType::kLevelControlAttributeChanged;
-                event.LevelControlChanged.level = *value;
-                if (powerOnZCLInitLevelControl) 
-                {
-                    powerOnZCLInitLevelControl = false;
-                    break;
-                }
-                DeviceLayer::PlatformMgr().PostEvent(&event);
+                powerOnZCLInitColortemperature = false;
+                break;
             }
-            break;
-        case ColorControl::Id:
-            if (attributeId == ColorControl::Attributes::CurrentX::Id || 
-                attributeId == ColorControl::Attributes::CurrentY::Id)
-            {
-                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeXYChanged;
-                DeviceLayer::PlatformMgr().PostEvent(&event);
-            }
-            else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
-                     attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
-                     attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
-            {
-                if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
-                {
-                    // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
-                    hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
-                    // get saturation from cluster value storage
-                    // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                    // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                    getH = true;
-
-                }
-                else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
-                {
-                    hsv.h = *value;
-                    // get saturation from cluster value storage
-                    // EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                    // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                    getH = true;
-                }
-                else if (attributeId == ColorControl::Attributes::CurrentSaturation::Id)
-                {
-                    hsv.s = *value;
-                    // get hue from cluster value storage
-                    // EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
-                    // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                    getS = true;
-                }
-
-                if (getH && getS) 
-                {
-                    event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
-                    event.ColorControlHSVChanged.hue = hsv.h;
-                    event.ColorControlHSVChanged.saturation = hsv.s;
-                    getH = getS = false;
-                    DeviceLayer::PlatformMgr().PostEvent(&event);
-                }
-            }
-            else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
-            {
-                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
-                event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);                    
-                if (powerOnZCLInitColortemperature) 
-                {
-                    powerOnZCLInitColortemperature = false;
-                    break;
-                }
-                DeviceLayer::PlatformMgr().PostEvent(&event);
-            }
-            break;
-        default:
-            break;
+            DeviceLayer::PlatformMgr().PostEvent(&event);
+        }
+        break;
+    default:
+        break;
     }
 
     if (clusterId == Identify::Id)

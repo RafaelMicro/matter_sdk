@@ -136,12 +136,11 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
     if (chip_use_transitional_commissionable_data_provider) {
       defines += [ 
         "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=1",  
-        "RAFAEL_PASSCODE_ENABLED=0"
       ]
     } else {
       defines += [ 
         "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=0",  
-        "RAFAEL_PASSCODE_ENABLED=1"]
+      ]
     }
 
     if (chip_device_platform == "cc13x2_26x2") {

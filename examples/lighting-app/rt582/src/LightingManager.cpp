@@ -31,7 +31,7 @@
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
 // initialization values for Blue in HSV color space
-constexpr HsvColor_t kHSV = { 60, 0, 0 };
+constexpr HsvColor_t kHSV = { 60, 0, 254 };
 
 using namespace chip;
 using namespace chip::DeviceLayer;

@@ -453,8 +453,8 @@ void AppTask::InitServer(intptr_t arg)
     }
     LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    uint8_t current_level = 0;
-    RgbColor_t RGB;
+    // uint8_t current_level = 0;
+    // RgbColor_t RGB;
 
     // if (LightMgr().IsTurnedOn())
     // {
@@ -664,9 +664,7 @@ CHIP_ERROR AppTask::StartAppTask()
 #if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
-#if RAFAEL_PASSCODE_ENABLED
     SetCommissionableDataProvider(&mFactoryDataProvider);
-#endif
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());

@@ -68,6 +68,7 @@ private:
     State_t mState;
     uint8_t mLevel;
     XyColor_t mXY;
+    CW_t mCW;
     HsvColor_t mHSV;
     RgbColor_t mRGB;
     CtColor_t mCT;

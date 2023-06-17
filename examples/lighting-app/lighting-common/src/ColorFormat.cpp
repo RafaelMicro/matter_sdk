@@ -139,29 +139,29 @@ RgbColor_t XYToRgb(uint8_t level, uint16_t currentX, uint16_t currentY)
     return rgb;
 }
 
-XyColor_t CTToXY(CtColor_t ct)
+CW_t CTToXY(CtColor_t ct)
 {
-    XyColor_t xy;
+    CW_t cw;
 
     double ctKelvin = 1000000 / ct.ctMireds;
-    double diff = 6500.0 - 2700.0;
-    double X = 0.0;
-    double Y = 0.0;
+    double diff = 7050.0 - 2580.0;
+    double C = 0.0;
+    double W = 0.0;
 
-    if (ctKelvin < 2700.0) 
+    if (ctKelvin < 2580.0) 
     {
-        ctKelvin = 2700.0;
+        ctKelvin = 2580.0;
     }
-    else if (ctKelvin > 6500.0)
+    else if (ctKelvin > 7000.0)
     {
-        ctKelvin = 6500.0;
+        ctKelvin = 7050.0;
     }
 
-    X = (ctKelvin - 2700.0) / diff;
-    Y = (6500.0 - ctKelvin) / diff;
-    
-    xy.x = (uint16_t)X;
-    xy.y = (uint16_t)Y;
+    C = (ctKelvin - 2580.0) / diff;
+    W = (7050.0 - ctKelvin) / diff;
 
-    return xy;
+    cw.c = C;
+    cw.w = W;
+
+    return cw;
 }

@@ -82,11 +82,12 @@ struct InternalFlashFactoryData
         mbedtls_aes_init(&aes_ctx);
         mbedtls_aes_setkey_dec(&aes_ctx, key, blockSize * 8);
         blockNumber = enc->len / blockSize;
-        for (blockIndex = 0; blockIndex < blockNumber; blockIndex++) {
+        for (blockIndex = 0; blockIndex < blockNumber; blockIndex++) 
+        {
             mbedtls_aes_crypt_ecb(&aes_ctx, 
-                                MBEDTLS_AES_DECRYPT, 
-                                &enc->data[blockIndex * blockSize], 
-                                &dec->data[blockIndex * blockSize]);
+                                  MBEDTLS_AES_DECRYPT, 
+                                  &enc->data[blockIndex * blockSize], 
+                                  &dec->data[blockIndex * blockSize]);
         }
         mbedtls_aes_free(&aes_ctx);
         dec->len = enc->len - dec->data[enc->len - 1];

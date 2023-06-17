@@ -64,6 +64,7 @@ using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
 
+
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)
 #define APP_TASK_PRIORITY 2
@@ -550,8 +551,8 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     case DeviceEventType::kColorControlAttributeCTChanged:
         LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, 
                                   0, 
-                                  sizeof(aEvent->ColorControlCTChanged.ctMireds), 
-                                  (uint8_t *)&aEvent->ColorControlCTChanged.ctMireds);
+                                  sizeof(aEvent->ColorControlCTChanged), 
+                                  (uint8_t *)&aEvent->ColorControlCTChanged);
         break;
     default:
         break;
@@ -573,7 +574,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    ChipLogError(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
+    ChipLogProgress(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_SED
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);

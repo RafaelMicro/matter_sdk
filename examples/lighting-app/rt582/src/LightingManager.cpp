@@ -27,6 +27,8 @@
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
 
+// #include "util_log.h"
+
 // initialization values for Blue in XY color space
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
@@ -165,6 +167,18 @@ bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t 
            new_state = kState_On;
         }
     }
+    else if (aAction == COLOR_ACTION_CT)
+    {
+        action_initiated = true;
+        if (ct.ctMireds == 0)
+        {
+            new_state = kState_Off;
+        }
+        else
+        {
+           new_state = kState_On;
+        }
+    }
     if (action_initiated)
     {        
         if (mActionInitiated_CB)
@@ -220,8 +234,6 @@ void LightingManager::SetColor(uint16_t x, uint16_t y)
 
 void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 {
-    // mHSV.h = (uint16_t)(((float)hue * 360.0)/254.0);
-    // mHSV.s = (uint16_t)((float)saturation * 100.0)/254.0;
     mHSV.h = hue;
     mHSV.s = saturation;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
@@ -230,6 +242,7 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 
     mRGB = HsvToRgb(mHSV);
 
+    // info("===> H: %d, S: %d\r\n", hue, saturation);
     // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 
     UpdateLight();
@@ -237,10 +250,11 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
 {
-    mCT  = ct;
-    mXY = CTToXY(mCT);
-
-    // info("===> X: %d, Y: %d\r\n", mXY.x, mXY.y);
+    mCT.ctMireds = ct.ctMireds;
+    // info("===> mCT.ctMireds: %d\r\n", mCT.ctMireds);
+    // info("===> Kelvin: %d\r\n", 1000000 / mCT.ctMireds);
+    mCW = CTToXY(mCT);
+    // info("===> C: %f, W: %f\r\n", mCW.c, mCW.w);
     // UpdateLight();
 }
 

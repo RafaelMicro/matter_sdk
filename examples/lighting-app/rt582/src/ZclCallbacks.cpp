@@ -97,14 +97,14 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             return;
         }
         else if (attributeId == ColorControl::Attributes::CurrentX::Id || 
-            attributeId == ColorControl::Attributes::CurrentY::Id)
+                 attributeId == ColorControl::Attributes::CurrentY::Id)
         {
             event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeXYChanged;
             DeviceLayer::PlatformMgr().PostEvent(&event);
         }
         else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
-                    attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
-                    attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
+                 attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
+                 attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
         {
             if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
             {
@@ -148,7 +148,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
         {
             event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
-            event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);                    
+            event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);   
             if (powerOnZCLInitColortemperature) 
             {
                 powerOnZCLInitColortemperature = false;

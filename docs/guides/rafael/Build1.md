@@ -61,7 +61,7 @@ Install all recommendations tool:
 -   vadimcn.vscode-lldb
 -   marus25.cortex-debug
 
-<!-- ![Vscode Recommand](./recommand.png) -->
+<!-- ![Vscode Recommand](./images/recommand.png) -->
 
 ### Install VSCode extension
 
@@ -72,7 +72,7 @@ sub-task:
 2. "RT matter container build (Step II)"
 3. "RT matter container env setup (Step III)"
 
-<!-- ![Vscode TASK](./Task.png) -->
+<!-- ![Vscode TASK](./images/Task.png) -->
 
 ### Building project
 

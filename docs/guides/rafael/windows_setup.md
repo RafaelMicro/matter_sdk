@@ -7,7 +7,7 @@
 -   Visual Studio Code: [Download](https://code.visualstudio.com/Download)
 -   Download Ubuntu from Microsoft Store!
 
-![](./msubuntu.jpg)
+![](./images/msubuntu.jpg)
 
 ## Check Windows pre-request
 
@@ -91,13 +91,13 @@
 -   open VScode and install some extensions for developing the environment
     -   WSL (ms-vscode-remote.remote-wsl)
 
-![](./activateWSL.png)
+![](./images/activateWSL.png)
 
 -   Using the lower left icon (like this ><) and select the new WSL window
     -   Now the vscode terminal will be a Linux terminal (like this
         sw@DESKTOP-JNHERQ8:~$)
 
-![](./activateWSL2.png)
+![](./images/activateWSL2.png)
 
 ---
 
@@ -110,7 +110,7 @@
 -   You can follow the default installation: (Use WSL2 ... is an important
     setting)
 
-![](./dockerDesktop.jpg)
+![](./images/dockerDesktop.jpg)
 
 -   If you get this message, it means the installer account and the launcher
     account are different. Please set your windows user group, following the
@@ -129,7 +129,7 @@
 
 ### Checking Docker work on WSL
 
-![](./dockerVersion.png)
+![](./images/dockerVersion.png)
 
 -   In the WSL terminal use the following command to check the docker state.
 
@@ -187,11 +187,11 @@
     $ git submodule update --init
     ```
 
-![](./buildingMatter1.png)
+![](./images/buildingMatter1.png)
 
 -   To get started select "Open folder..." to open "matter_sdk" folder
 
-![](./buildingMatter2.png)
+![](./images/buildingMatter2.png)
 
 ### Setup environment (in Remote WSL)
 
@@ -208,7 +208,7 @@
 
 ### Setup Rafael Matter Docker
 
-![](./setupRafaelMatterDocker.png)
+![](./images/setupRafaelMatterDocker.png)
 
 -   Run VSCode task: "RT matter dev setup" Task "RT matter dev setup" includes
     three sub-task:

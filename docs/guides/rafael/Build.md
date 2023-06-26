@@ -14,7 +14,7 @@
 In windows path D:\workspace, use Git bash To check out the Matter repository:
 
 ```
-git clone --recurse-submodules https://github.com/RexhuangTW/connectedhomeip.git
+git clone --recurse-submodules https://github.com/RafaelMicro/matter_sdk.git
 ```
 
 If you already have a checkout, run the following command to sync submodules:
@@ -40,7 +40,7 @@ Install all recommendations tool:
 -   vadimcn.vscode-lldb
 -   marus25.cortex-debug
 
-![Vscode Recommand](./recommand.png)
+![Vscode Recommand](./images/recommand.png)
 
 ### Install VSCode extension
 
@@ -51,7 +51,7 @@ sub-task:
 2. "RT matter container build (Step II)"
 3. "RT matter container env setup (Step III)"
 
-![Vscode TASK](./Task.png)
+![Vscode TASK](./images/Task.png)
 
 ### Building project
 

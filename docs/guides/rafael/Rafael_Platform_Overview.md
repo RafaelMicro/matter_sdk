@@ -7,7 +7,7 @@ dedicated Matter fork. That is, the code used for the RT58x SDK and Matter
 integration is stored in the Matter repository (RT58x platform) and is compiled
 when building one of the available Matter samples.
 
-![The RT58x SDK repository structure](sdk_repo.png)
+![The RT58x SDK repository structure](./images/sdk_repo.png)
 
 <hr>
 
@@ -21,7 +21,7 @@ The following diagram shows a simplified structure of a Matter application that
 runs on the nRF Connect platform and uses Bluetooth® LE and Thread stacks for
 communication purposes:
 
-![rt58x platform overview](stack.png)
+![rt58x platform overview](./images/stack.png)
 
 > **Note**: For readability, the diagram does not show all projects components,
 > only the most important ones for a typical Matter application.

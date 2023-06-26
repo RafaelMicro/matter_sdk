@@ -41,4 +41,4 @@ Note: This debugger's Arm Tool chain and execute file will using matter code and
 
 ---
 ## Start Debugger
-![Vscode Debugger](./debug.png)
+![Vscode Debugger](./images/debug.png)

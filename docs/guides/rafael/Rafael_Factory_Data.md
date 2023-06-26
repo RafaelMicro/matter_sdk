@@ -218,7 +218,7 @@ First of all, RT583 has to connect with MPTCB
 
 Furthermore, open Rafael MP tool and follow the steps to operate
 
-![RafaelMicro MP tool](./mp_tool.png)
+![RafaelMicro MP tool](./images/mp_tool.png)
 
 1. Press `SETTINGS` button and it will pop out Settings window
 2. Select `MATTER CERTIFICATES` in the left side of Settings window

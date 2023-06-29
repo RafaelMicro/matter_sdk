@@ -51,6 +51,8 @@ using namespace chip;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::LevelControl;
 
+extern bool isProcessing;
+
 #ifndef IGNORE_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL
 static bool areStartUpLevelControlServerAttributesNonVolatile(EndpointId endpoint);
 #endif // IGNORE_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL
@@ -304,6 +306,8 @@ void emberAfLevelControlClusterServerTickCallback(EndpointId endpoint)
 
         state->callbackSchedule.runTime = System::Clock::Milliseconds32(0);
         writeRemainingTime(endpoint, 0);
+
+        isProcessing = false;
     }
     else
     {
@@ -315,6 +319,7 @@ void emberAfLevelControlClusterServerTickCallback(EndpointId endpoint)
 
 static void writeRemainingTime(EndpointId endpoint, uint16_t remainingTimeMs)
 {
+    // info("===> [%s] enter\r\n", __FUNCTION__);
 #ifndef IGNORE_LEVEL_CONTROL_CLUSTER_LEVEL_CONTROL_REMAINING_TIME
     if (emberAfContainsAttribute(endpoint, LevelControl::Id, LevelControl::Attributes::RemainingTime::Id))
     {
@@ -448,14 +453,23 @@ bool emberAfLevelControlClusterMoveToLevelCallback(app::CommandHandler * command
     auto & optionsMask     = commandData.optionsMask;
     auto & optionsOverride = commandData.optionsOverride;
 
+    if (!isProcessing)
+    {   
+        isProcessing = true;
+    }
+    else
+    {
+        return false;
+    }     
+
     if (transitionTime.IsNull())
     {
-        emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL %x null %x %x", "RX level-control:", level, optionsMask.Raw(),
+        emberAfLevelControlClusterPrintln("MOVE_TO_LEVEL %x null %x %x", "RX level-control:", level, optionsMask.Raw(),
                                           optionsOverride.Raw());
     }
     else
     {
-        emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL %x %2x %x %x", "RX level-control:", level, transitionTime.Value(),
+        emberAfLevelControlClusterPrintln("MOVE_TO_LEVEL %x %2x %x %x", "RX level-control:", level, transitionTime.Value(),
                                           optionsMask.Raw(), optionsOverride.Raw());
     }
 
@@ -480,12 +494,12 @@ bool emberAfLevelControlClusterMoveToLevelWithOnOffCallback(app::CommandHandler 
 
     if (transitionTime.IsNull())
     {
-        emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL_WITH_ON_OFF %x null %x %x", "RX level-control:", level,
+        emberAfLevelControlClusterPrintln("MOVE_TO_LEVEL_WITH_ON_OFF %x null %x %x", "RX level-control:", level,
                                           optionsMask.Raw(), optionsOverride.Raw());
     }
     else
     {
-        emberAfLevelControlClusterPrintln("%pMOVE_TO_LEVEL_WITH_ON_OFF %x %2x %x %x", "RX level-control:", level,
+        emberAfLevelControlClusterPrintln("MOVE_TO_LEVEL_WITH_ON_OFF %x %2x %x %x", "RX level-control:", level,
                                           transitionTime.Value(), optionsMask.Raw(), optionsOverride.Raw());
     }
 

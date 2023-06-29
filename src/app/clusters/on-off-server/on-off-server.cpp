@@ -36,6 +36,8 @@ using namespace chip;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::OnOff;
 
+bool isProcessing = false;
+
 /**********************************************************
  * Attributes Definition
  *********************************************************/
@@ -114,6 +116,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
     if (status != EMBER_ZCL_STATUS_SUCCESS)
     {
         emberAfOnOffClusterPrintln("ERR: reading on/off %x", status);
+        isProcessing = false;
         return status;
     }
 
@@ -121,6 +124,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
     if ((!currentValue && command == Commands::Off::Id) || (currentValue && command == Commands::On::Id))
     {
         emberAfOnOffClusterPrintln("On/off already set to new value");
+        isProcessing = false;
         return EMBER_ZCL_STATUS_SUCCESS;
     }
 
@@ -163,6 +167,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
         if (status != EMBER_ZCL_STATUS_SUCCESS)
         {
             emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
+            isProcessing = false;
             return status;
         }
 
@@ -211,6 +216,7 @@ EmberAfStatus OnOffServer::setOnOffValue(chip::EndpointId endpoint, chip::Comman
             if (status != EMBER_ZCL_STATUS_SUCCESS)
             {
                 emberAfOnOffClusterPrintln("ERR: writing on/off %x", status);
+                isProcessing = false;
                 return status;
             }
 #ifdef EMBER_AF_PLUGIN_LEVEL_CONTROL
@@ -326,6 +332,17 @@ EmberAfStatus OnOffServer::getOnOffValueForStartUp(chip::EndpointId endpoint, bo
 
 bool OnOffServer::offCommand(const app::ConcreteCommandPath & commandPath)
 {
+    if (!isProcessing)
+    {   
+        isProcessing = true;
+    }
+    else
+    {
+        // emberAfOnOffClusterPrintln("Another command is processing");
+        emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE);
+        return true;
+    }
+
     EmberAfStatus status = setOnOffValue(commandPath.mEndpointId, Commands::Off::Id, false);
 
     emberAfSendImmediateDefaultResponse(status);
@@ -334,6 +351,17 @@ bool OnOffServer::offCommand(const app::ConcreteCommandPath & commandPath)
 
 bool OnOffServer::onCommand(const app::ConcreteCommandPath & commandPath)
 {
+    if (!isProcessing)
+    {   
+        isProcessing = true;
+    }
+    else
+    {
+        // emberAfOnOffClusterPrintln("Another command is processing");
+        emberAfSendImmediateDefaultResponse(EMBER_ZCL_STATUS_FAILURE);
+        return true;
+    }  
+
     EmberAfStatus status = setOnOffValue(commandPath.mEndpointId, Commands::On::Id, false);
 
     emberAfSendImmediateDefaultResponse(status);

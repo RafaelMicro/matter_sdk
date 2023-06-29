@@ -56,6 +56,17 @@ using namespace chip;
 using namespace chip::Shell;
 using namespace chip::Logging;
 
+CHIP_ERROR cmd_reset(int argc, char ** argv)
+{
+    const TickType_t xDelay250ms = pdMS_TO_TICKS(250UL);
+
+    vTaskDelay(xDelay250ms);
+
+    NVIC_DisableIRQ((IRQn_Type)Wdt_IRQn);
+
+    return CHIP_NO_ERROR;
+}
+
 CHIP_ERROR cmd_mem(int argc, char ** argv)
 {
     sys_malloc_info_printf();
@@ -222,11 +233,12 @@ CHIP_ERROR cmd_rd(int argc, char ** argv)
 }
 
 static shell_command_t cmds_rafael[] = {
-    { &cmd_rd, "rd", "Read memory" },
-    { &cmd_mem, "mem", "Show memory usage" },
-    { &cmd_mib, "mib", "Show mib counters" },
-    { &cmd_env, "env", "Show env datas" },
-    { &cmd_fbench, "bench", "flash bench"},
+    { &cmd_rd,     "rd",    "Read memory" },
+    { &cmd_mem,    "mem",   "Show memory usage" },
+    { &cmd_mib,    "mib",   "Show mib counters" },
+    { &cmd_env,    "env",   "Show env datas" },
+    { &cmd_fbench, "bench", "Flash bench"},
+    { &cmd_reset,  "reset", "Reset system"},
 };
 void cmd_rafael_init()
 {

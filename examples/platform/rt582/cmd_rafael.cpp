@@ -58,9 +58,12 @@ using namespace chip::Logging;
 
 CHIP_ERROR cmd_reset(int argc, char ** argv)
 {
-    const TickType_t xDelay250ms = pdMS_TO_TICKS(250UL);
+    // const TickType_t xDelay250ms = pdMS_TO_TICKS(250UL);
 
-    vTaskDelay(xDelay250ms);
+    sys_set_retention_reg(6, 7);
+    sys_set_retention_reg(7, 0);
+
+    // vTaskDelay(xDelay250ms);
 
     NVIC_DisableIRQ((IRQn_Type)Wdt_IRQn);
 

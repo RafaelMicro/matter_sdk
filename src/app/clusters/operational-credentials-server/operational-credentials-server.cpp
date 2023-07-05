@@ -446,6 +446,9 @@ exit:
     else
     {
         ChipLogProgress(Zcl, "OpCreds: RemoveFabric successful");
+        
+        DeviceLayer::ChipDeviceEvent event;
+
         SendNOCResponse(commandObj, commandPath, OperationalCertStatus::kSuccess, fabricBeingRemoved, CharSpan());
 
         chip::Messaging::ExchangeContext * ec = commandObj->GetExchangeContext();
@@ -459,6 +462,9 @@ exit:
             SessionManager * sessionManager = ec->GetExchangeMgr()->GetSessionManager();
             CleanupSessionsForFabric(*sessionManager, fabricBeingRemoved);
         }
+
+        event.Type = DeviceLayer::DeviceEventType::kRemoveFabricEvent;
+        DeviceLayer::PlatformMgr().PostEvent(&event);
     }
     return true;
 }

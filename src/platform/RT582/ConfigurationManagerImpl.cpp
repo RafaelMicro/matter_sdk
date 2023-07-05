@@ -197,6 +197,7 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
 
     // Restart the system.
     ChipLogProgress(DeviceLayer, "System restarting");
+    vTaskDelay(300);
     Sys_Software_Reset();
 }
 

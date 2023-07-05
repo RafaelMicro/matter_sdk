@@ -1634,8 +1634,6 @@ void GroupDataProviderImpl::KeySetIteratorImpl::Release()
 CHIP_ERROR GroupDataProviderImpl::RemoveFabric(chip::FabricIndex fabric_index)
 {
     FabricData fabric(fabric_index);
-    DeviceLayer::ChipDeviceEvent event;
-
     // Fabric data defaults to zero, so if not entry is found, no mappings, or keys are removed
     // However, states has a separate list, and needs to be removed regardless
     CHIP_ERROR err = fabric.Load(mStorage);
@@ -1671,10 +1669,6 @@ CHIP_ERROR GroupDataProviderImpl::RemoveFabric(chip::FabricIndex fabric_index)
         keyset.keyset_id = keyset.next;
         keyset_count++;
     }
-
-    event.Type = DeviceLayer::DeviceEventType::kRemoveFabricEvent;
-    DeviceLayer::PlatformMgr().PostEvent(&event);
-
     // Remove fabric
     return fabric.Delete(mStorage);
 }

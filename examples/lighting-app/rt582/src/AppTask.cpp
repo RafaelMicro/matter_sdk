@@ -527,7 +527,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     case DeviceEventType::kRemoveFabricEvent:
         if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
         {
-            chip::Server::GetInstance().ScheduleFactoryReset();
+            chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(1000), FactoryResetEventHandler, nullptr);
         }
         break;
     case DeviceEventType::kOnOffAttributeChanged:
@@ -672,6 +672,11 @@ CHIP_ERROR AppTask::StartAppTask()
 #endif
 
     return CHIP_NO_ERROR;
+}
+
+void AppTask::FactoryResetEventHandler(chip::System::Layer * aLayer, void * aAppState)
+{
+    chip::Server::GetInstance().ScheduleFactoryReset();
 }
 
 void AppTask::TimerEventHandler(chip::System::Layer * aLayer, void * aAppState)

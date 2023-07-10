@@ -1,7 +1,7 @@
 [![Rafael Micro](./rafael_docs/images/rafael_logo.jpg)](https://www.rafaelmicro.com/)
 ## Rafael RT58x Matter SDK
 
-Welcome to the Rafael RT58x Matter SDK github repo. It is built on top of the [Matter open source SDK](https://github.com/project-chip/connectedhomeip/) and added related components e.g., RT58x RF library(thread/BLE), system/peripherial driver... in this repo to help the user to build the Matter application with RT58x platform.
+Welcome to the Rafael RT58x Matter SDK github repo. It is built on top of the [Matter open source SDK](https://github.com/project-chip/connectedhomeip/) and added related components e.g., RT58x RF library(thread/BLE), system/peripherial driver for RT58x platform. The users can use this repo to build the Matter application on their own.
 
 ![The RT58x SDK repository structure](./rafael_docs/images/sdk_repo.png)
 
@@ -73,10 +73,11 @@ Please follow the steps below to create and test a fully functional Matter
 example on RT58x series of SoCs
 
 -   Rafael(RT582/RT583) Getting Start Guide
+    >The following application demo will need the specified tool providing by Rafael Micro, please go to the [Rafael Customer Support Portal](https://support.rafaelmicro.com:8088/) to download related files.
     -   [Setup Matter SDK Enviroment and Building an example application](./rafael_docs/matter_env_setup.md)
     -   Application Usage Guide
-        -   [Flash application](./rafael_docs/flash_application.md)
-        -   [Commissioning](./rafael_docs/commissioning.md)
+        -   [Matter over Thread Demo Overview](./rafael_docs/matter_over_thread_overview.md)
+        -   [Flash the Application Image](./rafael_docs/flash_application.md)
     -   [Factory Data](./rafael_docs/Rafael_Factory_Data.md)
     -   [Matter OTA](./rafael_docs/Rafael_Software_Update.md)
 -   Application development Guide

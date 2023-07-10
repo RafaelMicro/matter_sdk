@@ -16,8 +16,8 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
     provide information on how the remaining heap might be fragmented). */
     taskDISABLE_INTERRUPTS();
     //malloc_info_printf();
-    err("xPortGetFreeHeapSize: %d bytes\r\n", xPortGetFreeHeapSize());
-    err("MallocFailed (%d)\n", xWantedSize);
+    err("MallocFailed (%d)\r\n", xWantedSize);
+    NVIC_DisableIRQ((IRQn_Type)Wdt_IRQn);
     for (;;);
 }
 /*-----------------------------------------------------------*/

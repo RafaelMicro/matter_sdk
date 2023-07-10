@@ -471,21 +471,27 @@ void GenericThreadStackManagerImpl_OpenThread<ImplClass>::_OnNetworkScanFinished
     else
     {
         ChipLogProgress(DeviceLayer, "Thread Network: %s Panid 0x%x Channel %u RSSI %d LQI %u Version %u", aResult->mNetworkName.m8,
-                        aResult->mPanId, aResult->mChannel, aResult->mRssi, aResult->mLqi, aResult->mVersion);
+                aResult->mPanId, aResult->mChannel, aResult->mRssi, aResult->mLqi, aResult->mVersion);
 
-        NetworkCommissioning::ThreadScanResponse scanResponse = { 0 };
+        if (mScanResponseIter.Count() < 20) 
+        {
+            NetworkCommissioning::ThreadScanResponse scanResponse = { 0 };
 
-        scanResponse.panId           = aResult->mPanId;   // why is scanResponse.panID 64b
-        scanResponse.channel         = aResult->mChannel; // why is scanResponse.channel 16b
-        scanResponse.version         = aResult->mVersion;
-        scanResponse.rssi            = aResult->mRssi;
-        scanResponse.lqi             = aResult->mLqi;
-        scanResponse.extendedAddress = Encoding::BigEndian::Get64(aResult->mExtAddress.m8);
-        scanResponse.extendedPanId   = Encoding::BigEndian::Get64(aResult->mExtendedPanId.m8);
-        scanResponse.networkNameLen  = strnlen(aResult->mNetworkName.m8, OT_NETWORK_NAME_MAX_SIZE);
-        memcpy(scanResponse.networkName, aResult->mNetworkName.m8, scanResponse.networkNameLen);
+            scanResponse.panId           = aResult->mPanId;   // why is scanResponse.panID 64b
+            scanResponse.channel         = aResult->mChannel; // why is scanResponse.channel 16b
+            scanResponse.version         = aResult->mVersion;
+            scanResponse.rssi            = aResult->mRssi;
+            scanResponse.lqi             = aResult->mLqi;
+            scanResponse.extendedAddress = Encoding::BigEndian::Get64(aResult->mExtAddress.m8);
+            scanResponse.extendedPanId   = Encoding::BigEndian::Get64(aResult->mExtendedPanId.m8);
+            scanResponse.networkNameLen  = strnlen(aResult->mNetworkName.m8, OT_NETWORK_NAME_MAX_SIZE);
+            memcpy(scanResponse.networkName, aResult->mNetworkName.m8, scanResponse.networkNameLen);
 
-        mScanResponseIter.Add(&scanResponse);
+            if (!mScanResponseIter.Replace(&scanResponse))
+            {
+                mScanResponseIter.Add(&scanResponse);
+            }
+        }
     }
 }
 

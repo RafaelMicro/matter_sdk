@@ -23,7 +23,10 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       # Runs a single command using the runners shell
       - name: Run a one-line script
@@ -40,3 +43,6 @@ jobs:
         
       - name: Building project
         run: ./scripts/examples/gn_rt582_example.sh ./examples/lighting-app/rt582 ./out/lighting-app RT582
+        
+      - name: CHeck bin exist or not
+        run: (ls out/lighting-app/RT582/chip-rt582-lighting-app-example.bin && echo yes) || exit 1

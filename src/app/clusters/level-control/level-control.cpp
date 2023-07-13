@@ -51,7 +51,7 @@ using namespace chip;
 using namespace chip::app::Clusters;
 using namespace chip::app::Clusters::LevelControl;
 
-extern bool isProcessing;
+// extern bool isProcessing;
 
 #ifndef IGNORE_LEVEL_CONTROL_CLUSTER_START_UP_CURRENT_LEVEL
 static bool areStartUpLevelControlServerAttributesNonVolatile(EndpointId endpoint);
@@ -307,7 +307,7 @@ void emberAfLevelControlClusterServerTickCallback(EndpointId endpoint)
         state->callbackSchedule.runTime = System::Clock::Milliseconds32(0);
         writeRemainingTime(endpoint, 0);
 
-        isProcessing = false;
+        // isProcessing = false;
     }
     else
     {
@@ -453,14 +453,14 @@ bool emberAfLevelControlClusterMoveToLevelCallback(app::CommandHandler * command
     auto & optionsMask     = commandData.optionsMask;
     auto & optionsOverride = commandData.optionsOverride;
 
-    if (!isProcessing)
-    {   
-        isProcessing = true;
-    }
-    else
-    {
-        return false;
-    }     
+    // if (!isProcessing)
+    // {   
+    //     isProcessing = true;
+    // }
+    // else
+    // {
+    //     return false;
+    // }     
 
     if (transitionTime.IsNull())
     {
@@ -491,6 +491,15 @@ bool emberAfLevelControlClusterMoveToLevelWithOnOffCallback(app::CommandHandler 
     auto & transitionTime  = commandData.transitionTime;
     auto & optionsMask     = commandData.optionsMask;
     auto & optionsOverride = commandData.optionsOverride;
+
+    // if (!isProcessing)
+    // {   
+    //     isProcessing = true;
+    // }
+    // else
+    // {
+    //     return false;
+    // }    
 
     if (transitionTime.IsNull())
     {

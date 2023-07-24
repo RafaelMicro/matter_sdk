@@ -16,6 +16,8 @@
  */
 
 #include <platform/internal/GenericDeviceInstanceInfoProvider.h>
+#include "cm3_mcu.h"
+// #include "util_log.h"
 
 namespace chip {
 namespace DeviceLayer {
@@ -96,13 +98,26 @@ CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetSerialNumber(char 
 
     err = mGenericConfigManager.ReadConfigValueStr(ConfigClass::kConfigKey_SerialNum, buf, bufSize, serialNumLen);
 
+// #ifdef CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER
+//     if (CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER[0] != 0 && err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND)
+//     {
+//         ReturnErrorCodeIf(sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) > bufSize, CHIP_ERROR_BUFFER_TOO_SMALL);
+//         memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER));
+//         serialNumLen = sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) - 1;
+//         err          = CHIP_NO_ERROR;
+//     }
+// #endif // CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER
 #ifdef CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER
     if (CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER[0] != 0 && err == CHIP_DEVICE_ERROR_CONFIG_NOT_FOUND)
     {
-        ReturnErrorCodeIf(sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) > bufSize, CHIP_ERROR_BUFFER_TOO_SMALL);
-        memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER));
-        serialNumLen = sizeof(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) - 1;
-        err          = CHIP_NO_ERROR;
+        uint8_t temp[256];
+
+        flash_read_sec_register((uint32_t)temp, 0x1100);
+        sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x\n", 
+            temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
+
+        // err("serial number: %s\r\n", buf);       
+        err = CHIP_NO_ERROR; 
     }
 #endif // CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER
     ReturnErrorOnFailure(err);

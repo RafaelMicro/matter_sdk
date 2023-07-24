@@ -129,7 +129,7 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
  * Human readable name of the device model.
  */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "DimableLight"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "DimmableLight"
 #endif
 
 /**

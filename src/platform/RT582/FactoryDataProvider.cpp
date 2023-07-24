@@ -40,8 +40,8 @@
 #define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING   "1.0"
 #define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION          0x0001
 #define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "Light"
-#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER               "RAFAEL0001"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "DimmableLight"
+// #define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER               "RAFAEL0001"
 #endif
 
 namespace chip {
@@ -409,9 +409,16 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSerialNumber(char * buf, si
     // memcpy(buf, mFactoryData.sn.data, mFactoryData.sn.len);
     // buf[mFactoryData.sn.len] = 0;
 
-    memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
-    buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
-    // err("serial number: %s\r\n", CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER);
+    // memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
+    // buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
+
+    uint8_t temp[256];
+
+    flash_read_sec_register((uint32_t)temp, 0x1100);
+    sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x\n", 
+        temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
+
+    // err("serial number: %s\r\n", buf);
     return CHIP_NO_ERROR;
 }
 

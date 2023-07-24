@@ -91,7 +91,6 @@ private:
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
 
-    static void FactoryResetEventHandler(chip::System::Layer * aLayer, void * aAppState);
     static void TimerEventHandler(chip::System::Layer * aLayer, void * aAppState);
 
     void StartTimer(uint32_t aTimeoutMs);

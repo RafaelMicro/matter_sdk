@@ -44,21 +44,7 @@ public:
         Platform::MemoryFree(mpScanResponse);
         mpScanResponse = nullptr;
     }
-    bool Replace(T * pResponse)
-    {
-        size_t index = 0;
 
-        while (index < itemCount)
-        {
-            if (mpScanResponse[index].panId == pResponse->panId)
-            {
-                memcpy(&(mpScanResponse[index]), pResponse, kItemSize);
-                return true;
-            }
-            index++;
-        }
-        return false;
-    }
     void Add(T * pResponse)
     {
         size_t tempCount = itemCount + 1;

@@ -136,7 +136,6 @@ void GenericThreadStackManagerImpl_FreeRTOS<ImplClass>::ThreadTaskMain(void * ar
         self->Impl()->LockThreadStack();
         self->Impl()->ProcessThreadActivity();
         self->Impl()->UnlockThreadStack();
-
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     }
 }

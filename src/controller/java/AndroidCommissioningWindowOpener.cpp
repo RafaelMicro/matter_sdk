@@ -18,7 +18,6 @@
 #include "AndroidCommissioningWindowOpener.h"
 
 #include <app-common/zap-generated/cluster-objects.h>
-#include <controller-clusters/zap-generated/CHIPClusters.h>
 #include <lib/core/CHIPSafeCasts.h>
 #include <lib/support/CHIPMem.h>
 #include <lib/support/JniReferences.h>
@@ -26,6 +25,7 @@
 #include <protocols/secure_channel/PASESession.h>
 #include <setup_payload/ManualSetupPayloadGenerator.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
+#include <zap-generated/CHIPClusters.h>
 
 using namespace chip::app::Clusters;
 using namespace chip::System::Clock;
@@ -121,8 +121,8 @@ void AndroidCommissioningWindowOpener::OnOpenCommissioningWindowResponse(void * 
         std::string QRCode;
         std::string manualPairingCode;
 
-        SuccessOrExit(ManualSetupPayloadGenerator(payload).payloadDecimalStringRepresentation(manualPairingCode));
-        SuccessOrExit(QRCodeSetupPayloadGenerator(payload).payloadBase38Representation(QRCode));
+        SuccessOrExit(status = ManualSetupPayloadGenerator(payload).payloadDecimalStringRepresentation(manualPairingCode));
+        SuccessOrExit(status = QRCodeSetupPayloadGenerator(payload).payloadBase38Representation(QRCode));
 
         if (self->mOnSuccessMethod != nullptr)
         {

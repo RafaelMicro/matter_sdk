@@ -17,17 +17,19 @@
  *    limitations under the License.
  */
 
+#include <math.h>
 #include "LightingManager.h"
+
+#include <app-common/zap-generated/attributes/Accessors.h>
+#include <app-common/zap-generated/ids/Clusters.h>
 
 #include "AppConfig.h"
 #include "AppTask.h"
 #include <FreeRTOS.h>
-#include <app/clusters/on-off-server/on-off-server.h>
 
-#include <app-common/zap-generated/af-structs.h>
-#include <app-common/zap-generated/attributes/Accessors.h>
+#include <lib/support/TypeTraits.h>
 
-// #include "util_log.h"
+
 
 // initialization values for Blue in XY color space
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
@@ -167,18 +169,6 @@ bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t 
            new_state = kState_On;
         }
     }
-    else if (aAction == COLOR_ACTION_CT)
-    {
-        action_initiated = true;
-        if (ct.ctMireds == 0)
-        {
-            new_state = kState_Off;
-        }
-        else
-        {
-           new_state = kState_On;
-        }
-    }
     if (action_initiated)
     {        
         if (mActionInitiated_CB)
@@ -232,30 +222,22 @@ void LightingManager::SetColor(uint16_t x, uint16_t y)
     UpdateLight();
 }
 
-void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
+void LightingManager::SetColor(uint16_t hue, uint8_t saturation)
 {
-    mHSV.h = hue;
-    mHSV.s = saturation;
+    mHSV.h = (uint16_t)((hue * 360)/254);
+    mHSV.s = (saturation * 100)/254;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
 
-    // ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
-
-    mRGB = HsvToRgb(mHSV);
-
-    // info("===> H: %d, S: %d\r\n", hue, saturation);
-    // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-
+    ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
+    mRGB   = HsvToRgb(mHSV);
     UpdateLight();
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
 {
-    mCT.ctMireds = ct.ctMireds;
-    // info("===> mCT.ctMireds: %d\r\n", mCT.ctMireds);
-    // info("===> Kelvin: %d\r\n", 1000000 / mCT.ctMireds);
-    mCW = CTToXY(mCT);
-    // info("===> C: %f, W: %f\r\n", mCW.c, mCW.w);
-    // UpdateLight();
+    mCT  = ct;
+    mRGB = CTToRgb(ct);
+    UpdateLight();
 }
 
 void LightingManager::Set(bool aOn)
@@ -273,12 +255,10 @@ void LightingManager::Set(bool aOn)
 
 void LightingManager::UpdateLight()
 {
-    // ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
+    ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
 
-    if (mState == kState_On && mLevel > 1)
+    if(mState == kState_On && mLevel > 1)
     {
-        // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-
         rt582_led_level_ctl(2, mRGB.b);
         rt582_led_level_ctl(3, mRGB.r);
         rt582_led_level_ctl(4, mRGB.g);

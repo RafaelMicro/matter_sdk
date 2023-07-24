@@ -212,9 +212,14 @@ enum PublicEventTypes
     kOperationalNetworkEnabled,
 
     /**
-     * Signals that DNS-SD platform layer was initialized and is ready to operate.
+     * Signals that DNS-SD has been initialized and is ready to operate.
      */
-    kDnssdPlatformInitialized,
+    kDnssdInitialized,
+
+    /**
+     * Signals that DNS-SD backend was restarted and services must be published again.
+     */
+    kDnssdRestartNeeded,
 
     /**
      * Signals that bindings were updated.
@@ -227,16 +232,15 @@ enum PublicEventTypes
     kOtaStateChanged,
 
     /**
-     * Signals that receives remove fabric command
+     * Server initialization has completed.
+     *
+     * Signals that all server components have been initialized and the node is ready to establish
+     * connections with other nodes. This event can be used to trigger on-boot actions that require
+     * sending messages to other nodes.
      */
+    kServerReady,
+
     kRemoveFabricEvent,
-
-
-    kOnOffAttributeChanged,
-    kLevelControlAttributeChanged,
-    kColorControlAttributeXYChanged,
-    kColorControlAttributeHSVChanged,
-    kColorControlAttributeCTChanged,
 };
 
 /**
@@ -492,6 +496,10 @@ struct ChipDeviceEvent final
             uint64_t nodeId;
             FabricIndex fabricIndex;
         } CommissioningComplete;
+        struct
+        {
+            FabricIndex fabricIndex;
+        } BindingsChanged;
 
         struct
         {
@@ -510,33 +518,6 @@ struct ChipDeviceEvent final
         {
             OtaState newState;
         } OtaStateChanged;
-
-        struct
-        {
-
-        } RemoveFabric;
-
-        struct 
-        {
-            uint8_t value;
-        } OnOffChanged;
-
-        struct 
-        {
-            uint8_t level;
-        } LevelControlChanged;
-
-        struct 
-        {
-            uint8_t hue;
-            uint8_t saturation;    
-            uint8_t value;
-        } ColorControlHSVChanged;
-
-        struct 
-        {
-            uint16_t ctMireds;
-        } ColorControlCTChanged;
     };
 
     void Clear() { memset(this, 0, sizeof(*this)); }

@@ -18,7 +18,6 @@
 
 from typing import Dict, Set
 
-
 # IGNORE lists source files that are not checked at all.
 #
 # Each entry is a string giving a Python regular expression,
@@ -34,6 +33,7 @@ IGNORE: Set[str] = {
     '/Test',
     '/tests/',
     '/tools/',
+    r'/lib/assign/ValueAssign\.h',
 
     # Platforms can opt in or out.
     '/darwin/',

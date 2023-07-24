@@ -31,6 +31,8 @@
 #include <lib/support/Span.h>
 #include <string.h>
 
+#define RT582_HW_CRYPTO_ENGINE_ENABLE
+
 using chip::ByteSpan;
 using chip::MutableByteSpan;
 using chip::Encoding::BufferWriter;
@@ -383,11 +385,30 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
 
     SuccessOrExit(error = PointLoad(in, in_len, XY));
     SuccessOrExit(error = PointIsValid(XY));
-    SuccessOrExit(error = FEMul(tempbn, xy, w0));
-    SuccessOrExit(error = PointInvert(MN));
-    SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
-    SuccessOrExit(error = PointCofactorMul(Z));
 
+#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+
+        SuccessOrExit(error = ComputeZ(Z, xy, XY, w0, MN));
+#else
+        SuccessOrExit(error = FEMul(tempbn, xy, w0));
+        SuccessOrExit(error = PointInvert(MN));
+        SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
+        SuccessOrExit(error = PointCofactorMul(Z));
+
+#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */    
+
+#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+
+    if (role == CHIP_SPAKE2P_ROLE::PROVER)
+    {
+        SuccessOrExit(error = ComputeProverV(V, w0, w1, XY, MN));
+    }
+    else if (role == CHIP_SPAKE2P_ROLE::VERIFIER)
+    {
+
+        SuccessOrExit(error = ComputeVerifierV(V, xy, L));
+    }
+#else
     if (role == CHIP_SPAKE2P_ROLE::PROVER)
     {
         SuccessOrExit(error = FEMul(tempbn, w1, w0));
@@ -397,6 +418,8 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
     {
         SuccessOrExit(error = PointMul(V, L, xy));
     }
+
+#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
 
     SuccessOrExit(error = PointCofactorMul(V));
     SuccessOrExit(error = PointWrite(Z, point_buffer, point_size));
@@ -706,14 +729,14 @@ CHIP_ERROR EcdsaAsn1SignatureToRaw(size_t fe_length_bytes, const ByteSpan & asn1
     return CHIP_NO_ERROR;
 }
 
-CHIP_ERROR AES_CTR_crypt(const uint8_t * input, size_t input_length, const uint8_t * key, size_t key_length, const uint8_t * nonce,
+CHIP_ERROR AES_CTR_crypt(const uint8_t * input, size_t input_length, const Aes128KeyHandle & key, const uint8_t * nonce,
                          size_t nonce_length, uint8_t * output)
 {
     // Discard tag portion of CCM to apply only CTR mode encryption/decryption.
     constexpr size_t kTagLen = Crypto::kAES_CCM128_Tag_Length;
     uint8_t tag[kTagLen];
 
-    return AES_CCM_encrypt(input, input_length, nullptr, 0, key, key_length, nonce, nonce_length, output, tag, kTagLen);
+    return AES_CCM_encrypt(input, input_length, nullptr, 0, key, nonce, nonce_length, output, tag, kTagLen);
 }
 
 CHIP_ERROR GenerateCompressedFabricId(const Crypto::P256PublicKey & root_public_key, uint64_t fabric_id,

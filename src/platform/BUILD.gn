@@ -24,6 +24,10 @@ import("device.gni")
 
 if (chip_enable_openthread) {
   import("//build_overrides/openthread.gni")
+
+  if (chip_device_platform == "linux" || chip_device_platform == "darwin") {
+    import("//build_overrides/ot_br_posix.gni")
+  }
 }
 
 if (chip_device_platform != "none" && chip_device_platform != "external") {
@@ -50,7 +54,7 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
         chip_device_platform != "linux" && chip_device_platform != "android"
 
     # lock tracking: none/log/fatal or auto for a platform-dependent choice
-    chip_stack_lock_tracking = "auto"
+    chip_stack_lock_tracking = "none"
 
     # todo: below operates are not work without root permission
     # pthread_attr_setschedpolicy in GenericPlatformManagerImpl_POSIX.cpp
@@ -61,6 +65,9 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
 
     # The string of device software version was built.
     chip_device_config_device_software_version_string = ""
+
+    # Define the default number of ip addresses to discover
+    chip_max_discovered_ip_addresses = 5
   }
 
   if (chip_stack_lock_tracking == "auto") {
@@ -134,13 +141,9 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
     }
 
     if (chip_use_transitional_commissionable_data_provider) {
-      defines += [ 
-        "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=1",  
-      ]
+      defines += [ "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=1" ]
     } else {
-      defines += [ 
-        "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=0",  
-      ]
+      defines += [ "CHIP_USE_TRANSITIONAL_COMMISSIONABLE_DATA_PROVIDER=0" ]
     }
 
     if (chip_device_platform == "cc13x2_26x2") {
@@ -169,11 +172,6 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
         "CHIP_DEVICE_LAYER_TARGET_EFR32=1",
         "CHIP_DEVICE_LAYER_TARGET=silabs",
       ]
-    } else if (chip_device_platform == "rt582") {
-      defines += [
-        "CHIP_DEVICE_LAYER_TARGET_RT582=1",
-        "CHIP_DEVICE_LAYER_TARGET=RT582",
-      ]        
     } else if (chip_device_platform == "esp32") {
       defines += [
         "CHIP_DEVICE_LAYER_TARGET_ESP32=1",
@@ -196,8 +194,6 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
         "CHIP_DEVICE_LAYER_TARGET=Tizen",
         "CHIP_DEVICE_CONFIG_ENABLE_WIFI=${chip_enable_wifi}",
       ]
-      defines -=
-          [ "CHIP_DEVICE_CONFIG_ENABLE_WPA=${chip_device_config_enable_wpa}" ]
     } else if (chip_device_platform == "nrfconnect") {
       defines += [
         "CHIP_DEVICE_LAYER_TARGET_NRFCONNECT=1",
@@ -293,11 +289,18 @@ if (chip_device_platform != "none" && chip_device_platform != "external") {
         "CHIP_DEVICE_LAYER_TARGET_OPEN_IOT_SDK=1",
         "CHIP_DEVICE_LAYER_TARGET=openiotsdk",
       ]
+    } else if (chip_device_platform == "rt582") {
+      defines += [
+        "CHIP_DEVICE_LAYER_TARGET_RT582=1",
+        "CHIP_DEVICE_LAYER_TARGET=RT582",
+      ]
     }
 
     if (chip_device_config_device_software_version_string != "") {
       defines += [ "CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING=\"${chip_device_config_device_software_version_string}\"" ]
     }
+
+    defines += [ "CHIP_DEVICE_CONFIG_MAX_DISCOVERED_IP_ADDRESSES=${chip_max_discovered_ip_addresses}" ]
   }
 } else if (chip_device_platform == "none") {
   buildconfig_header("platform_buildconfig") {
@@ -424,13 +427,11 @@ if (chip_device_platform != "none") {
     } else if (chip_device_platform == "darwin") {
       _platform_target = "Darwin"
     } else if (chip_device_platform == "efr32") {
-      _platform_target = "silabs/EFR32"
+      _platform_target = "silabs/efr32"
     } else if (chip_device_platform == "SiWx917") {
       _platform_target = "silabs/SiWx917"
     } else if (chip_device_platform == "esp32") {
       _platform_target = "ESP32"
-    } else if (chip_device_platform == "rt582") {
-      _platform_target = "RT582"            
     } else if (chip_device_platform == "k32w0") {
       _platform_target = "nxp/k32w/k32w0"
     } else if (chip_device_platform == "linux") {
@@ -473,6 +474,8 @@ if (chip_device_platform != "none") {
       _platform_target = "mt793x"
     } else if (chip_device_platform == "openiotsdk") {
       _platform_target = "openiotsdk"
+    } else if (chip_device_platform == "rt582") {
+      _platform_target = "RT582"
     } else {
       assert(false, "Unknown chip_device_platform: ${chip_device_platform}")
     }
@@ -490,4 +493,8 @@ if (chip_device_platform != "none") {
   group("platform") {
     public_deps = [ ":platform_buildconfig" ]
   }
+}
+
+source_set("syscalls_stub") {
+  sources = [ "SyscallStubs.cpp" ]
 }

@@ -17,7 +17,7 @@
 #pragma once
 
 #include <lib/core/CHIPPersistentStorageDelegate.h>
-#include <lib/core/CHIPTLV.h>
+#include <lib/core/TLV.h>
 #include <lib/support/DefaultStorageKeyAllocator.h>
 
 namespace chip {
@@ -52,7 +52,7 @@ struct PersistentData
         return storage->SyncSetKeyValue(key.KeyName(), buffer, static_cast<uint16_t>(writer.GetLengthWritten()));
     }
 
-    CHIP_ERROR Load(PersistentStorageDelegate * storage)
+    virtual CHIP_ERROR Load(PersistentStorageDelegate * storage)
     {
         VerifyOrReturnError(nullptr != storage, CHIP_ERROR_INVALID_ARGUMENT);
 

@@ -34,12 +34,11 @@ import hashlib
 import os
 import struct
 import sys
-import pylzma
 from enum import IntEnum
 
 sys.path.insert(0, os.path.join(
     os.path.dirname(__file__), '../controller/python'))
-from chip.tlv import TLVReader, TLVWriter, uint  # noqa: E402
+from chip.tlv import TLVReader, TLVWriter, uint  # noqa: E402 isort:skip
 
 HEADER_MAGIC = 0x1BEEF11E
 FIXED_HEADER_FORMAT = '<IQI'
@@ -187,33 +186,6 @@ def generate_header(header_tlv: bytes, payload_size: int):
     return fixed_header + header_tlv
 
 
-def lzma_compression(inputFileName, outputFileName):
-    i = open(inputFileName, 'rb')
-    o = open(outputFileName, 'wb')
-    i.seek(0)
-    s = pylzma.compressfile(i, dictionary=16)
-
-    statinfo = os.stat(inputFileName)
-
-    result = s.read(5)
-    # size of uncompressed data
-    result += struct.pack('<Q', statinfo.st_size)
-    # compressed data
-    result += s.read()
-
-    o.write(result)
-    o.close()
-    i.close()
-
-    oSize = float(os.path.getsize(outputFileName))
-    iSize = float(os.path.getsize(inputFileName))
-
-    print('input data size: %s bytes' %int(iSize))
-    print('output data size: %s bytes' %int(oSize))
-    print(oSize/iSize)
-    sys.stdout.flush()
-
-
 def write_image(args: object, header: bytes):
     """
     Write OTA image file consisting of header and concatenated payload files
@@ -221,14 +193,9 @@ def write_image(args: object, header: bytes):
 
     with open(args.output_file, 'wb') as out_file:
         out_file.write(header)
-        # print(len(header))
-        # print(args.input_files)
-        # print(args.output_file)
 
         for path in args.input_files:
-            compressed = path+'.lzma'
-            lzma_compression(path, compressed)
-            with open(compressed, 'rb') as file:
+            with open(path, 'rb') as file:
                 while True:
                     chunk = file.read(PAYLOAD_BUFFER_SIZE)
                     if not chunk:

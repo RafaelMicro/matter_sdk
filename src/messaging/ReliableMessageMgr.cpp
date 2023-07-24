@@ -209,10 +209,10 @@ System::Clock::Timestamp ReliableMessageMgr::GetBackoff(System::Clock::Timestamp
 {
     // See section "4.11.8. Parameters and Constants" for the parameters below:
     // MRP_BACKOFF_JITTER = 0.25
-    constexpr uint32_t MRP_BACKOFF_JITTER_BASE = 1024;
+    constexpr uint32_t MRP_BACKOFF_JITTER_BASE = 2048;
     // MRP_BACKOFF_MARGIN = 1.1
     constexpr uint32_t MRP_BACKOFF_MARGIN_NUMERATOR   = 1127;
-    constexpr uint32_t MRP_BACKOFF_MARGIN_DENOMINATOR = 1024;
+    constexpr uint32_t MRP_BACKOFF_MARGIN_DENOMINATOR = 2048;
     // MRP_BACKOFF_BASE = 1.6
     constexpr uint32_t MRP_BACKOFF_BASE_NUMERATOR   = 16;
     constexpr uint32_t MRP_BACKOFF_BASE_DENOMINATOR = 10;
@@ -261,6 +261,10 @@ System::Clock::Timestamp ReliableMessageMgr::GetBackoff(System::Clock::Timestamp
     {
         mrpBackoffTime += System::Clock::Timestamp(sedIntervals.ActiveIntervalMS);
     }
+#endif
+
+#ifdef CHIP_CONFIG_MRP_RETRY_INTERVAL_SENDER_BOOST
+    mrpBackoffTime += CHIP_CONFIG_MRP_RETRY_INTERVAL_SENDER_BOOST;
 #endif
 
     return mrpBackoffTime;

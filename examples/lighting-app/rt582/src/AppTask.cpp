@@ -23,11 +23,9 @@
 
 #include <OTAConfig.h>
 
-#include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/attribute-type.h>
-#include <app-common/zap-generated/cluster-id.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/clusters/on-off-server/on-off-server.h>
+
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/server/Dnssd.h>
@@ -63,7 +61,6 @@ using namespace chip;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
-
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)
@@ -454,24 +451,23 @@ void AppTask::InitServer(intptr_t arg)
     }
     LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    // uint8_t current_level = 0;
-    // RgbColor_t RGB;
+    uint8_t current_level = 0;
+    RgbColor_t RGB;
 
-    // if (LightMgr().IsTurnedOn())
-    // {
-    //     current_level = LightMgr().GetLevel();
-    //     RGB = LightMgr().GetRgb();
-    //     rt582_led_level_ctl(2, RGB.b);
-    //     rt582_led_level_ctl(3, RGB.r);
-    //     rt582_led_level_ctl(4, RGB.g);
-    // }
-    // else
-    // {
-    //     rt582_led_level_ctl(2, 0); 
-    //     rt582_led_level_ctl(3, 0); 
-    //     rt582_led_level_ctl(4, 0);      
-    // }
-
+    if (LightMgr().IsTurnedOn())
+    {
+        current_level = LightMgr().GetLevel();
+        RGB = LightMgr().GetRgb();
+        rt582_led_level_ctl(2, RGB.b);
+        rt582_led_level_ctl(3, RGB.r);
+        rt582_led_level_ctl(4, RGB.g);
+    }
+    else
+    {
+        rt582_led_level_ctl(2, 0); 
+        rt582_led_level_ctl(3, 0); 
+        rt582_led_level_ctl(4, 0);      
+    }
 #if RT582_OTA_ENABLED
     OTAConfig::Init();
 #endif
@@ -516,43 +512,22 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
+
     case DeviceEventType::kCHIPoBLEConnectionEstablished:
         sHaveBLEConnections = true;
         UpdateStatusLED(); 
         break;
+
     case DeviceEventType::kCommissioningComplete:
         sCommissioned = true;
         UpdateStatusLED();
         break;
     case DeviceEventType::kRemoveFabricEvent:
+        // info("===> Commissioned Fabric: %d\r\n", chip::Server::GetInstance().GetFabricTable().FabricCount());
         if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
         {
-            chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(1000), FactoryResetEventHandler, nullptr);
+            chip::Server::GetInstance().ScheduleFactoryReset();
         }
-        break;
-    case DeviceEventType::kOnOffAttributeChanged:
-        LightMgr().InitiateAction(aEvent->OnOffChanged.value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, 
-                                  0, 
-                                  sizeof(aEvent->OnOffChanged.value), 
-                                  (uint8_t *)&aEvent->OnOffChanged.value);
-        break;
-    case DeviceEventType::kLevelControlAttributeChanged:
-        LightMgr().InitiateAction(LightingManager::LEVEL_ACTION, 
-                                  0, 
-                                  sizeof(aEvent->LevelControlChanged.level), 
-                                  (uint8_t *)&aEvent->LevelControlChanged.level);
-        break;
-    case DeviceEventType::kColorControlAttributeHSVChanged:
-        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, 
-                                  0, 
-                                  sizeof(aEvent->ColorControlHSVChanged), 
-                                  (uint8_t *)&aEvent->ColorControlHSVChanged);
-        break;
-    case DeviceEventType::kColorControlAttributeCTChanged:
-        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, 
-                                  0, 
-                                  sizeof(aEvent->ColorControlCTChanged), 
-                                  (uint8_t *)&aEvent->ColorControlCTChanged);
         break;
     default:
         break;
@@ -574,7 +549,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    ChipLogProgress(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
+    ChipLogError(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
 
 #if CHIP_DEVICE_CONFIG_ENABLE_SED
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
@@ -665,18 +640,15 @@ CHIP_ERROR AppTask::StartAppTask()
 #if RAFAEL_CERTS_ENABLED
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     // SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
+#if RAFAEL_PASSCODE_ENABLED
     SetCommissionableDataProvider(&mFactoryDataProvider);
+#endif
     SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
 
     return CHIP_NO_ERROR;
-}
-
-void AppTask::FactoryResetEventHandler(chip::System::Layer * aLayer, void * aAppState)
-{
-    chip::Server::GetInstance().ScheduleFactoryReset();
 }
 
 void AppTask::TimerEventHandler(chip::System::Layer * aLayer, void * aAppState)

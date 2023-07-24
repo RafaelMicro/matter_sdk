@@ -40,17 +40,11 @@ struct XyColor_t
     uint16_t y;
 };
 
-struct CW_t
-{
-    double c;
-    double w;
-};
-
 struct CtColor_t
 {
     uint16_t ctMireds;
 };
 
-RgbColor_t XYToRgb(uint8_t level, uint16_t currentX, uint16_t currentY);
+RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY);
 RgbColor_t HsvToRgb(HsvColor_t hsv);
-CW_t CTToXY(CtColor_t ct);
+RgbColor_t CTToRgb(CtColor_t ct);

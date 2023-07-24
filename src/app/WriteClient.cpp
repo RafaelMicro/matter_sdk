@@ -225,7 +225,7 @@ CHIP_ERROR WriteClient::TryPutSinglePreencodedAttributeWritePayload(const Concre
 
     ReturnErrorOnFailure(PrepareAttributeIB(attributePath));
     VerifyOrReturnError((writer = GetAttributeDataIBTLVWriter()) != nullptr, CHIP_ERROR_INCORRECT_STATE);
-    ReturnErrorOnFailure(writer->CopyElement(TLV::ContextTag(to_underlying(AttributeDataIB::Tag::kData)), dataToWrite));
+    ReturnErrorOnFailure(writer->CopyElement(TLV::ContextTag(AttributeDataIB::Tag::kData), dataToWrite));
     ReturnErrorOnFailure(FinishAttributeIB());
     return CHIP_NO_ERROR;
 }
@@ -243,7 +243,6 @@ CHIP_ERROR WriteClient::PutSinglePreencodedAttributeWritePayload(const chip::app
     {
         // If it failed with no memory, then we create a new chunk for it.
         mWriteRequestBuilder.GetWriteRequests().Rollback(backupWriter);
-        mWriteRequestBuilder.GetWriteRequests().ResetError();
         ReturnErrorOnFailure(StartNewMessage());
         err = TryPutSinglePreencodedAttributeWritePayload(attributePath, data);
         // Since we have created a new chunk for this element, the encode is expected to succeed.
@@ -460,7 +459,7 @@ CHIP_ERROR WriteClient::OnMessageReceived(Messaging::ExchangeContext * apExchang
         if (!mChunks.IsNull())
         {
             // Send the next chunk.
-            SuccessOrExit(SendWriteRequest());
+            SuccessOrExit(err = SendWriteRequest());
         }
     }
     else if (aPayloadHeader.HasMessageType(MsgType::StatusResponse))
@@ -521,13 +520,7 @@ CHIP_ERROR WriteClient::ProcessAttributeStatusIB(AttributeStatusIB::Parser & aAt
     err = aAttributeStatusIB.GetPath(&attributePathParser);
     SuccessOrExit(err);
 
-    err = attributePathParser.GetCluster(&(attributePath.mClusterId));
-    SuccessOrExit(err);
-    err = attributePathParser.GetEndpoint(&(attributePath.mEndpointId));
-    SuccessOrExit(err);
-    err = attributePathParser.GetAttribute(&(attributePath.mAttributeId));
-    SuccessOrExit(err);
-    err = attributePathParser.GetListIndex(attributePath);
+    err = attributePathParser.GetConcreteAttributePath(attributePath);
     SuccessOrExit(err);
 
     err = aAttributeStatusIB.GetErrorStatus(&(StatusIBParser));

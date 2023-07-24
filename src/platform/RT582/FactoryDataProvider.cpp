@@ -28,9 +28,21 @@
 #include <lib/support/Base64.h>
 
 // #include <logging/log.h>
-#include "util_log.h"
+// #include "util_log.h"
 #include "FactoryDataParser.h"
 #include "cm3_mcu.h"
+
+#if RAFAEL_CERTS_ENABLED
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID                 0x1346
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID                0x400E
+// #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION_STRING   "1.0"
+// #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION          0x0001
+#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING   "1.0"
+#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION          0x0001
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "Light"
+#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER               "RAFAEL0001"
+#endif
 
 namespace chip {
 namespace {
@@ -309,111 +321,158 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupPasscode(uint32_t setu
     return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorName(char * buf, size_t bufSize)
-// {
-//     ReturnErrorCodeIf(bufSize < mFactoryData.vendor_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.vendor_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorName(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(bufSize < mFactoryData.vendor_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // ReturnErrorCodeIf(!mFactoryData.vendor_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
-//     memcpy(buf, mFactoryData.vendor_name.data, mFactoryData.vendor_name.len);
-//     buf[mFactoryData.vendor_name.len] = 0;
+    // memcpy(buf, mFactoryData.vendor_name.data, mFactoryData.vendor_name.len);
+    // buf[mFactoryData.vendor_name.len] = 0;
 
-//     return CHIP_NO_ERROR;
-// }
+    memcpy(buf, CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME, strlen(CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME) + 1);
+    buf[strlen(CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME) + 1] = 0;
+    // err("vendor name: %s\r\n", buf);
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorId(uint16_t & vendorId)
-// {
-//     VerifyOrReturnError(mFactoryData.vendorIdPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     vendorId = mFactoryData.vendor_id;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorId(uint16_t & vendorId)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // VerifyOrReturnError(mFactoryData.vendorIdPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // vendorId = mFactoryData.vendor_id;
+    vendorId = CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID;
+    // err("vid: %x\r\n", vendorId);
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductName(char * buf, size_t bufSize)
-// {
-//     ReturnErrorCodeIf(bufSize < mFactoryData.product_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.product_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductName(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(bufSize < mFactoryData.product_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // ReturnErrorCodeIf(!mFactoryData.product_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
-//     memcpy(buf, mFactoryData.product_name.data, mFactoryData.product_name.len);
-//     buf[mFactoryData.product_name.len] = 0;
+    // memcpy(buf, mFactoryData.product_name.data, mFactoryData.product_name.len);
+    // buf[mFactoryData.product_name.len] = 0;
 
-//     return CHIP_NO_ERROR;
-// }
+    memcpy(buf, CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME, strlen(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME) + 1);
+    buf[strlen(CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME) + 1] = 0;
+    // err("product name: %s\r\n", CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME);
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductId(uint16_t & productId)
-// {
-//     VerifyOrReturnError(mFactoryData.productIdPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     productId = mFactoryData.product_id;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductId(uint16_t & productId)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // VerifyOrReturnError(mFactoryData.productIdPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // productId = mFactoryData.product_id;
+    productId = CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID;
+    // err("pid: %x\r\n", productId);
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSerialNumber(char * buf, size_t bufSize)
-// {
-//     ReturnErrorCodeIf(bufSize < mFactoryData.sn.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.sn.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetPartNumber(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    return CHIP_NO_ERROR;
+}
 
-//     memcpy(buf, mFactoryData.sn.data, mFactoryData.sn.len);
-//     buf[mFactoryData.sn.len] = 0;
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductURL(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    memcpy(buf, "https://www.rafaelmicro.com/tw/", strlen("https://www.rafaelmicro.com/tw/") + 1);
+    // err("URL: %s\r\n", buf);
 
-//     return CHIP_NO_ERROR;
-// }
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day)
-// {
-//     VerifyOrReturnError(mFactoryData.date_year != 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     year  = mFactoryData.date_year;
-//     month = mFactoryData.date_month;
-//     day   = mFactoryData.date_day;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductLabel(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersion(uint16_t & hardwareVersion)
-// {
-//     VerifyOrReturnError(mFactoryData.hwVerPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     hardwareVersion = mFactoryData.hw_ver;
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSerialNumber(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(bufSize < mFactoryData.sn.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // ReturnErrorCodeIf(!mFactoryData.sn.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersionString(char * buf, size_t bufSize)
-// {
-//     ReturnErrorCodeIf(bufSize < mFactoryData.hw_ver_str.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.hw_ver_str.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // memcpy(buf, mFactoryData.sn.data, mFactoryData.sn.len);
+    // buf[mFactoryData.sn.len] = 0;
 
-//     memcpy(buf, mFactoryData.hw_ver_str.data, mFactoryData.hw_ver_str.len);
-//     buf[mFactoryData.hw_ver_str.len] = 0;
+    memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
+    buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
+    // err("serial number: %s\r\n", CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER);
+    return CHIP_NO_ERROR;
+}
 
-//     return CHIP_NO_ERROR;
-// }
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // VerifyOrReturnError(mFactoryData.date_year != 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // year  = mFactoryData.date_year;
+    // month = mFactoryData.date_month;
+    // day   = mFactoryData.date_day;
+    return CHIP_NO_ERROR;
+}
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan)
-// {
-//     ReturnErrorCodeIf(uniqueIdSpan.size() < mFactoryData.rd_uid.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-//     ReturnErrorCodeIf(!mFactoryData.rd_uid.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersion(uint16_t & hardwareVersion)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // VerifyOrReturnError(mFactoryData.hwVerPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // hardwareVersion = mFactoryData.hw_ver;
+    return CHIP_NO_ERROR;
+}
 
-//     memcpy(uniqueIdSpan.data(), mFactoryData.rd_uid.data, mFactoryData.rd_uid.len);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersionString(char * buf, size_t bufSize)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(bufSize < mFactoryData.hw_ver_str.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // ReturnErrorCodeIf(!mFactoryData.hw_ver_str.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
-//     return CHIP_NO_ERROR;
-// }
+    // memcpy(buf, mFactoryData.hw_ver_str.data, mFactoryData.hw_ver_str.len);
+    // buf[mFactoryData.hw_ver_str.len] = 0;
 
-// template <class FlashFactoryData>
-// CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetEnableKey(MutableByteSpan & enableKey)
-// {
-//     ReturnErrorCodeIf(!mFactoryData.enable_key.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-//     ReturnErrorCodeIf(enableKey.size() < mFactoryData.enable_key.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    return CHIP_NO_ERROR;
+}
 
-//     memcpy(enableKey.data(), mFactoryData.enable_key.data, mFactoryData.enable_key.len);
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(uniqueIdSpan.size() < mFactoryData.rd_uid.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // ReturnErrorCodeIf(!mFactoryData.rd_uid.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
-//     enableKey.reduce_size(mFactoryData.enable_key.len);
+    // memcpy(uniqueIdSpan.data(), mFactoryData.rd_uid.data, mFactoryData.rd_uid.len);
 
-//     return CHIP_NO_ERROR;
-// }
+    return CHIP_NO_ERROR;
+}
+
+template <class FlashFactoryData>
+CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetEnableKey(MutableByteSpan & enableKey)
+{
+    // err("enter %s\r\n", __FUNCTION__);
+    // ReturnErrorCodeIf(!mFactoryData.enable_key.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // ReturnErrorCodeIf(enableKey.size() < mFactoryData.enable_key.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+
+    // memcpy(enableKey.data(), mFactoryData.enable_key.data, mFactoryData.enable_key.len);
+
+    // enableKey.reduce_size(mFactoryData.enable_key.len);
+
+    return CHIP_NO_ERROR;
+}
 
 // Fully instantiate the template class in whatever compilation unit includes this file.
 template class FactoryDataProvider<InternalFlashFactoryData>;

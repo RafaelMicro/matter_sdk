@@ -39,19 +39,26 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
 // #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR 3846
 // #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_ITERATION_COUNT 1234
 // #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_SALT "UmFmYWVsTWljcm8gTWF0dGVyIFJUNTh4"
-// #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER \
-//     "YvdRY7tNGx8WY/eQix/HKJ/NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
+// #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
+//     "YvdRY7tNGx8WY/eQix/HKJ/"                                                                                                      \
+//     "NEAqVs2TqcTtGG+BGqvMEIxFGgTFRPx4jZItAhbl9FyA4U6cnwNNCtrDEZD7PlQuqNQeKPuacusD1ghKnKiAmOEMqJqYtVSEDG8KJRBm5RQ=="
 
-#if 0
 #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 20202021
 #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR 3840
 #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_ITERATION_COUNT 1000
 #define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_SALT "U1BBS0UyUCBLZXkgU2FsdA=="
-#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER                                                                               \
-    "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/"  \
+#define CHIP_DEVICE_CONFIG_USE_TEST_SPAKE2P_VERIFIER \
+    "uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+NEkg0JVI5MGCQGMMT/SRPFNRODm3wH/MBiehuFc6FJ/" \ 
     "NH6Rmzw=="
 
-#endif
+// For convenience, Chip Security Test Mode can be enabled and the
+// requirement for authentication in various protocols can be disabled.
+//
+//    WARNING: These options make it possible to circumvent basic Chip security functionality,
+//    including message encryption. Because of this they MUST NEVER BE ENABLED IN PRODUCTION BUILDS.
+//
+#define CHIP_CONFIG_SECURITY_TEST_MODE 0
+
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID
  *
@@ -73,7 +80,7 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
 #if (RAFAEL_CERTS_ENABLED)
 #define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x400E
 #else
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8000
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8005
 #endif
 
 /**
@@ -84,8 +91,6 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
  * physical device, a change to its packaging, and/or a change to its marketing presentation.
  * This value is generally *not* incremented for device software versions.
  */
-
-#if 0
 #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION 1
 
 /**
@@ -156,15 +161,18 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
  * Enable recording UTC timestamps.
  */
 #define CHIP_CONFIG_EVENT_LOGGING_UTC_TIMESTAMPS 0
-#endif
 
-#define CHIP_BTP_PROTOCOL_ENGINE_DEBUG_LOGGING_ENABLED 1
 /**
  * CHIP_DEVICE_CONFIG_EVENT_LOGGING_DEBUG_BUFFER_SIZE
  *
  * A size, in bytes, of the individual debug event logging buffer.
  */
 #define CHIP_DEVICE_CONFIG_EVENT_LOGGING_DEBUG_BUFFER_SIZE (512)
+
+#define CHIP_DEVICE_CONFIG_ENABLE_EXTENDED_DISCOVERY 0
+
 #define CHIP_PROGRESS_LOGGING 1
+
 #define CHIP_DETAIL_LOGGING 0
-//#define CHIP_DEVICE_CONFIG_ENABLE_EXTENDED_DISCOVERY 0
+
+#define CHIP_DEVICE_CONFIG_DEVICE_TYPE 0x010D

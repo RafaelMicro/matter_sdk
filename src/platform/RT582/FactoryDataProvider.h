@@ -313,13 +313,10 @@ struct ExternalFlashFactoryData
     // uint8_t mFactoryDataBuffer[2]; //PM_FACTORY_DATA_SIZE
 };
 
-// template <class FlashFactoryData>
-// class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider,
-//                             public CommissionableDataProvider,
-//                             public DeviceInstanceInfoProvider
 template <class FlashFactoryData>
 class FactoryDataProvider : public chip::Credentials::DeviceAttestationCredentialsProvider,
-                            public chip::DeviceLayer::CommissionableDataProvider
+                            public chip::DeviceLayer::CommissionableDataProvider,
+                            public chip::DeviceLayer::DeviceInstanceInfoProvider
 {
 public:
     CHIP_ERROR Init();
@@ -341,18 +338,21 @@ public:
     CHIP_ERROR SetSetupPasscode(uint32_t setupPasscode) override;
 
     // ===== Members functions that implement the DeviceInstanceInfoProvider
-    // CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;
-    // CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
-    // CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
-    // CHIP_ERROR GetProductId(uint16_t & productId) override;
-    // CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
-    // CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
-    // CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
-    // CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
-    // CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
+    CHIP_ERROR GetVendorName(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetVendorId(uint16_t & vendorId) override;
+    CHIP_ERROR GetProductName(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductId(uint16_t & productId) override;
+    CHIP_ERROR GetPartNumber(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductURL(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetProductLabel(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetSerialNumber(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetManufacturingDate(uint16_t & year, uint8_t & month, uint8_t & day) override;
+    CHIP_ERROR GetHardwareVersion(uint16_t & hardwareVersion) override;
+    CHIP_ERROR GetHardwareVersionString(char * buf, size_t bufSize) override;
+    CHIP_ERROR GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan) override;
 
     // ===== Members functions that are platform-specific
-    // CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
+    CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
 
 private:
     static constexpr uint16_t kFactoryDataPartitionSize    = 100; // PM_FACTORY_DATA_SIZE

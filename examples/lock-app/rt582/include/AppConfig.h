@@ -28,3 +28,12 @@
 // Time it takes in ms for the simulated actuator to move from one
 // state to another.
 #define ACTUATOR_MOVEMENT_PERIOS_MS 10
+
+
+
+// Maximum number of users supported by lock
+#define CONFIG_LOCK_NUM_USERS (3)
+// Maximum number of credentials supported by lock
+#define CONFIG_LOCK_NUM_CREDENTIALS (2)
+// Maximum number of credentials per user supported by lock
+#define CONFIG_LOCK_NUM_CREDENTIALS_PER_USER (1)

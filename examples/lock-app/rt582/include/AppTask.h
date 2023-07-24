@@ -29,7 +29,8 @@
 #include "AppEvent.h"
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
-#include "LockManager.h"
+
+#include "BoltLockManager.h"
 // #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
@@ -63,20 +64,19 @@ public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
     static AppTask & GetAppTask() { return sAppTask; }
-
-    void ActionRequest(int32_t aActor, LockManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
+    void ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction);
 
 private:
-    static void UpdateClusterState(intptr_t context);
+    static void UpdateClusterState();
 
     CHIP_ERROR Init();
     static void InitServer(intptr_t arg);
+    static void ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor);
+    static void ActionCompleted(BoltLockManager::Action_t aAction);    
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
     static void LockActionEventHandler(AppEvent * aEvent);
-    static void ActionInitiated(LockManager::Action_t aAction, int32_t aActor);
-    static void ActionCompleted(LockManager::Action_t aAction);
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);
 

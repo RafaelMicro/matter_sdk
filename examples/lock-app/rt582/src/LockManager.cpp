@@ -1,7 +1,6 @@
 /*
  *
- *    Copyright (c) 2020 Project CHIP Authors
- *    Copyright (c) 2019 Google LLC.
+ *    Copyright (c) 2020-2023 Project CHIP Authors
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,694 +18,282 @@
 
 #include "LockManager.h"
 
-#include "AppConfig.h"
-#include "AppTask.h"
-#include <FreeRTOS.h>
-#include <app-common/zap-generated/attributes/Accessors.h>
-#include <cstring>
+#include <iostream>
 #include <lib/support/logging/CHIPLogging.h>
 
-LockManager LockManager::sLock;
+using chip::to_underlying;
 
-TimerHandle_t sLockTimer;
+LockManager LockManager::instance;
 
-using namespace ::chip::DeviceLayer::Internal;
-using namespace RT582DoorLock::LockInitParams;
-
-CHIP_ERROR LockManager::Init(chip::app::DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> state, LockParam lockParam)
+LockManager & LockManager::Instance()
 {
+    return instance;
+}
 
-    LockParams = lockParam;
-
-    if (LockParams.numberOfUsers > kMaxUsers)
+bool LockManager::InitEndpoint(chip::EndpointId endpointId)
+{
+    uint16_t numberOfSupportedUsers = 0;
+    if (!DoorLockServer::Instance().GetNumberOfUserSupported(endpointId, numberOfSupportedUsers))
     {
-        ChipLogError(NotSpecified, "Max number of users is greater than %d, the maximum amount of users currently supported on this platform",
-                  kMaxUsers);
-        return CHIP_ERROR_NO_MEMORY;
+        ChipLogError(Zcl,
+                     "Unable to get number of supported users when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+                     endpointId);
+        numberOfSupportedUsers = 10;
     }
 
-    if (LockParams.numberOfCredentialsPerUser > kMaxCredentialsPerUser)
+    uint16_t numberOfSupportedCredentials = 0;
+    // We're planning to use shared storage for PIN and RFID users so we will have the maximum of both sizes her to simplify logic
+    uint16_t numberOfPINCredentialsSupported  = 0;
+    uint16_t numberOfRFIDCredentialsSupported = 0;
+    if (!DoorLockServer::Instance().GetNumberOfPINCredentialsSupported(endpointId, numberOfPINCredentialsSupported) ||
+        !DoorLockServer::Instance().GetNumberOfRFIDCredentialsSupported(endpointId, numberOfRFIDCredentialsSupported))
     {
-        ChipLogError(NotSpecified, "Max number of credentials per user is greater than %d, the maximum amount of users currently supported on this "
-                  "platform",
-                  kMaxCredentialsPerUser);
-        return CHIP_ERROR_NO_MEMORY;
+        ChipLogError(
+            Zcl, "Unable to get number of supported credentials when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+            endpointId);
+        numberOfSupportedCredentials = 10;
     }
-
-    if (LockParams.numberOfWeekdaySchedulesPerUser > kMaxWeekdaySchedulesPerUser)
-    {
-        ChipLogError(NotSpecified, 
-            "Max number of schedules is greater than %d, the maximum amount of schedules currently supported on this platform",
-            kMaxWeekdaySchedulesPerUser);
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-    if (LockParams.numberOfYeardaySchedulesPerUser > kMaxYeardaySchedulesPerUser)
-    {
-        ChipLogError(NotSpecified, 
-            "Max number of schedules is greater than %d, the maximum amount of schedules currently supported on this platform",
-            kMaxYeardaySchedulesPerUser);
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-    if (LockParams.numberOfHolidaySchedules > kMaxHolidaySchedules)
-    {
-        ChipLogError(NotSpecified, 
-            "Max number of schedules is greater than %d, the maximum amount of schedules currently supported on this platform",
-            kMaxHolidaySchedules);
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-    // Create FreeRTOS sw timer for lock timer.
-    sLockTimer = xTimerCreate("lockTmr",        // Just a text name, not used by the RTOS kernel
-                              1,                // == default timer period (mS)
-                              false,            // no timer reload (==one-shot)
-                              (void *) this,    // init timer id = lock obj context
-                              TimerEventHandler // timer callback handler
-    );
-
-    if (sLockTimer == NULL)
-    {
-        ChipLogError(NotSpecified, "sLockTimer timer create failed");
-        return CHIP_ERROR_NO_MEMORY;
-    }
-
-    if (state.Value() == DlLockState::kUnlocked)
-        mState = kState_UnlockCompleted;
     else
-        mState = kState_LockCompleted;
-
-    return CHIP_NO_ERROR;
-}
-
-bool LockManager::IsValidUserIndex(uint16_t userIndex)
-{
-    return (userIndex < kMaxUsers);
-}
-
-bool LockManager::IsValidCredentialIndex(uint16_t credentialIndex, DlCredentialType type)
-{
-    if (DlCredentialType::kProgrammingPIN == type)
     {
-        return (0 == credentialIndex); // 0 is required index for Programming PIN
+        numberOfSupportedCredentials = std::max(numberOfPINCredentialsSupported, numberOfRFIDCredentialsSupported);
     }
-    return (credentialIndex < kMaxCredentialsPerUser);
-}
 
-bool LockManager::IsValidWeekdayScheduleIndex(uint8_t scheduleIndex)
-{
-    return (scheduleIndex < kMaxWeekdaySchedulesPerUser);
-}
+    uint8_t numberOfCredentialsSupportedPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfCredentialsSupportedPerUser(endpointId, numberOfCredentialsSupportedPerUser))
+    {
+        ChipLogError(Zcl,
+                     "Unable to get number of credentials supported per user when initializing lock endpoint, defaulting to 5 "
+                     "[endpointId=%d]",
+                     endpointId);
+        numberOfCredentialsSupportedPerUser = 5;
+    }
 
-bool LockManager::IsValidYeardayScheduleIndex(uint8_t scheduleIndex)
-{
-    return (scheduleIndex < kMaxYeardaySchedulesPerUser);
-}
+    uint8_t numberOfWeekDaySchedulesPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfWeekDaySchedulesPerUserSupported(endpointId, numberOfWeekDaySchedulesPerUser))
+    {
+        ChipLogError(Zcl,
+                     "Unable to get number of supported week day schedules per user when initializing lock endpoint, defaulting to "
+                     "10 [endpointId=%d]",
+                     endpointId);
+        numberOfWeekDaySchedulesPerUser = 10;
+    }
 
-bool LockManager::IsValidHolidayScheduleIndex(uint8_t scheduleIndex)
-{
-    return (scheduleIndex < kMaxHolidaySchedules);
-}
+    uint8_t numberOfYearDaySchedulesPerUser = 0;
+    if (!DoorLockServer::Instance().GetNumberOfYearDaySchedulesPerUserSupported(endpointId, numberOfYearDaySchedulesPerUser))
+    {
+        ChipLogError(Zcl,
+                     "Unable to get number of supported year day schedules per user when initializing lock endpoint, defaulting to "
+                     "10 [endpointId=%d]",
+                     endpointId);
+        numberOfYearDaySchedulesPerUser = 10;
+    }
 
-bool LockManager::ReadConfigValues()
-{
-    size_t outLen;
-    #if 0
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_LockUser, reinterpret_cast<uint8_t *>(&mLockUsers),
-                                    sizeof(EmberAfPluginDoorLockUserInfo) * ArraySize(mLockUsers), outLen);
+    uint8_t numberOfHolidaySchedules = 0;
+    if (!DoorLockServer::Instance().GetNumberOfHolidaySchedulesSupported(endpointId, numberOfHolidaySchedules))
+    {
+        ChipLogError(
+            Zcl,
+            "Unable to get number of supported holiday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
+            endpointId);
+        numberOfHolidaySchedules = 10;
+    }
 
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_Credential, reinterpret_cast<uint8_t *>(&mLockCredentials),
-                                    sizeof(EmberAfPluginDoorLockCredentialInfo) * ArraySize(mLockCredentials), outLen);
+    mEndpoints.emplace_back(endpointId, numberOfSupportedUsers, numberOfSupportedCredentials, numberOfWeekDaySchedulesPerUser,
+                            numberOfYearDaySchedulesPerUser, numberOfCredentialsSupportedPerUser, numberOfHolidaySchedules);
 
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_LockUserName, reinterpret_cast<uint8_t *>(mUserNames),
-                                    sizeof(mUserNames), outLen);
+    ChipLogProgress(Zcl,
+                    "Initialized new lock door endpoint "
+                    "[id=%d,users=%d,credentials=%d,weekDaySchedulesPerUser=%d,yearDaySchedulesPerUser=%d,"
+                    "numberOfCredentialsSupportedPerUser=%d,holidaySchedules=%d]",
+                    endpointId, numberOfSupportedUsers, numberOfSupportedCredentials, numberOfWeekDaySchedulesPerUser,
+                    numberOfYearDaySchedulesPerUser, numberOfCredentialsSupportedPerUser, numberOfHolidaySchedules);
 
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_CredentialData, reinterpret_cast<uint8_t *>(mCredentialData),
-                                    sizeof(mCredentialData), outLen);
-
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_UserCredentials, reinterpret_cast<uint8_t *>(mCredentials),
-                                    sizeof(DlCredential) * LockParams.numberOfUsers * LockParams.numberOfCredentialsPerUser,
-                                    outLen);
-
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_WeekDaySchedules, reinterpret_cast<uint8_t *>(mWeekdaySchedule),
-                                    sizeof(EmberAfPluginDoorLockWeekDaySchedule) * LockParams.numberOfWeekdaySchedulesPerUser *
-                                        LockParams.numberOfUsers,
-                                    outLen);
-
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_YearDaySchedules, reinterpret_cast<uint8_t *>(mYeardaySchedule),
-                                    sizeof(EmberAfPluginDoorLockYearDaySchedule) * LockParams.numberOfYeardaySchedulesPerUser *
-                                        LockParams.numberOfUsers,
-                                    outLen);
-
-    RT582Config::ReadConfigValueBin(RT582Config::kConfigKey_HolidaySchedules, reinterpret_cast<uint8_t *>(&(mHolidaySchedule)),
-                                    sizeof(EmberAfPluginDoorLockHolidaySchedule) * LockParams.numberOfHolidaySchedules, outLen);
-    #endif
     return true;
 }
 
-void LockManager::SetCallbacks(Callback_fn_initiated aActionInitiated_CB, Callback_fn_completed aActionCompleted_CB)
+bool LockManager::SetDoorState(chip::EndpointId endpointId, DoorStateEnum doorState)
 {
-    mActionInitiated_CB = aActionInitiated_CB;
-    mActionCompleted_CB = aActionCompleted_CB;
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to toggle the door state - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return false;
+    }
+    return lockEndpoint->SetDoorState(doorState);
 }
 
-bool LockManager::IsActionInProgress()
+bool LockManager::SendLockAlarm(chip::EndpointId endpointId, AlarmCodeEnum alarmCode)
 {
-    return (mState == kState_LockInitiated || mState == kState_UnlockInitiated);
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to send lock alarm - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
+        return false;
+    }
+    return lockEndpoint->SendLockAlarm(alarmCode);
 }
 
-bool LockManager::NextState()
+bool LockManager::Lock(chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, OperationErrorEnum & err,
+                       OperationSourceEnum opSource)
 {
-    return (mState == kState_UnlockCompleted);
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to lock the door - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
+        return false;
+    }
+    return lockEndpoint->Lock(pin, err, opSource);
 }
 
-bool LockManager::InitiateAction(int32_t aActor, Action_t aAction)
+bool LockManager::Unlock(chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, OperationErrorEnum & err,
+                         OperationSourceEnum opSource)
 {
-    bool action_initiated = false;
-    State_t new_state;
-
-    // Initiate Turn Lock/Unlock Action only when the previous one is complete.
-    if (mState == kState_LockCompleted && aAction == UNLOCK_ACTION)
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        action_initiated = true;
-
-        new_state = kState_UnlockInitiated;
+        ChipLogError(Zcl, "Unable to unlock the door - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
+        return false;
     }
-    else if (mState == kState_UnlockCompleted && aAction == LOCK_ACTION)
-    {
-        action_initiated = true;
-
-        new_state = kState_LockInitiated;
-    }
-
-    if (action_initiated)
-    {
-
-        StartTimer(ACTUATOR_MOVEMENT_PERIOS_MS);
-
-        // Since the timer started successfully, update the state and trigger callback
-        mState = new_state;
-
-        if (mActionInitiated_CB)
-        {
-            mActionInitiated_CB(aAction, aActor);
-        }
-    }
-
-    return action_initiated;
-}
-
-void LockManager::StartTimer(uint32_t aTimeoutMs)
-{
-    if (xTimerIsTimerActive(sLockTimer))
-    {
-        ChipLogError(NotSpecified, "app timer already started!");
-        CancelTimer();
-    }
-
-    // timer is not active, change its period to required value (== restart).
-    // FreeRTOS- Block for a maximum of 100 ticks if the change period command
-    // cannot immediately be sent to the timer command queue.
-    if (xTimerChangePeriod(sLockTimer, (aTimeoutMs / portTICK_PERIOD_MS), 100) != pdPASS)
-    {
-        ChipLogError(NotSpecified, "sLockTimer timer start() failed");
-    }
-}
-
-void LockManager::CancelTimer(void)
-{
-    if (xTimerStop(sLockTimer, 0) == pdFAIL)
-    {
-        ChipLogError(NotSpecified, "sLockTimer stop() failed");
-    }
-}
-
-void LockManager::TimerEventHandler(TimerHandle_t xTimer)
-{
-    // Get lock obj context from timer id.
-    LockManager * lock = static_cast<LockManager *>(pvTimerGetTimerID(xTimer));
-
-    // The timer event handler will be called in the context of the timer task
-    // once sLockTimer expires. Post an event to apptask queue with the actual handler
-    // so that the event can be handled in the context of the apptask.
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Timer;
-    event.TimerEvent.Context = lock;
-    event.Handler            = ActuatorMovementTimerEventHandler;
-    AppTask::GetAppTask().PostEvent(&event);
-}
-
-void LockManager::ActuatorMovementTimerEventHandler(AppEvent * aEvent)
-{
-    Action_t actionCompleted = INVALID_ACTION;
-
-    LockManager * lock = static_cast<LockManager *>(aEvent->TimerEvent.Context);
-
-    if (lock->mState == kState_LockInitiated)
-    {
-        lock->mState    = kState_LockCompleted;
-        actionCompleted = LOCK_ACTION;
-    }
-    else if (lock->mState == kState_UnlockInitiated)
-    {
-        lock->mState    = kState_UnlockCompleted;
-        actionCompleted = UNLOCK_ACTION;
-    }
-
-    if (actionCompleted != INVALID_ACTION)
-    {
-        if (lock->mActionCompleted_CB)
-        {
-            lock->mActionCompleted_CB(actionCompleted);
-        }
-    }
-}
-
-bool LockManager::Lock(chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, DlOperationError & err)
-{
-    return setLockState(endpointId, DlLockState::kLocked, pin, err);
-}
-
-bool LockManager::Unlock(chip::EndpointId endpointId, const Optional<chip::ByteSpan> & pin, DlOperationError & err)
-{
-    return setLockState(endpointId, DlLockState::kUnlocked, pin, err);
+    return lockEndpoint->Unlock(pin, err, opSource);
 }
 
 bool LockManager::GetUser(chip::EndpointId endpointId, uint16_t userIndex, EmberAfPluginDoorLockUserInfo & user)
 {
-    VerifyOrReturnValue(userIndex > 0, false); // indices are one-indexed
-
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), false);
-
-    ChipLogProgress(Zcl, "Door Lock App: LockManager::GetUser [endpoint=%d,userIndex=%hu]", endpointId, userIndex);
-
-    const auto & userInDb = mLockUsers[userIndex];
-
-    user.userStatus = userInDb.userStatus;
-    if (DlUserStatus::kAvailable == user.userStatus)
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        ChipLogDetail(Zcl, "Found unoccupied user [endpoint=%d]", endpointId);
-        return true;
+        ChipLogError(Zcl, "Unable to get the user - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
+        return false;
     }
-
-    user.userName       = chip::CharSpan(userInDb.userName.data(), userInDb.userName.size());
-    user.credentials    = chip::Span<const DlCredential>(mCredentials[userIndex], userInDb.credentials.size());
-    user.userUniqueId   = userInDb.userUniqueId;
-    user.userType       = userInDb.userType;
-    user.credentialRule = userInDb.credentialRule;
-    // So far there's no way to actually create the credential outside Matter, so here we always set the creation/modification
-    // source to Matter
-    user.creationSource     = DlAssetSource::kMatterIM;
-    user.createdBy          = userInDb.createdBy;
-    user.modificationSource = DlAssetSource::kMatterIM;
-    user.lastModifiedBy     = userInDb.lastModifiedBy;
-
-    ChipLogDetail(Zcl,
-                  "Found occupied user "
-                  "[endpoint=%d,name=\"%.*s\",credentialsCount=%u,uniqueId=%lx,type=%u,credentialRule=%u,"
-                  "createdBy=%d,lastModifiedBy=%d]",
-                  endpointId, static_cast<int>(user.userName.size()), user.userName.data(), user.credentials.size(),
-                  user.userUniqueId, to_underlying(user.userType), to_underlying(user.credentialRule), user.createdBy,
-                  user.lastModifiedBy);
-
-    return true;
+    return lockEndpoint->GetUser(userIndex, user);
 }
 
 bool LockManager::SetUser(chip::EndpointId endpointId, uint16_t userIndex, chip::FabricIndex creator, chip::FabricIndex modifier,
-                          const chip::CharSpan & userName, uint32_t uniqueId, DlUserStatus userStatus, DlUserType usertype,
-                          DlCredentialRule credentialRule, const DlCredential * credentials, size_t totalCredentials)
+                          const chip::CharSpan & userName, uint32_t uniqueId, UserStatusEnum userStatus, UserTypeEnum usertype,
+                          CredentialRuleEnum credentialRule, const CredentialStruct * credentials, size_t totalCredentials)
 {
-    ChipLogProgress(Zcl,
-                    "Door Lock App: LockManager::SetUser "
-                    "[endpoint=%d,userIndex=%d,creator=%d,modifier=%d,userName=%s,uniqueId=%ld "
-                    "userStatus=%u,userType=%u,credentialRule=%u,credentials=%p,totalCredentials=%u]",
-                    endpointId, userIndex, creator, modifier, userName.data(), uniqueId, to_underlying(userStatus),
-                    to_underlying(usertype), to_underlying(credentialRule), credentials, totalCredentials);
-
-    VerifyOrReturnValue(userIndex > 0, false); // indices are one-indexed
-
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), false);
-
-    auto & userInStorage = mLockUsers[userIndex];
-
-    if (userName.size() > DOOR_LOCK_MAX_USER_NAME_SIZE)
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        ChipLogError(Zcl, "Cannot set user - user name is too long [endpoint=%d,index=%d]", endpointId, userIndex);
+        ChipLogError(Zcl, "Unable to set the user - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
         return false;
     }
-
-    if (totalCredentials > LockParams.numberOfCredentialsPerUser)
-    {
-        ChipLogError(Zcl, "Cannot set user - total number of credentials is too big [endpoint=%d,index=%d,totalCredentials=%u]",
-                     endpointId, userIndex, totalCredentials);
-        return false;
-    }
-
-    chip::Platform::CopyString(mUserNames[userIndex], userName);
-    userInStorage.userName       = chip::CharSpan(mUserNames[userIndex], userName.size());
-    userInStorage.userUniqueId   = uniqueId;
-    userInStorage.userStatus     = userStatus;
-    userInStorage.userType       = usertype;
-    userInStorage.credentialRule = credentialRule;
-    userInStorage.lastModifiedBy = modifier;
-    userInStorage.createdBy      = creator;
-
-    for (size_t i = 0; i < totalCredentials; ++i)
-    {
-        mCredentials[userIndex][i]                 = credentials[i];
-        mCredentials[userIndex][i].CredentialType  = 1;
-        mCredentials[userIndex][i].CredentialIndex = i + 1;
-    }
-
-    userInStorage.credentials = chip::Span<const DlCredential>(mCredentials[userIndex], totalCredentials);
-
-    // Save user information in NVM flash
-    #if 0
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_LockUser, reinterpret_cast<const uint8_t *>(&mLockUsers),
-                                     sizeof(EmberAfPluginDoorLockUserInfo) * LockParams.numberOfUsers);
-
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_UserCredentials, reinterpret_cast<const uint8_t *>(mCredentials),
-                                     sizeof(DlCredential) * LockParams.numberOfUsers * LockParams.numberOfCredentialsPerUser);
-
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_LockUserName, reinterpret_cast<const uint8_t *>(mUserNames),
-                                     sizeof(mUserNames));
-    #endif 
-    ChipLogProgress(Zcl, "Successfully set the user [mEndpointId=%d,index=%d]", endpointId, userIndex);
-
-    return true;
+    return lockEndpoint->SetUser(userIndex, creator, modifier, userName, uniqueId, userStatus, usertype, credentialRule,
+                                 credentials, totalCredentials);
 }
 
-bool LockManager::GetCredential(chip::EndpointId endpointId, uint16_t credentialIndex, DlCredentialType credentialType,
+bool LockManager::GetCredential(chip::EndpointId endpointId, uint16_t credentialIndex, CredentialTypeEnum credentialType,
                                 EmberAfPluginDoorLockCredentialInfo & credential)
 {
-
-    if (DlCredentialType::kProgrammingPIN == credentialType)
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        VerifyOrReturnValue(IsValidCredentialIndex(credentialIndex, credentialType),
-                            false); // programming pin index is only index allowed to contain 0
+        ChipLogError(Zcl, "Unable to get the credential - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
+        return false;
     }
-    else
-    {
-        VerifyOrReturnValue(IsValidCredentialIndex(--credentialIndex, credentialType), false); // otherwise, indices are one-indexed
-    }
-
-    ChipLogProgress(Zcl, "Lock App: LockManager::GetCredential [credentialType=%u], credentialIndex=%d",
-                    to_underlying(credentialType), credentialIndex);
-
-    const auto & credentialInStorage = mLockCredentials[credentialIndex];
-
-    credential.status = credentialInStorage.status;
-    ChipLogDetail(Zcl, "CredentialStatus: %d, CredentialIndex: %d ", (int) credential.status, credentialIndex);
-
-    if (DlCredentialStatus::kAvailable == credential.status)
-    {
-        ChipLogDetail(Zcl, "Found unoccupied credential ");
-        return true;
-    }
-    credential.credentialType = credentialInStorage.credentialType;
-    credential.credentialData = credentialInStorage.credentialData;
-    credential.createdBy      = credentialInStorage.createdBy;
-    credential.lastModifiedBy = credentialInStorage.lastModifiedBy;
-    // So far there's no way to actually create the credential outside Matter, so here we always set the creation/modification
-    // source to Matter
-    credential.creationSource     = DlAssetSource::kMatterIM;
-    credential.modificationSource = DlAssetSource::kMatterIM;
-
-    ChipLogDetail(Zcl, "Found occupied credential [type=%u,dataSize=%u]", to_underlying(credential.credentialType),
-                  credential.credentialData.size());
-
-    return true;
+    return lockEndpoint->GetCredential(credentialIndex, credentialType, credential);
 }
 
 bool LockManager::SetCredential(chip::EndpointId endpointId, uint16_t credentialIndex, chip::FabricIndex creator,
-                                chip::FabricIndex modifier, DlCredentialStatus credentialStatus, DlCredentialType credentialType,
+                                chip::FabricIndex modifier, DlCredentialStatus credentialStatus, CredentialTypeEnum credentialType,
                                 const chip::ByteSpan & credentialData)
 {
-
-    if (DlCredentialType::kProgrammingPIN == credentialType)
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        VerifyOrReturnValue(IsValidCredentialIndex(credentialIndex, credentialType),
-                            false); // programming pin index is only index allowed to contain 0
-    }
-    else
-    {
-        VerifyOrReturnValue(IsValidCredentialIndex(--credentialIndex, credentialType), false); // otherwise, indices are one-indexed
-    }
-
-    ChipLogProgress(Zcl,
-                    "Door Lock App: LockManager::SetCredential "
-                    "[credentialStatus=%u,credentialType=%u,credentialDataSize=%u,creator=%d,modifier=%d]",
-                    to_underlying(credentialStatus), to_underlying(credentialType), credentialData.size(), creator, modifier);
-
-    auto & credentialInStorage = mLockCredentials[credentialIndex];
-
-    credentialInStorage.status         = credentialStatus;
-    credentialInStorage.credentialType = credentialType;
-    credentialInStorage.createdBy      = creator;
-    credentialInStorage.lastModifiedBy = modifier;
-
-    memcpy(mCredentialData[credentialIndex], credentialData.data(), credentialData.size());
-    credentialInStorage.credentialData = chip::ByteSpan{ mCredentialData[credentialIndex], credentialData.size() };
-#if 0
-    // Save credential information in NVM flash
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_Credential, reinterpret_cast<const uint8_t *>(&mLockCredentials),
-                                     sizeof(EmberAfPluginDoorLockCredentialInfo) * LockParams.numberOfCredentialsPerUser);
-
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_CredentialData, reinterpret_cast<const uint8_t *>(&mCredentialData),
-                                     sizeof(mCredentialData));
-#endif
-    ChipLogProgress(Zcl, "Successfully set the credential [credentialType=%u]", to_underlying(credentialType));
-
-    return true;
-}
-
-DlStatus LockManager::GetWeekdaySchedule(chip::EndpointId endpointId, uint8_t weekdayIndex, uint16_t userIndex,
-                                         EmberAfPluginDoorLockWeekDaySchedule & schedule)
-{
-
-    VerifyOrReturnValue(weekdayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-    VerifyOrReturnValue(userIndex > 0, DlStatus::kFailure);    // indices are one-indexed
-
-    weekdayIndex--;
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidWeekdayScheduleIndex(weekdayIndex), DlStatus::kFailure);
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), DlStatus::kFailure);
-
-    const auto & scheduleInStorage = mWeekdaySchedule[userIndex][weekdayIndex];
-    if (DlScheduleStatus::kAvailable == scheduleInStorage.status)
-    {
-        return DlStatus::kNotFound;
-    }
-
-    schedule = scheduleInStorage.schedule;
-
-    return DlStatus::kSuccess;
-}
-
-DlStatus LockManager::SetWeekdaySchedule(chip::EndpointId endpointId, uint8_t weekdayIndex, uint16_t userIndex,
-                                         DlScheduleStatus status, DlDaysMaskMap daysMask, uint8_t startHour, uint8_t startMinute,
-                                         uint8_t endHour, uint8_t endMinute)
-{
-
-    VerifyOrReturnValue(weekdayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-    VerifyOrReturnValue(userIndex > 0, DlStatus::kFailure);    // indices are one-indexed
-
-    weekdayIndex--;
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidWeekdayScheduleIndex(weekdayIndex), DlStatus::kFailure);
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), DlStatus::kFailure);
-
-    auto & scheduleInStorage = mWeekdaySchedule[userIndex][weekdayIndex];
-
-    scheduleInStorage.schedule.daysMask    = daysMask;
-    scheduleInStorage.schedule.startHour   = startHour;
-    scheduleInStorage.schedule.startMinute = startMinute;
-    scheduleInStorage.schedule.endHour     = endHour;
-    scheduleInStorage.schedule.endMinute   = endMinute;
-    scheduleInStorage.status               = status;
-
-    // Save schedule information in NVM flash
-    //RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_WeekDaySchedules, reinterpret_cast<const uint8_t *>(mWeekdaySchedule),
-    //                                 sizeof(EmberAfPluginDoorLockWeekDaySchedule) * LockParams.numberOfWeekdaySchedulesPerUser *
-    //                                     LockParams.numberOfUsers);
-
-    return DlStatus::kSuccess;
-}
-
-DlStatus LockManager::GetYeardaySchedule(chip::EndpointId endpointId, uint8_t yearDayIndex, uint16_t userIndex,
-                                         EmberAfPluginDoorLockYearDaySchedule & schedule)
-{
-    VerifyOrReturnValue(yearDayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-    VerifyOrReturnValue(userIndex > 0, DlStatus::kFailure);    // indices are one-indexed
-
-    yearDayIndex--;
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidYeardayScheduleIndex(yearDayIndex), DlStatus::kFailure);
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), DlStatus::kFailure);
-
-    const auto & scheduleInStorage = mYeardaySchedule[userIndex][yearDayIndex];
-    if (DlScheduleStatus::kAvailable == scheduleInStorage.status)
-    {
-        return DlStatus::kNotFound;
-    }
-
-    schedule = scheduleInStorage.schedule;
-
-    return DlStatus::kSuccess;
-}
-
-DlStatus LockManager::SetYeardaySchedule(chip::EndpointId endpointId, uint8_t yearDayIndex, uint16_t userIndex,
-                                         DlScheduleStatus status, uint32_t localStartTime, uint32_t localEndTime)
-{
-    VerifyOrReturnValue(yearDayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-    VerifyOrReturnValue(userIndex > 0, DlStatus::kFailure);    // indices are one-indexed
-
-    yearDayIndex--;
-    userIndex--;
-
-    VerifyOrReturnValue(IsValidYeardayScheduleIndex(yearDayIndex), DlStatus::kFailure);
-    VerifyOrReturnValue(IsValidUserIndex(userIndex), DlStatus::kFailure);
-
-    auto & scheduleInStorage = mYeardaySchedule[userIndex][yearDayIndex];
-
-    scheduleInStorage.schedule.localStartTime = localStartTime;
-    scheduleInStorage.schedule.localEndTime   = localEndTime;
-    scheduleInStorage.status                  = status;
-
-    // Save schedule information in NVM flash
-    #if 0
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_YearDaySchedules, reinterpret_cast<const uint8_t *>(mYeardaySchedule),
-                                     sizeof(EmberAfPluginDoorLockYearDaySchedule) * LockParams.numberOfYeardaySchedulesPerUser *
-                                         LockParams.numberOfUsers);
-    #endif
-
-    return DlStatus::kSuccess;
-}
-
-DlStatus LockManager::GetHolidaySchedule(chip::EndpointId endpointId, uint8_t holidayIndex,
-                                         EmberAfPluginDoorLockHolidaySchedule & schedule)
-{
-    VerifyOrReturnValue(holidayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-
-    holidayIndex--;
-
-    VerifyOrReturnValue(IsValidHolidayScheduleIndex(holidayIndex), DlStatus::kFailure);
-
-    const auto & scheduleInStorage = mHolidaySchedule[holidayIndex];
-    if (DlScheduleStatus::kAvailable == scheduleInStorage.status)
-    {
-        return DlStatus::kNotFound;
-    }
-
-    schedule = scheduleInStorage.schedule;
-
-    return DlStatus::kSuccess;
-}
-
-DlStatus LockManager::SetHolidaySchedule(chip::EndpointId endpointId, uint8_t holidayIndex, DlScheduleStatus status,
-                                         uint32_t localStartTime, uint32_t localEndTime, DlOperatingMode operatingMode)
-{
-    VerifyOrReturnValue(holidayIndex > 0, DlStatus::kFailure); // indices are one-indexed
-
-    holidayIndex--;
-
-    VerifyOrReturnValue(IsValidHolidayScheduleIndex(holidayIndex), DlStatus::kFailure);
-
-    auto & scheduleInStorage = mHolidaySchedule[holidayIndex];
-
-    scheduleInStorage.schedule.localStartTime = localStartTime;
-    scheduleInStorage.schedule.localEndTime   = localEndTime;
-    scheduleInStorage.schedule.operatingMode  = operatingMode;
-    scheduleInStorage.status                  = status;
-
-#if 0
-    // Save schedule information in NVM flash
-    RT582Config::WriteConfigValueBin(RT582Config::kConfigKey_HolidaySchedules,
-                                     reinterpret_cast<const uint8_t *>(&(mHolidaySchedule)),
-                                     sizeof(EmberAfPluginDoorLockHolidaySchedule) * LockParams.numberOfHolidaySchedules);
-#endif
-    return DlStatus::kSuccess;
-}
-
-const char * LockManager::lockStateToString(DlLockState lockState) const
-{
-    switch (lockState)
-    {
-    case DlLockState::kNotFullyLocked:
-        return "Not Fully Locked";
-    case DlLockState::kLocked:
-        return "Locked";
-    case DlLockState::kUnlocked:
-        return "Unlocked";
-    case DlLockState::kUnknownEnumValue:
-        break;
-    }
-
-    return "Unknown";
-}
-
-bool LockManager::setLockState(chip::EndpointId endpointId, DlLockState lockState, const Optional<chip::ByteSpan> & pin,
-                               DlOperationError & err)
-{
-
-    // Assume pin is required until told otherwise
-    bool requirePin = true;
-    chip::app::Clusters::DoorLock::Attributes::RequirePINforRemoteOperation::Get(endpointId, &requirePin);
-
-    // If a pin code is not given
-    if (!pin.HasValue())
-    {
-        ChipLogDetail(Zcl, "Door Lock App: PIN code is not specified [endpointId=%d]", endpointId);
-
-        // If a pin code is not required
-        if (!requirePin)
-        {
-            ChipLogDetail(Zcl, "Door Lock App: setting door lock state to \"%s\" [endpointId=%d]", lockStateToString(lockState),
-                          endpointId);
-
-            DoorLockServer::Instance().SetLockState(endpointId, lockState);
-
-            return true;
-        }
-
-        ChipLogError(Zcl, "Door Lock App: PIN code is not specified, but it is required [endpointId=%d]", endpointId);
-
+        ChipLogError(Zcl, "Unable to set the credential - endpoint does not exist or not initialized [endpointId=%d]", endpointId);
         return false;
     }
+    return lockEndpoint->SetCredential(credentialIndex, creator, modifier, credentialStatus, credentialType, credentialData);
+}
 
-    // Check the PIN code
-    for (uint8_t i = 0; i < kMaxCredentials; i++)
+DlStatus LockManager::GetSchedule(chip::EndpointId endpointId, uint8_t weekDayIndex, uint16_t userIndex,
+                                  EmberAfPluginDoorLockWeekDaySchedule & schedule)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
     {
-        if (mLockCredentials[i].credentialType != DlCredentialType::kPin ||
-            mLockCredentials[i].status == DlCredentialStatus::kAvailable)
+        ChipLogError(Zcl, "Unable to get the week day schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->GetSchedule(weekDayIndex, userIndex, schedule);
+}
+
+DlStatus LockManager::SetSchedule(chip::EndpointId endpointId, uint8_t weekDayIndex, uint16_t userIndex, DlScheduleStatus status,
+                                  DaysMaskMap daysMask, uint8_t startHour, uint8_t startMinute, uint8_t endHour, uint8_t endMinute)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to set the week day schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->SetSchedule(weekDayIndex, userIndex, status, daysMask, startHour, startMinute, endHour, endMinute);
+}
+
+DlStatus LockManager::GetSchedule(chip::EndpointId endpointId, uint8_t yearDayIndex, uint16_t userIndex,
+                                  EmberAfPluginDoorLockYearDaySchedule & schedule)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to get the year day schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->GetSchedule(yearDayIndex, userIndex, schedule);
+}
+
+DlStatus LockManager::SetSchedule(chip::EndpointId endpointId, uint8_t yearDayIndex, uint16_t userIndex, DlScheduleStatus status,
+                                  uint32_t localStartTime, uint32_t localEndTime)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to set the year day schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->SetSchedule(yearDayIndex, userIndex, status, localStartTime, localEndTime);
+}
+
+DlStatus LockManager::GetSchedule(chip::EndpointId endpointId, uint8_t holidayIndex,
+                                  EmberAfPluginDoorLockHolidaySchedule & schedule)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to get the holiday schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->GetSchedule(holidayIndex, schedule);
+}
+
+DlStatus LockManager::SetSchedule(chip::EndpointId endpointId, uint8_t holidayIndex, DlScheduleStatus status,
+                                  uint32_t localStartTime, uint32_t localEndTime, OperatingModeEnum operatingMode)
+{
+    auto lockEndpoint = getEndpoint(endpointId);
+    if (nullptr == lockEndpoint)
+    {
+        ChipLogError(Zcl, "Unable to set the holiday schedule - endpoint does not exist or not initialized [endpointId=%d]",
+                     endpointId);
+        return DlStatus::kFailure;
+    }
+    return lockEndpoint->SetSchedule(holidayIndex, status, localStartTime, localEndTime, operatingMode);
+}
+
+LockEndpoint * LockManager::getEndpoint(chip::EndpointId endpointId)
+{
+    for (auto & mEndpoint : mEndpoints)
+    {
+        if (mEndpoint.GetEndpointId() == endpointId)
         {
-            continue;
-        }
-
-        if (mLockCredentials[i].credentialData.data_equal(pin.Value()))
-        {
-            ChipLogDetail(Zcl,
-                          "Lock App: specified PIN code was found in the database, setting lock state to \"%s\" [endpointId=%d]",
-                          lockStateToString(lockState), endpointId);
-
-            DoorLockServer::Instance().SetLockState(endpointId, lockState);
-
-            return true;
+            return &mEndpoint;
         }
     }
-
-    ChipLogDetail(Zcl,
-                  "Door Lock App: specified PIN code was not found in the database, ignoring command to set lock state to \"%s\" "
-                  "[endpointId=%d]",
-                  lockStateToString(lockState), endpointId);
-
-    err = DlOperationError::kInvalidCredential;
-    return false;
+    return nullptr;
 }

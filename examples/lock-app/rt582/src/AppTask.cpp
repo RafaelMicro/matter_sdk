@@ -21,13 +21,8 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 
-#include <app-common/zap-generated/af-structs.h>
-#include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
-#include <app-common/zap-generated/cluster-id.h>
 #include <app-common/zap-generated/cluster-objects.h>
-
 #include <app/clusters/door-lock-server/door-lock-server.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/server/OnboardingCodesUtil.h>
@@ -38,47 +33,19 @@
 
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <setup_payload/SetupPayload.h>
-
-#include <lib/support/CodeUtils.h>
-
-#include <platform/CHIPDeviceLayer.h>
-
-#include <credentials/DeviceAttestationCredsProvider.h>
-#include <credentials/examples/DeviceAttestationCredsExample.h>
-
-#include <lib/core/CHIPError.h>
-
-#include <DeviceInfoProviderImpl.h>
-
-#if 0
-#include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/attribute-type.h>
-#include <app-common/zap-generated/cluster-id.h>
-#include <app/clusters/identify-server/identify-server.h>
-#include <app/clusters/on-off-server/on-off-server.h>
-#include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/server/Dnssd.h>
-#include <app/util/attribute-storage.h>
-
-#include <assert.h>
-#include <DeviceInfoProviderImpl.h>
-#include <setup_payload/QRCodeSetupPayloadGenerator.h>
-#include <setup_payload/SetupPayload.h>
-
-#include "queue.h"
-
 #include <lib/support/CodeUtils.h>
-#include <platform/CHIPDeviceLayer.h>
 
-#include <platform/CommissionableDataProvider.h>
+#include <platform/CHIPDeviceLayer.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
 #include <lib/core/CHIPError.h>
-#include <lib/core/CHIPError.h>
-#endif
+
+#include <DeviceInfoProviderImpl.h>
+
 #include "uart.h"
 #include "util_log.h"
 #include "cm3_mcu.h"
@@ -92,7 +59,6 @@ using namespace chip;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
-using namespace RT582DoorLock::LockInitParams;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)
@@ -205,113 +171,68 @@ void AppTask::OpenCommissioning(intptr_t arg)
 /**
  * Update cluster status after application level changes
  */
-void AppTask::UpdateClusterState(intptr_t context)
+void AppTask::UpdateClusterState()
 {
+    using namespace chip::app::Clusters;
+    auto newValue = BoltLockMgr().IsUnlocked() ? DoorLock::DlLockState::kUnlocked : DoorLock::DlLockState::kLocked;
+
     ChipLogProgress(NotSpecified, "UpdateClusterState");
 
-    bool unlocked        = LockMgr().NextState();
-    DlLockState newState = unlocked ? DlLockState::kUnlocked : DlLockState::kLocked;
-
-    DlOperationSource source = DlOperationSource::kUnspecified;
-
-    // write the new lock value
-    EmberAfStatus status =
-        DoorLockServer::Instance().SetLockState(1, newState, source) ? EMBER_ZCL_STATUS_SUCCESS : EMBER_ZCL_STATUS_FAILURE;
+    EmberAfStatus status = DoorLock::Attributes::LockState::Set(1, newValue);
 
     if (status != EMBER_ZCL_STATUS_SUCCESS)
     {
-        ChipLogProgress(NotSpecified, "ERR: updating lock state %x", status);
+        ChipLogError(NotSpecified, "ERR: updating DoorLock %x", status);
     }
 }
 
-void AppTask::ActionInitiated(LockManager::Action_t aAction, int32_t aActor)
+void AppTask::ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor)
 {
-    if (aAction == LockManager::UNLOCK_ACTION || aAction == LockManager::LOCK_ACTION)
+    // If the action has been initiated by the lock, update the bolt lock trait
+    // and start flashing the LEDs rapidly to indicate action initiation.
+    if (aAction == BoltLockManager::LOCK_ACTION)
     {
-        bool locked = (aAction == LockManager::LOCK_ACTION);
-        ChipLogProgress(NotSpecified, "%s Action has been initiated", (locked) ? "Lock" : "Unlock");
-        if(!locked)
-        {
-            gpio_pin_clear(22);
-            gpio_pin_clear(23);
-            gpio_pin_clear(24);
-        }
-        else
-        {
-            gpio_pin_set(22);
-            gpio_pin_set(23);
-            gpio_pin_set(24);
-        }
+        ChipLogProgress(NotSpecified, "Lock Action has been initiated");
+    }
+    else if (aAction == BoltLockManager::UNLOCK_ACTION)
+    {
+        ChipLogProgress(NotSpecified, "Unlock Action has been initiated");
     }
 
     if (aActor == AppEvent::kEventType_Button)
     {
         sAppTask.mSyncClusterToButtonAction = true;
     }
+
 }
 
-void AppTask::ActionCompleted(LockManager::Action_t aAction)
+void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
 {
-    // if the action has been completed by the lock, update the lock trait.
-    // Turn off the lock LED if in a LOCKED state OR
-    // Turn on the lock LED if in an UNLOCKED state.
-    if (aAction == LockManager::LOCK_ACTION)
+    // if the action has been completed by the lock, update the bolt lock trait.
+    // Turn on the lock LED if in a LOCKED state OR
+    // Turn off the lock LED if in an UNLOCKED state.
+    if (aAction == BoltLockManager::LOCK_ACTION)
     {
         ChipLogProgress(NotSpecified, "Lock Action has been completed");
     }
-    else if (aAction == LockManager::UNLOCK_ACTION)
+    else if (aAction == BoltLockManager::UNLOCK_ACTION)
     {
         ChipLogProgress(NotSpecified, "Unlock Action has been completed");
     }
 
     if (sAppTask.mSyncClusterToButtonAction)
     {
-        chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
+        sAppTask.UpdateClusterState();
         sAppTask.mSyncClusterToButtonAction = false;
     }
 }
 
 void AppTask::LockActionEventHandler(AppEvent * aEvent)
 {
-    bool initiated = false;
-    LockManager::Action_t action;
-    int32_t actor;
-    CHIP_ERROR err = CHIP_NO_ERROR;
 
-    if (aEvent->Type == AppEvent::kEventType_Lock)
-    {
-        action = static_cast<LockManager::Action_t>(aEvent->LockEvent.Action);
-        actor  = aEvent->LockEvent.Actor;
-    }
-    else if (aEvent->Type == AppEvent::kEventType_Button)
-    {
-        if (LockMgr().NextState() == true)
-        {
-            action = LockManager::LOCK_ACTION;
-        }
-        else
-        {
-            action = LockManager::UNLOCK_ACTION;
-        }
-        actor = AppEvent::kEventType_Button;
-    }
-    else
-    {
-        err = APP_ERROR_UNHANDLED_EVENT;
-    }
-
-    if (err == CHIP_NO_ERROR)
-    {
-        initiated = LockMgr().InitiateAction(actor, action);
-
-        if (!initiated)
-        {
-            
-        }
-    }
 }
 
-void AppTask::ActionRequest(int32_t aActor, LockManager::Action_t aAction)
+void AppTask::ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction)
 {
     AppEvent event;
     event.Type             = AppEvent::kEventType_Lock;
@@ -353,80 +274,16 @@ void AppTask::InitServer(intptr_t arg)
         sCommissioned = true;
         UpdateStatusLED();
     }
-    // Initial lock state
-    chip::app::DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> state;
-    chip::EndpointId endpointId{ 1 };
-    //chip::DeviceLayer::PlatformMgr().LockChipStack();
-    chip::app::Clusters::DoorLock::Attributes::LockState::Get(endpointId, state);
-
-    uint8_t numberOfCredentialsPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfCredentialsSupportedPerUser(endpointId, numberOfCredentialsPerUser))
-    {
-        ChipLogError(Zcl,
-                     "Unable to get number of credentials supported per user when initializing lock endpoint, defaulting to 5 "
-                     "[endpointId=%d]",
-                     endpointId);
-        numberOfCredentialsPerUser = 5;
-    }
-
-    uint16_t numberOfUsers = 0;
-    if (!DoorLockServer::Instance().GetNumberOfUserSupported(endpointId, numberOfUsers))
-    {
-        ChipLogError(Zcl,
-                     "Unable to get number of supported users when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-                     endpointId);
-        numberOfUsers = 10;
-    }
-
-    uint8_t numberOfWeekdaySchedulesPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfWeekDaySchedulesPerUserSupported(endpointId, numberOfWeekdaySchedulesPerUser))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported weekday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfWeekdaySchedulesPerUser = 10;
-    }
-
-    uint8_t numberOfYeardaySchedulesPerUser = 0;
-    if (!DoorLockServer::Instance().GetNumberOfYearDaySchedulesPerUserSupported(endpointId, numberOfYeardaySchedulesPerUser))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported yearday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfYeardaySchedulesPerUser = 10;
-    }
-
-    uint8_t numberOfHolidaySchedules = 0;
-    if (!DoorLockServer::Instance().GetNumberOfHolidaySchedulesSupported(endpointId, numberOfHolidaySchedules))
-    {
-        ChipLogError(
-            Zcl,
-            "Unable to get number of supported holiday schedules when initializing lock endpoint, defaulting to 10 [endpointId=%d]",
-            endpointId);
-        numberOfHolidaySchedules = 10;
-    }
-
-    //chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-
-    err = LockMgr().Init(state,
-                         ParamBuilder()
-                             .SetNumberOfUsers(numberOfUsers)
-                             .SetNumberOfCredentialsPerUser(numberOfCredentialsPerUser)
-                             .SetNumberOfWeekdaySchedulesPerUser(numberOfWeekdaySchedulesPerUser)
-                             .SetNumberOfYeardaySchedulesPerUser(numberOfYeardaySchedulesPerUser)
-                             .SetNumberOfHolidaySchedules(numberOfHolidaySchedules)
-                             .GetLockParam());
-
+    // Setup Bolt
+    err = BoltLockMgr().Init();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "LockMgr().Init() failed");
+        ChipLogError(NotSpecified, "BoltLockMgr().Init() failed");
+        return;
     }
+    BoltLockMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    LockMgr().SetCallbacks(ActionInitiated, ActionCompleted);    
-
-    chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
+    UpdateClusterState();
 }
 
 void AppTask::UpdateStatusLED()

@@ -29,6 +29,8 @@ struct AppEvent
         kEventType_Button = 0,
         kEventType_Button_ON,
         kEventType_Button_OFF,
+        kEventType_Button_Func_Pressed,
+        kEventType_Button_Func_Released,
         kEventType_Timer,
         kEventType_Light,
         kEventType_Install,
@@ -39,6 +41,7 @@ struct AppEvent
         kActionTypes_FactoryReset = 0,
         kActionTypes_Switch_1,
         kActionTypes_Switch_2,
+        kActionTypes_Switch_3,
     };
 
     uint16_t Type;

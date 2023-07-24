@@ -29,7 +29,8 @@
 #include "AppEvent.h"
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
-#include "binding-handler.h"
+#include "LightSwitchMgr.h"
+#include "BindingHandler.h"
 // #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>

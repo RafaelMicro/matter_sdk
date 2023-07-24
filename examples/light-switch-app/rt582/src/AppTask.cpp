@@ -21,9 +21,6 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 
-#include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/attribute-type.h>
-#include <app-common/zap-generated/cluster-id.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/util/attribute-storage.h>
 
@@ -270,10 +267,11 @@ void AppTask::InitServer(intptr_t arg)
     {
         chip::app::DnssdServer::Instance().StartServer();
     }
-    err = InitBindingHandler();
+
+    err = LightSwitchMgr::GetInstance().Init(1, 1);
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "InitBindingHandler() failed");
+        ChipLogError(NotSpecified, "LightSwitchMgr Init failed!");
     }
 }
 
@@ -506,7 +504,29 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;        
-    
+    case (AppEvent::AppActionTypes::kActionTypes_Switch_3):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            AppEvent event;
+            event.Type               = AppEvent::kEventType_Button_Func_Pressed;
+            event.ButtonEvent.Action = kButtonPushEvent;
+            event.Handler            = SwitchActionEventHandler;
+            sAppTask.PostEvent(&event);
+
+            sAppTask.mFunction = kFunction_NoneSelected;
+            sAppTask.mFunctionSwitchActive = false;
+        }
+        else
+        {
+
+            AppEvent event;
+            event.Type               = AppEvent::kEventType_Button_Func_Released;
+            event.ButtonEvent.Action = kButtonPushEvent;
+            event.Handler            = SwitchActionEventHandler;
+            sAppTask.PostEvent(&event);
+
+        }
+        break;      
     default:
         break;
     }
@@ -532,6 +552,14 @@ void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
         data->commandId           = chip::app::Clusters::OnOff::Commands::Off::Id;
         data->clusterId           = chip::app::Clusters::OnOff::Id;
         PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+    }
+    else if (aEvent->Type == AppEvent::kEventType_Button_Func_Pressed)
+    {
+        LightSwitchMgr::GetInstance().GenericSwitchOnInitialPress();
+    }
+    else if (aEvent->Type == AppEvent::kEventType_Button_Func_Released)
+    {
+        LightSwitchMgr::GetInstance().GenericSwitchOnShortRelease();
     }
 }
 
@@ -571,7 +599,17 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
-        break;        
+        break;
+    case (BSP_EVENT_BUTTONS_3):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_3;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_EVENT_BUTTONS_3-5)?0:1;
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;           
     default:
         break;
     }

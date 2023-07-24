@@ -27,6 +27,8 @@
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 
+#include <app/clusters/on-off-server/on-off-server.h>
+
 #include "init_rt582Platform.h"
 #include "init_smart-plug-app_rt582Platform.h"  
 #include <lib/core/CHIPError.h>

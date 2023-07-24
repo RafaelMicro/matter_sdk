@@ -22,11 +22,9 @@
 #include "AppConfig.h"
 #include "AppTask.h"
 #include <FreeRTOS.h>
-#include <app/clusters/on-off-server/on-off-server.h>
 
-#include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
-
+#include <app-common/zap-generated/ids/Clusters.h>
 
 using namespace chip;
 using namespace chip::DeviceLayer;

@@ -1608,7 +1608,7 @@ endpoint 0 {
   }
 }
 endpoint 1 {
-  device type dimmablelight = 257, version 1;
+  device type onoffpluginunit = 266, version 1;
 
   server cluster Identify {
     ram      attribute identifyTime;

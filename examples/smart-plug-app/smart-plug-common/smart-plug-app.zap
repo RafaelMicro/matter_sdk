@@ -5157,9 +5157,9 @@
       ]
     },
     {
-      "name": "MA-dimmablelight",
-      "deviceTypeName": "MA-dimmablelight",
-      "deviceTypeCode": 257,
+      "name": "MA-onoffpluginunit",
+      "deviceTypeName": "MA-onoffpluginunit",
+      "deviceTypeCode": 266,
       "deviceTypeProfileId": 259,
       "clusters": [
         {
@@ -6428,13 +6428,13 @@
       "deviceIdentifier": 22
     },
     {
-      "endpointTypeName": "MA-dimmablelight",
+      "endpointTypeName": "MA-onoffpluginunit",
       "endpointTypeIndex": 1,
       "profileId": 259,
       "endpointId": 1,
       "networkId": 0,
       "endpointVersion": 1,
-      "deviceIdentifier": 257
+      "deviceIdentifier": 266
     }
   ]
 }

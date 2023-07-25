@@ -1416,10 +1416,10 @@ static void gc_collect(void)
 {
     struct sector_meta_data sector;
     size_t empty_sec = 0;
-
+#if (LPWR_FLASH_PROTECT_ENABLE == 1 && CHIP_DEVICE_CONFIG_ENABLE_SED != 1)
     if (flash_vbat_read() < 2500)
         return;
-
+#endif
     /* GC check the empty sector number */
     sector_iterator(&sector, SECTOR_STORE_EMPTY, &empty_sec, NULL, gc_check_cb, false);
 

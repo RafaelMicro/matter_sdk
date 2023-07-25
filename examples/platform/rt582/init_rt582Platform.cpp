@@ -99,7 +99,8 @@ static void init_wdt_init(void)
 void init_rt582Platform(void)
 {
     NVIC_SetPriority(CommSubsystem_IRQn, 0x04);
-
+    NVIC_SetPriority(Wdt_IRQn, 0x01);
+    
     init_default_pin_mux();
 #if(CHIP_DEVICE_CONFIG_ENABLE_SED != 1)    
     init_wdt_init();
@@ -109,7 +110,7 @@ void init_rt582Platform(void)
     uartConsoleInit();
     crypto_lib_init();
 
-   #if LPWR_FLASH_PROTECT_ENABLE==1
+   #if (LPWR_FLASH_PROTECT_ENABLE==1 && CHIP_DEVICE_CONFIG_ENABLE_SED != 1)
    flash_vbat_protect_init();
    flash_cmp_protect_init();
    #endif

@@ -44,4 +44,4 @@
 
 /* definition for crypto hw engine */
 #define CRYPTO_SECP256R1_ENABLE 1
-#define LPWR_FLASH_PROTECT_ENABLE 1
+#define LPWR_FLASH_PROTECT_ENABLE 0

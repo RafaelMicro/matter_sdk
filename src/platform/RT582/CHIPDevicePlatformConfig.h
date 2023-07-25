@@ -83,6 +83,29 @@
 
 #define CHIP_DEVICE_CONFIG_MAX_EVENT_QUEUE_SIZE 25
 
+/**
+ * CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MIN
+ *
+ * The minimum interval (in units of 0.625ms) at which the device will send BLE advertisements while
+ * in slow advertising mode. The minimum interval should be greater and not equal to the
+ * CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX.
+ *
+ * Defaults to 240 (150 ms).
+ */
+#define CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MIN 240
+
+/**
+ * CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX
+ *
+ * The maximum interval (in units of 0.625ms) at which the device will send BLE advertisements while
+ * in slow advertising mode. The maximum interval should be greater and not equal to the
+ * CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MIN.
+ *
+ * Defaults to 240 (150 ms).
+ */
+#define CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX 240
+
+
 #ifndef CHIP_DEVICE_CONFIG_CERTIFICATION_DECLARATION
 //-> format_version = 1
 //-> vendor_id = 0xFFF1

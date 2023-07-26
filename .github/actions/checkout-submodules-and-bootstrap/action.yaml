@@ -21,8 +21,8 @@ runs:
         platform: ${{ inputs.platform }}
         extra-parameters: ${{ inputs.extra-submodule-parameters }}
     
-    - name: Bootstrap Cache
-      uses: ./.github/actions/bootstrap-cache
+    # - name: Bootstrap Cache
+    #   uses: ./.github/actions/bootstrap-cache
     
     - name: Bootstrap
       uses: ./.github/actions/bootstrap

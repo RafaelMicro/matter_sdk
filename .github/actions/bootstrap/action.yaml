@@ -5,4 +5,4 @@ runs:
   steps:
     - name: Bootstrap
       shell: bash
-      run: bash scripts/bootstrap.sh
+      run: scripts/build/gn_bootstrap.sh

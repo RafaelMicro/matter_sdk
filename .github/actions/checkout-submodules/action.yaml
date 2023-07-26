@@ -14,6 +14,6 @@ runs:
     - uses: Wandalen/wretry.action@v1.3.0
       name: Checkout submodules
       with:
-        command: scripts/checkout_submodules.py --shallow --platform ${{ inputs.platform }} ${{ inputs.extra-parameters }}
+        command: scripts/checkout_submodules.py --allow-changing-global-git-config --shallow --platform ${{ inputs.platform }} 
         attempt_limit: 3
         attempt_delay: 2000

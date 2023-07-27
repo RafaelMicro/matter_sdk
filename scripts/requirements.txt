@@ -2,23 +2,23 @@ pip-tools
 virtualenv
 
 # esp-idf
-# -c constraints.esp32.txt
-# -r requirements.esp32.txt
+-c constraints.esp32.txt
+-r requirements.esp32.txt
 
 # mbed-os
-# -r requirements.mbed.txt
+-r requirements.mbed.txt
 
 # bouffalolab
-# -r requirements.bouffalolab.txt
+-r requirements.bouffalolab.txt
 
 # openiotsdk
-# -r requirements.openiotsdk.txt
+-r requirements.openiotsdk.txt
 
 # Infineon
-# -r requirements.infineon.txt
+-r requirements.infineon.txt
 
 # TI
-# -r requirements.ti.txt
+-r requirements.ti.txt
 
 # Telink
 -r requirements.telink.txt

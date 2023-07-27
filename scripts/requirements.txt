@@ -15,7 +15,7 @@ virtualenv
 -r requirements.openiotsdk.txt
 
 # Infineon
--r requirements.infineon.txt
+# -r requirements.infineon.txt
 
 # TI
 -r requirements.ti.txt

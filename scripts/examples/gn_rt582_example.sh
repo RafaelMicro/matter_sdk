@@ -155,4 +155,5 @@ else
     # ninja -v -C "$BUILD_DIR"/
     # print stats
     arm-none-eabi-size -A "$BUILD_DIR"/*.out
+    arm-none-eabi-size -A "$BUILD_DIR"/*.out > "$BUILD_DIR"/size.txt
 fi

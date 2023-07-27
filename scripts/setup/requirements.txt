@@ -3,7 +3,7 @@ virtualenv
 
 # esp-idf
 -c constraints.esp32.txt
--r requirements.esp32.txt
+# -r requirements.esp32.txt
 
 # mbed-os
 -r requirements.mbed.txt
@@ -32,6 +32,9 @@ pgi; sys_platform == 'linux'
 pyobjc-core; sys_platform == 'darwin'
 pyobjc-framework-cocoa; sys_platform == 'darwin'
 pyobjc-framework-corebluetooth; sys_platform == 'darwin'
+
+
+# gdbgui==0.13.2.0 ; platform_machine != 'aarch64' and sys_platform == 'linux'
 
 # mobly tests
 portpicker

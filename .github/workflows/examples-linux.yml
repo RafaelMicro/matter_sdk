@@ -63,6 +63,7 @@ jobs:
 
             - name: Bootstrap
               timeout-minutes: 10
+              shell: bash
               run: source scripts/bootstrap.sh
 
             - name: Uploading bootstrap logs

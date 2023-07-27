@@ -1,0 +1,26 @@
+name: Build example
+description: Build example
+inputs:
+  example_name:
+    description: "the name of the example project"
+    required: true
+  upload_bin_path:
+    description: "the path of the upload bin folder"
+    required: true
+  upload_size_path:
+    description: "the path of the upload size folder"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Build example
+      shell: bash
+      run : ./scripts/examples/gn_rt582_example.sh ./examples/${{ inputs.example_name }}/rt582 ./out/${{ inputs.example_name }} RT582
+    
+    - name: Copy bin file to upload project directory
+      shell: bash
+      run : cp ./out/${{ inputs.example_name }}/RT582/chip-rt582-${{ inputs.example_name }}-example.bin ${{ inputs.upload_bin_path }}/chip-rt582-${{ inputs.example_name }}-example.bin
+    
+    - name: Copy size file to upload project directory
+      shell: bash
+      run : cp ./out/${{ inputs.example_name }}/RT582/size.txt ${{ inputs.upload_size_path }}/chip-rt582-${{ inputs.example_name }}-example-size.txt

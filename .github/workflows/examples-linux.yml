@@ -1,0 +1,104 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Build example - Linux 
+
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  merge_group:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+concurrency:
+    group: ${{ github.ref }}-${{ github.workflow }}-${{ (github.event_name == 'pull_request' && github.event.number) || (github.event_name == 'workflow_dispatch' && github.run_number) || github.sha }}
+    cancel-in-progress: true
+
+env:
+    CHIP_NO_LOG_TIMESTAMPS: true
+    UPLOAD_FOLDER: tmp
+    SIZE_FOLDER: size_reports
+    BIN_FOLDER: bin_files
+    
+jobs:
+    build-linux:
+        name: Build-Linux
+
+        runs-on: ubuntu-latest
+        if: github.actor != 'restyled-io[bot]'
+
+        container:
+            image: connectedhomeip/chip-build:0.7.3
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Checkout submodules & Bootstrap
+              uses: ./.github/actions/checkout-submodules-and-bootstrap
+              with:
+                platform: linux
+
+            - name: Set up upload folder
+              run : |
+                mkdir -p $UPLOAD_FOLDER/$BIN_FOLDER
+                mkdir -p $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build lighting-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: lighting-app
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build light-switch-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: light-switch-app
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Clean out build output
+              run: rm -rf ./out
+
+            - name: Uploading Files
+              if: ${{ always() }}
+              uses: actions/upload-artifact@v3
+              with:
+                name: bin_files_and_size_files
+                path: ${{ env.UPLOAD_FOLDER }}/
+
+            # Either the following steps can create an issue
+            
+            # - name: Create an issue
+            #   run: python3 scripts/workflow/create_issue.py "${{ github.token }}" "${{github.repository_owner}}" "${{github.repository}}"
+
+            # - name: Create an issue
+            #   uses: dacbd/create-issue-action@main
+            #   with:
+            #     token: ${{ github.token }}
+            #     title: Simple test issue
+            #     body: my new issue
+            #     assignees: eling22
+
+    # run-on-board:
+    #     name: Run-On-Board
+    #     needs: build-linux
+    #     runs-on: self-hosted
+
+    #     steps:
+    #       - name: Checkout repository
+    #         uses: actions/checkout@v3
+
+    #       - name: Downloading bin files
+    #         uses: actions/download-artifact@v3
+    #         with:
+    #           name: bin_files_and_size_files
+
+    #       - name: Do Some Thing
+    #         run: ls
+
+        

@@ -71,6 +71,19 @@ jobs:
                 name: bin_files_and_size_files
                 path: ${{ env.UPLOAD_FOLDER }}/
 
+            # Either the following steps can create an issue
+            
+            # - name: Create an issue
+            #   run: python3 scripts/workflow/create_issue.py "${{ github.token }}" "${{github.repository_owner}}" "${{github.repository}}"
+
+            # - name: Create an issue
+            #   uses: dacbd/create-issue-action@main
+            #   with:
+            #     token: ${{ github.token }}
+            #     title: Simple test issue
+            #     body: my new issue
+            #     assignees: eling22
+
     # run-on-board:
     #     name: Run-On-Board
     #     needs: build-linux

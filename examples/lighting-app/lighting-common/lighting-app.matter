@@ -1216,118 +1216,6 @@ server cluster ThreadNetworkDiagnostics = 53 {
   command ResetCounts(): DefaultSuccess = 0;
 }
 
-/** The Wi-Fi Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
-server cluster WiFiNetworkDiagnostics = 54 {
-  enum AssociationFailureCauseEnum : ENUM8 {
-    kUnknown = 0;
-    kAssociationFailed = 1;
-    kAuthenticationFailed = 2;
-    kSsidNotFound = 3;
-  }
-
-  enum ConnectionStatusEnum : ENUM8 {
-    kConnected = 0;
-    kNotConnected = 1;
-  }
-
-  enum SecurityTypeEnum : ENUM8 {
-    kUnspecified = 0;
-    kNone = 1;
-    kWep = 2;
-    kWpa = 3;
-    kWpa2 = 4;
-    kWpa3 = 5;
-  }
-
-  enum WiFiVersionEnum : ENUM8 {
-    kA = 0;
-    kB = 1;
-    kG = 2;
-    kN = 3;
-    kAc = 4;
-    kAx = 5;
-  }
-
-  bitmap WiFiNetworkDiagnosticsFeature : BITMAP32 {
-    kPacketCounts = 0x1;
-    kErrorCounts = 0x2;
-  }
-
-  info event Disconnection = 0 {
-    INT16U reasonCode = 0;
-  }
-
-  info event AssociationFailure = 1 {
-    AssociationFailureCauseEnum associationFailure = 0;
-    INT16U status = 1;
-  }
-
-  info event ConnectionStatus = 2 {
-    ConnectionStatusEnum connectionStatus = 0;
-  }
-
-  readonly attribute nullable octet_string<6> bssid = 0;
-  readonly attribute nullable SecurityTypeEnum securityType = 1;
-  readonly attribute nullable WiFiVersionEnum wiFiVersion = 2;
-  readonly attribute nullable int16u channelNumber = 3;
-  readonly attribute nullable int8s rssi = 4;
-  readonly attribute nullable int32u beaconLostCount = 5;
-  readonly attribute nullable int32u beaconRxCount = 6;
-  readonly attribute nullable int32u packetMulticastRxCount = 7;
-  readonly attribute nullable int32u packetMulticastTxCount = 8;
-  readonly attribute nullable int32u packetUnicastRxCount = 9;
-  readonly attribute nullable int32u packetUnicastTxCount = 10;
-  readonly attribute nullable int64u currentMaxRate = 11;
-  readonly attribute nullable int64u overrunCount = 12;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  command ResetCounts(): DefaultSuccess = 0;
-}
-
-/** The Ethernet Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
-server cluster EthernetNetworkDiagnostics = 55 {
-  enum PHYRateEnum : ENUM8 {
-    kRate10M = 0;
-    kRate100M = 1;
-    kRate1G = 2;
-    kRate25g = 3;
-    kRate5G = 4;
-    kRate10G = 5;
-    kRate40G = 6;
-    kRate100G = 7;
-    kRate200G = 8;
-    kRate400G = 9;
-  }
-
-  bitmap EthernetNetworkDiagnosticsFeature : BITMAP32 {
-    kPacketCounts = 0x1;
-    kErrorCounts = 0x2;
-  }
-
-  readonly attribute nullable PHYRateEnum PHYRate = 0;
-  readonly attribute nullable boolean fullDuplex = 1;
-  readonly attribute int64u packetRxCount = 2;
-  readonly attribute int64u packetTxCount = 3;
-  readonly attribute int64u txErrCount = 4;
-  readonly attribute int64u collisionCount = 5;
-  readonly attribute int64u overrunCount = 6;
-  readonly attribute nullable boolean carrierDetect = 7;
-  readonly attribute int64u timeSinceReset = 8;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  command ResetCounts(): DefaultSuccess = 0;
-}
-
 /** This cluster exposes interactions with a switch device, for the purpose of using those interactions by other devices.
 Two types of switch devices are supported: latching switch (e.g. rocker switch) and momentary switch (e.g. push button), distinguished with their feature flags.
 Interactions with the switch device are exposed as attributes (for the latching switch) and as events (for both types of switches). An interested party MAY subscribe to these attributes/events and thus be informed of the interactions, and can perform actions based on this, for example by sending commands to perform an action such as controlling a light or a window shade. */
@@ -1910,35 +1798,6 @@ server cluster ColorControl = 768 {
   command StepColorTemperature(StepColorTemperatureRequest): DefaultSuccess = 76;
 }
 
-/** Attributes and commands for configuring occupancy sensing, and reporting occupancy status. */
-server cluster OccupancySensing = 1030 {
-  enum OccupancySensorTypeEnum : ENUM8 {
-    kPir = 0;
-    kUltrasonic = 1;
-    kPIRAndUltrasonic = 2;
-    kPhysicalContact = 3;
-  }
-
-  bitmap OccupancyBitmap : BITMAP8 {
-    kOccupied = 0x1;
-  }
-
-  bitmap OccupancySensorTypeBitmap : BITMAP8 {
-    kPir = 0x1;
-    kUltrasonic = 0x2;
-    kPhysicalContact = 0x4;
-  }
-
-  readonly attribute OccupancyBitmap occupancy = 0;
-  readonly attribute OccupancySensorTypeEnum occupancySensorType = 1;
-  readonly attribute OccupancySensorTypeBitmap occupancySensorTypeBitmap = 2;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-}
 
 endpoint 0 {
   device type rootdevice = 22, version 1;
@@ -2150,41 +2009,6 @@ endpoint 0 {
     ram      attribute clusterRevision default = 1;
   }
 
-  server cluster WiFiNetworkDiagnostics {
-    emits event Disconnection;
-    emits event AssociationFailure;
-    emits event ConnectionStatus;
-    callback attribute bssid;
-    callback attribute securityType;
-    callback attribute wiFiVersion;
-    callback attribute channelNumber default = 0x0000;
-    callback attribute rssi default = 0x00;
-    callback attribute beaconLostCount default = 0x00000000;
-    callback attribute beaconRxCount default = 0x00000000;
-    callback attribute packetMulticastRxCount default = 0x00000000;
-    callback attribute packetMulticastTxCount default = 0x00000000;
-    callback attribute packetUnicastRxCount default = 0x00000000;
-    callback attribute packetUnicastTxCount default = 0x00000000;
-    callback attribute currentMaxRate default = 0x0000000000000000;
-    callback attribute overrunCount default = 0x0000000000000000;
-    ram      attribute featureMap default = 3;
-    ram      attribute clusterRevision default = 1;
-  }
-
-  server cluster EthernetNetworkDiagnostics {
-    callback attribute PHYRate;
-    callback attribute fullDuplex default = 0x00;
-    callback attribute packetRxCount default = 0x0000000000000000;
-    callback attribute packetTxCount default = 0x0000000000000000;
-    callback attribute txErrCount default = 0x0000000000000000;
-    callback attribute collisionCount default = 0x0000000000000000;
-    callback attribute overrunCount default = 0x0000000000000000;
-    callback attribute carrierDetect default = 0x00;
-    callback attribute timeSinceReset default = 0x0000000000000000;
-    ram      attribute featureMap default = 3;
-    ram      attribute clusterRevision default = 1;
-  }
-
   server cluster Switch {
     ram      attribute numberOfPositions default = 2;
     ram      attribute currentPosition;
@@ -2249,7 +2073,7 @@ endpoint 1 {
   }
 
   server cluster OnOff {
-    persist  attribute onOff default = 0x00;
+    persist  attribute onOff default = 0x01;
     ram      attribute globalSceneControl default = 0x01;
     ram      attribute onTime default = 0x0000;
     ram      attribute offWaitTime default = 0x0000;
@@ -2259,7 +2083,7 @@ endpoint 1 {
   }
 
   server cluster LevelControl {
-    persist  attribute currentLevel default = 0x01;
+    persist  attribute currentLevel default = 0xFE;
     ram      attribute remainingTime default = 0x0000;
     ram      attribute minLevel default = 0x01;
     ram      attribute maxLevel default = 0xFE;
@@ -2312,13 +2136,4 @@ endpoint 1 {
     ram      attribute clusterRevision default = 5;
   }
 
-  server cluster OccupancySensing {
-    ram      attribute occupancy;
-    ram      attribute occupancySensorType;
-    ram      attribute occupancySensorTypeBitmap;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 3;
-  }
 }
-
-

@@ -1,5 +1,5 @@
 {
-  "featureLevel": 92,
+  "featureLevel": 96,
   "creator": "zap",
   "keyValuePairs": [
     {
@@ -18,17 +18,17 @@
   "package": [
     {
       "pathRelativity": "relativeToZap",
+      "path": "../../../src/app/zap-templates/app-templates.json",
+      "type": "gen-templates-json",
+      "version": "chip-v1"
+    },
+    {
+      "pathRelativity": "relativeToZap",
       "path": "../../../src/app/zap-templates/zcl/zcl.json",
       "type": "zcl-properties",
       "category": "matter",
       "version": 1,
       "description": "Matter SDK ZCL data"
-    },
-    {
-      "pathRelativity": "relativeToZap",
-      "path": "../../../src/app/zap-templates/app-templates.json",
-      "type": "gen-templates-json",
-      "version": "chip-v1"
     }
   ],
   "endpointTypes": [
@@ -2335,7 +2335,7 @@
               "code": 2,
               "mfgCode": null,
               "source": "client",
-              "incoming": 1,
+              "incoming": 0,
               "outgoing": 0
             },
             {
@@ -4160,7 +4160,7 @@
           "mfgCode": null,
           "define": "WIFI_NETWORK_DIAGNOSTICS_CLUSTER",
           "side": "server",
-          "enabled": 1,
+          "enabled": 0,
           "attributes": [
             {
               "name": "BSSID",
@@ -4469,7 +4469,7 @@
           "mfgCode": null,
           "define": "ETHERNET_NETWORK_DIAGNOSTICS_CLUSTER",
           "side": "server",
-          "enabled": 1,
+          "enabled": 0,
           "attributes": [
             {
               "name": "PHYRate",
@@ -6087,7 +6087,7 @@
               "storageOption": "NVM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "0x00",
+              "defaultValue": "0x01",
               "reportable": 1,
               "minInterval": 0,
               "maxInterval": 65344,
@@ -6301,7 +6301,7 @@
               "storageOption": "NVM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "0x01",
+              "defaultValue": "0xFE",
               "reportable": 1,
               "minInterval": 0,
               "maxInterval": 65344,
@@ -8235,7 +8235,7 @@
           "mfgCode": null,
           "define": "OCCUPANCY_SENSING_CLUSTER",
           "side": "server",
-          "enabled": 1,
+          "enabled": 0,
           "attributes": [
             {
               "name": "Occupancy",
@@ -8341,5 +8341,6 @@
       "endpointVersion": 1,
       "deviceIdentifier": 257
     }
-  ]
+  ],
+  "log": []
 }

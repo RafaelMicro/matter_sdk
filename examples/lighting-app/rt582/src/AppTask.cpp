@@ -306,10 +306,10 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
  */
 void AppTask::UpdateClusterState(intptr_t arg)
 {
-    ChipLogProgress(NotSpecified, "UpdateClusterState");
+    // ChipLogProgress(NotSpecified, "UpdateClusterState");
 
     // write the new on/off value
-    EmberAfStatus status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), false);
+    EmberAfStatus status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), true);
 
     if (status != EMBER_ZCL_STATUS_SUCCESS)
     {
@@ -320,20 +320,20 @@ void AppTask::UpdateClusterState(intptr_t arg)
 void AppTask::ActionInitiated(LightingManager::Action_t aAction)
 {
     // Placeholder for light action
-    if (aAction == LightingManager::ON_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light goes on");
-    }
-    else if (aAction == LightingManager::OFF_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light goes off ");
-    }
+    // if (aAction == LightingManager::ON_ACTION)
+    // {
+    //     ChipLogProgress(NotSpecified, "Light goes on");
+    // }
+    // else if (aAction == LightingManager::OFF_ACTION)
+    // {
+    //     ChipLogProgress(NotSpecified, "Light goes off ");
+    // }
 
-    if (sAppTask.mSyncClusterToButtonAction)
-    {
-        PlatformMgr().ScheduleWork(UpdateClusterState, 0);
-        sAppTask.mSyncClusterToButtonAction = false;
-    }
+    // if (sAppTask.mSyncClusterToButtonAction)
+    // {
+    //     PlatformMgr().ScheduleWork(UpdateClusterState, 0);
+    //     sAppTask.mSyncClusterToButtonAction = false;
+    // }
 }
 
 void AppTask::ActionCompleted(LightingManager::Action_t aAction)
@@ -359,11 +359,11 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
         rt582_led_level_ctl(4, 0); 
     }
 
-    // if (sAppTask.mSyncClusterToButtonAction)
-    // {
-    //     chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState(), reinterpret_cast<intptr_t>(nullptr));
-    //     sAppTask.mSyncClusterToButtonAction = false;
-    // }
+    if (sAppTask.mSyncClusterToButtonAction)
+    {
+        chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
+        sAppTask.mSyncClusterToButtonAction = false;
+    }
 }
 void AppTask::LightActionEventHandler(AppEvent * aEvent)
 {

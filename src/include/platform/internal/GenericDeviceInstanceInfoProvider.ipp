@@ -114,7 +114,8 @@ CHIP_ERROR GenericDeviceInstanceInfoProvider<ConfigClass>::GetSerialNumber(char 
 
         flash_read_sec_register((uint32_t)temp, 0x1100);
         sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x\n", 
-            temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
+            temp[15], temp[14], temp[13], temp[12], temp[11], temp[10], temp[9], temp[8]);
+        serialNumLen = strlen(buf) + 1;
 
         // err("serial number: %s\r\n", buf);       
         err = CHIP_NO_ERROR; 

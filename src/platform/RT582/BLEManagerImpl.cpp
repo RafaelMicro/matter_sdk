@@ -88,6 +88,7 @@ namespace {
 
 /* FreeRTOS sw timer */
 TimerHandle_t sbleAdvTimeoutTimer;
+TimerHandle_t sbleConnTimeoutTimer;
 
 /* advertising configuration */
 #define BLERT_ADV_MAX_NO (2)
@@ -96,7 +97,7 @@ TimerHandle_t sbleAdvTimeoutTimer;
 #define CHIP_ADV_SHORT_UUID_LEN (2)
 
 // GAP device name
-static const uint8_t         DEVICE_NAME_STR[] = {DEVICE_NAME};
+static const uint8_t   DEVICE_NAME_STR[] = {DEVICE_NAME};
 
 // Device BLE Address
 static ble_gap_addr_t  DEVICE_ADDR = {.addr_type = RANDOM_STATIC_ADDR,
@@ -372,6 +373,26 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
                        p_conn_param->peer_addr.addr[2],
                        p_conn_param->peer_addr.addr[1],
                        p_conn_param->peer_addr.addr[0]);
+
+            if (g_use_slow_adv_interval == false)
+            {
+                ChipLogProgress(DeviceLayer, "Stop Slow Advertisement timer");
+                BLEMgrImpl().CancelBleAdvTimeoutTimer();
+            }
+
+            ChipLogProgress(DeviceLayer, "Start ble connection timeout timer");
+            if (xTimerIsTimerActive(sbleConnTimeoutTimer))
+            {
+                if (xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
+                {
+                    ChipLogError(DeviceLayer, "Failed to stop ble connection timer");
+                }
+            }
+            if (xTimerChangePeriod(sbleConnTimeoutTimer, 10000 / portTICK_PERIOD_MS, 100) != pdPASS)
+            {
+                ChipLogError(DeviceLayer, "Failed to start ble connection timeout timer");
+            }
+
         }
     }
     break;
@@ -455,6 +476,11 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         else
         {
             ChipLogProgress(DeviceLayer, "Disconnect, ID:%d, Reason:0x%02x", p_disconn_param->host_id, p_disconn_param->reason);
+            // if (p_disconn_param->reason == 0x08)
+            // {
+            //     err("ble disconnect\r\n");
+            //     PlatformMgr().ScheduleWork(DriveBLEState, 0);
+            // }
         }        
         /* Send Connection close event */
         disconnectEvent.Type = DeviceEventType::kCHIPoBLEConnectionClosed;
@@ -901,6 +927,12 @@ CHIP_ERROR BLEManagerImpl::_Init()
                                        (void *) this,       // init timer id = ble obj context
                                        BleAdvTimeoutHandler // timer callback handler
     );
+    sbleConnTimeoutTimer = xTimerCreate("BleConnTimer",       
+                                        1,                   
+                                        false,               
+                                        (void *) this,      
+                                        BleConnTimeoutHandler
+    ); 
     mFlags.Set(Flags::kRTBLEStackInitialized);
     mFlags.Set(Flags::kFastAdvertisingEnabled);
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
@@ -911,13 +943,21 @@ exit:
 void BLEManagerImpl::BleAdvTimeoutHandler(TimerHandle_t xTimer)
 {
     if (BLEMgrImpl().mFlags.Has(Flags::kFastAdvertisingEnabled))
-    {
-        ChipLogDetail(DeviceLayer, "bleAdv Timeout : Start slow advertisment");
-        
-        ChipLogProgress(DeviceLayer, "bleAdv Timeout : Start slow advertisment");
+    {        
+        ChipLogProgress(DeviceLayer, "Ble Fast Adv Timeout: Start Slow Adv");
         BLEMgrImpl().StopAdvertising();
         BLEMgrImpl()._SetAdvertisingMode(BLEAdvertisingMode::kSlowAdvertising);
     }
+}
+
+void BLEManagerImpl::BleConnTimeoutHandler(TimerHandle_t xTimer)
+{    
+    ChipLogProgress(DeviceLayer, "Ble Connection Timeout");
+
+    BLEMgrImpl().CloseConnection(0);
+    vTaskDelay(300);
+    BLEMgrImpl().mFlags.Set(Flags::kRestartAdvertising);
+    PlatformMgr().ScheduleWork(DriveBLEState, 0);
 }
 
 uint16_t BLEManagerImpl::_NumConnections(void)
@@ -1236,6 +1276,8 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         HandleSubscribeReceived(event->CHIPoBLESubscribe.ConId, &CHIP_BLE_SVC_ID, &ChipUUID_CHIPoBLEChar_TX);
         connEstEvent.Type = DeviceEventType::kCHIPoBLEConnectionEstablished;
         PlatformMgr().PostEventOrDie(&connEstEvent);
+        ChipLogProgress(DeviceLayer, "Stop ble connection timeout timer");
+        BLEMgrImpl().CancelBleConnTimeoutTimer();
     }
     break;
 
@@ -1384,6 +1426,8 @@ bool BLEManagerImpl::SendReadResponse(BLE_CONNECTION_OBJECT conId, BLE_READ_REQU
 
 void BLEManagerImpl::NotifyChipConnectionClosed(BLE_CONNECTION_OBJECT conId)
 {
+    ChipLogProgress(DeviceLayer, "Notify Chip Connection Closed");
+    CloseConnection(conId);
 }
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
@@ -1423,6 +1467,14 @@ exit:
 /*******************************************************************************
  * FreeRTOS Task Management Functions
  *******************************************************************************/
+
+void BLEManagerImpl::CancelBleConnTimeoutTimer(void)
+{
+    if (xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
+    {
+        ChipLogError(DeviceLayer, "Failed to stop Ble Conn timeout timer");
+    }
+}
 
 void BLEManagerImpl::CancelBleAdvTimeoutTimer(void)
 {

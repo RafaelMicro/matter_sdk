@@ -119,7 +119,6 @@ private:
     CHIP_ERROR StopAdvertising(void);
     CHIP_ERROR ConfigureAdvertisingData(void);
 
-
     static void ble_evt_task(void * arg);
     static void ble_evt_indication_cb(uint32_t data_len);
     static void ble_evt_handler(void *p_param);
@@ -133,8 +132,10 @@ private:
     static void app_evt_handler(void *p_param);
 
     static void BleAdvTimeoutHandler(TimerHandle_t xTimer);
+    static void BleConnTimeoutHandler(TimerHandle_t xTimer);
     static void DriveBLEState(intptr_t arg);
     
+    void CancelBleConnTimeoutTimer(void);
     void CancelBleAdvTimeoutTimer(void);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
 

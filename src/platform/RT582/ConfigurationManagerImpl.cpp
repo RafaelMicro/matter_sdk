@@ -53,17 +53,22 @@ exit:
 
 CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
 {
-    RT582Config::ReadConfigValue(RT582Config::kConfigKey_SoftwareVersion, softwareVer);
-    ChipLogProgress(SoftwareUpdate, "ConfigurationManagerImpl::GetSoftwareVersion = %d", softwareVer);
-    // softwareVer = CHIP_CONFIG_SOFTWARE_VERSION_NUMBER;
+    CHIP_ERROR err;
+
+    err = RT582Config::ReadConfigValue(RT582Config::kConfigKey_SoftwareVersion, softwareVer);
+    if (err != CHIP_NO_ERROR)
+    {
+        softwareVer = CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION;
+    }
+    ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
+
     return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR ConfigurationManagerImpl::StoreSoftwareVersion(uint32_t softwareVer)
 {
     RT582Config::WriteConfigValue(RT582Config::kConfigKey_SoftwareVersion, softwareVer);
-    ChipLogProgress(SoftwareUpdate, "ConfigurationManagerImpl::StoreSoftwareVersion = %d", softwareVer);
-    // softwareVer = CHIP_CONFIG_SOFTWARE_VERSION_NUMBER;
+    // ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
     return CHIP_NO_ERROR;
 }
 

@@ -90,6 +90,11 @@ void LightSwitchChangedHandler(const EmberBindingTableEntry & binding, Operation
     VerifyOrReturn(context != nullptr, ChipLogError(NotSpecified, "OnDeviceConnectedFn: context is null"));
     BindingCommandData * data = static_cast<BindingCommandData *>(context);
 
+    if(binding.type == EMBER_MULTICAST_BINDING)
+        data->isGroup = true;
+    else
+        data->isGroup = false;
+
     if (binding.type == EMBER_MULTICAST_BINDING && data->isGroup)
     {
         switch (data->clusterId)

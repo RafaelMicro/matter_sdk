@@ -18,7 +18,7 @@
 
         {
             "label": "postDebugKill",
-            "command": "echo ${input:terminate}",``
+            "command": "echo ${input:terminate}",
             "type": "shell"
         },
         {
@@ -75,42 +75,30 @@
             "type": "pickString",
             "id": "board",
             "description": "RT582 or RT583?",
-            "options": [
-                "RT582",
-                "RT583",
-            ],
+            "options": ["RT582", "RT583"],
             "default": "RT582"
         },
         {
             "type": "pickString",
             "id": "sed",
             "description": "Sleep device?",
-            "options": [
-                "yes",
-                "no",
-            ],
+            "options": ["yes", "no"],
             "default": "no"
         },
         {
             "type": "pickString",
             "id": "OTA",
             "description": "Enable OTA?",
-            "options": [
-                "yes",
-                "no",
-            ],
+            "options": ["yes", "no"],
             "default": "no"
         },
         {
             "type": "pickString",
             "id": "Certificate",
             "description": "Use attestation credentials?",
-            "options": [
-                "yes",
-                "no",
-            ],
+            "options": ["yes", "no"],
             "default": "no"
-        },        
+        },
         {
             "type": "promptString",
             "id": "COMPort",

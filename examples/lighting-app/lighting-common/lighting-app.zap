@@ -5438,9 +5438,9 @@
       ]
     },
     {
-      "name": "MA-dimmablelight",
-      "deviceTypeName": "MA-dimmablelight",
-      "deviceTypeCode": 257,
+      "name": "MA-extendedcolorlight",
+      "deviceTypeName": "MA-extendedcolorlight",
+      "deviceTypeCode": 269,
       "deviceTypeProfileId": 259,
       "clusters": [
         {
@@ -8333,13 +8333,13 @@
       "deviceIdentifier": 22
     },
     {
-      "endpointTypeName": "MA-dimmablelight",
+      "endpointTypeName": "MA-extendedcolorlight",
       "endpointTypeIndex": 1,
       "profileId": 259,
       "endpointId": 1,
       "networkId": 0,
       "endpointVersion": 1,
-      "deviceIdentifier": 257
+      "deviceIdentifier": 269
     }
   ],
   "log": []

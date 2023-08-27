@@ -56,7 +56,16 @@ CHIP_ERROR LightingManager::Init()
     EmberAfStatus status;
 
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
-    Attributes::CurrentLevel::Get(1, nullableCurrentLevel);
+    status = Attributes::CurrentLevel::Get(1, nullableCurrentLevel);
+    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    {
+        mLevel = nullableCurrentLevel.Value();
+    }
+    else
+    {
+        mLevel = kHSV.v;
+    }
+    mHSV.v = mLevel;
     status = ColorControl::Attributes::CurrentHue::Get(1, &currentLedHue);
     if (status == EMBER_ZCL_STATUS_SUCCESS)
     {
@@ -81,17 +90,21 @@ CHIP_ERROR LightingManager::Init()
     }
     else
     {
+        currentLedColorMode = 0x0;
     }
     status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
     if (status == EMBER_ZCL_STATUS_SUCCESS)
     {
         mCT.ctMireds = currentLedColorTemperature;
     }
+    // err("color mode: %d\r\n", currentLedColorMode);
+    // err("level: %d\r\n", mHSV.v);
+    // err("hue: %d\r\n", mHSV.h);
+    // err("saturation: %d\r\n", mHSV.s);
+    // err("color temperature: %d\r\n", mCT.ctMireds);
 
-    mLevel = nullableCurrentLevel.Value();
     mXY    = kBlueXY;
     // mHSV   = kHSV;
-    mHSV.v = mLevel;
     if (currentLedColorMode == 0x0)
         mRGB = HsvToRgb(mHSV);
     else if (currentLedColorMode == 0x2)

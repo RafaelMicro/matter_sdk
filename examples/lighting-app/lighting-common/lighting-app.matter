@@ -2111,13 +2111,13 @@ endpoint 1 {
   }
 
   server cluster ColorControl {
-    persist      attribute currentHue default = 0x00;
+    persist      attribute currentHue default = 0x3C;
     persist      attribute currentSaturation default = 0x00;
     ram      attribute remainingTime default = 0x0000;
     ram      attribute currentX default = 0x616B;
     ram      attribute currentY default = 0x607D;
     persist      attribute colorTemperatureMireds default = 0x00FA;
-    persist      attribute colorMode default = 0x01;
+    persist      attribute colorMode default = 0x00;
     ram      attribute options default = 0x00;
     ram      attribute numberOfPrimaries;
     ram      attribute enhancedCurrentHue default = 0x0000;

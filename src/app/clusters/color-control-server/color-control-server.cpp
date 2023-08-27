@@ -929,7 +929,7 @@ bool ColorControlServer::moveHueCommand(app::CommandHandler * commandObj, const 
     Attributes::RemainingTime::Set(endpoint, MAX_INT16U_VALUE);
 
     // kick off the state machine:
-    scheduleTimerCallbackMs(configureHSVEventControl(endpoint), UPDATE_TIME_MS);
+    scheduleTimerCallbackMs(configureHSVEventControl(endpoint), UPDATE_TIME_MS + 100);
 
 exit:
     commandObj->AddStatus(commandPath, status);
@@ -2693,7 +2693,7 @@ bool emberAfColorControlClusterStopMoveStepCallback(app::CommandHandler * comman
 void emberAfColorControlClusterServerInitCallback(EndpointId endpoint)
 {
 #ifdef EMBER_AF_PLUGIN_COLOR_CONTROL_SERVER_TEMP
-    ColorControlServer::Instance().startUpColorTempCommand(endpoint);
+    // ColorControlServer::Instance().startUpColorTempCommand(endpoint);
 #endif // EMBER_AF_PLUGIN_COLOR_CONTROL_SERVER_TEMP
 }
 

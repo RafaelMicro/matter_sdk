@@ -78,6 +78,47 @@ RgbColor_t HsvToRgb(HsvColor_t hsv)
     return rgb;
 }
 
+RgbColor_t CctToRgb(CtColor_t ct)
+{
+    RgbColor_t rgb = {.r = 0, .g = 0, .b = 0};
+    double ctKelvin = 1000000.0 / ct.ctMireds;
+    double temp = ctKelvin / 100.0;
+
+    if (temp <= 66.0)
+    {
+        rgb.r = 255;
+        rgb.g = temp;
+        rgb.g = 99.4708025861 * log2(rgb.g) - 161.1195681661;
+
+        if( temp <= 19.0){
+
+            rgb.b = 0;
+
+        } else {
+
+            rgb.b = temp - 10;
+            rgb.b = 138.5177312231 * log2(rgb.b) - 305.0447927307;
+
+        }
+    }
+    else 
+    {
+        rgb.r = temp - 60;
+        rgb.r = 329.698727446 * pow(rgb.r, -0.1332047592);
+        
+        rgb.g = temp - 60;
+        rgb.g = 288.1221695283 * pow(rgb.g, -0.0755148492 );
+
+        rgb.b = 255;
+    }
+
+    rgb.r = clamp(rgb.r, 0, 255);
+    rgb.g = clamp(rgb.g, 0, 255);
+    rgb.b = clamp(rgb.b, 0, 255);
+
+    return rgb;
+}
+
 RgbColor_t XYToRgb(uint8_t level, uint16_t currentX, uint16_t currentY)
 {
     // convert xyY color space to RGB
@@ -144,21 +185,21 @@ CW_t CTToXY(CtColor_t ct)
     CW_t cw;
 
     double ctKelvin = 1000000 / ct.ctMireds;
-    double diff = 7050.0 - 2580.0;
+    double diff = 6500.0 - 2700.0;
     double C = 0.0;
     double W = 0.0;
 
-    if (ctKelvin < 2580.0) 
+    if (ctKelvin < 2700.0) 
     {
-        ctKelvin = 2580.0;
+        ctKelvin = 2700.0;
     }
-    else if (ctKelvin > 7000.0)
+    else if (ctKelvin > 2700.0)
     {
-        ctKelvin = 7050.0;
+        ctKelvin = 2700.0;
     }
 
-    C = (ctKelvin - 2580.0) / diff;
-    W = (7050.0 - ctKelvin) / diff;
+    C = (ctKelvin - 2700.0) / diff;
+    W = (6500.0 - ctKelvin) / diff;
 
     cw.c = C;
     cw.w = W;

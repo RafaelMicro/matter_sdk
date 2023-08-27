@@ -2111,13 +2111,13 @@ endpoint 1 {
   }
 
   server cluster ColorControl {
-    ram      attribute currentHue default = 0x00;
-    ram      attribute currentSaturation default = 0x00;
+    persist      attribute currentHue default = 0x00;
+    persist      attribute currentSaturation default = 0x00;
     ram      attribute remainingTime default = 0x0000;
     ram      attribute currentX default = 0x616B;
     ram      attribute currentY default = 0x607D;
-    ram      attribute colorTemperatureMireds default = 0x00FA;
-    ram      attribute colorMode default = 0x01;
+    persist      attribute colorTemperatureMireds default = 0x00FA;
+    persist      attribute colorMode default = 0x01;
     ram      attribute options default = 0x00;
     ram      attribute numberOfPrimaries;
     ram      attribute enhancedCurrentHue default = 0x0000;
@@ -2128,8 +2128,8 @@ endpoint 1 {
     ram      attribute colorLoopStartEnhancedHue default = 0x2300;
     ram      attribute colorLoopStoredEnhancedHue default = 0x0000;
     ram      attribute colorCapabilities default = 0x1F;
-    ram      attribute colorTempPhysicalMinMireds default = 0x0000;
-    ram      attribute colorTempPhysicalMaxMireds default = 0xFEFF;
+    ram      attribute colorTempPhysicalMinMireds default = 0x0099;
+    ram      attribute colorTempPhysicalMaxMireds default = 0x0172;
     ram      attribute coupleColorTempToLevelMinMireds;
     ram      attribute startUpColorTemperatureMireds;
     ram      attribute featureMap default = 0x1F;

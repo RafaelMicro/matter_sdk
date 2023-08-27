@@ -51,8 +51,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     static bool getH = false;
     static bool getS = false;
     // static bool powerOnZCLInitOnOff = true;
-    static bool powerOnZCLInitLevelControl = true;
-    static bool powerOnZCLInitColortemperature = true;
+    // static bool powerOnZCLInitLevelControl = true;
+    // static bool powerOnZCLInitColortemperature = true;
 
     switch (clusterId)
     {
@@ -70,11 +70,11 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         {
             event.Type = DeviceLayer::DeviceEventType::kLevelControlAttributeChanged;
             event.LevelControlChanged.level = *value;
-            if (powerOnZCLInitLevelControl) 
-            {
-                powerOnZCLInitLevelControl = false;
-                break;
-            }
+            // if (powerOnZCLInitLevelControl) 
+            // {
+            //     powerOnZCLInitLevelControl = false;
+            //     break;
+            // }
             DeviceLayer::PlatformMgr().PostEvent(&event);
         }
         break;
@@ -157,11 +157,11 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         {
             event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
             event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);   
-            if (powerOnZCLInitColortemperature) 
-            {
-                powerOnZCLInitColortemperature = false;
-                break;
-            }
+            // if (powerOnZCLInitColortemperature) 
+            // {
+            //     powerOnZCLInitColortemperature = false;
+            //     break;
+            // }
             DeviceLayer::PlatformMgr().PostEvent(&event);
         }
         break;

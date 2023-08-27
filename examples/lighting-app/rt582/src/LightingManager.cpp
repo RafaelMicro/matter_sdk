@@ -29,7 +29,7 @@
 
 #include <lib/support/TypeTraits.h>
 
-
+#include "util_log.h"
 
 // initialization values for Blue in XY color space
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
@@ -40,24 +40,62 @@ constexpr HsvColor_t kHSV = { 60, 0, 254 };
 using namespace chip;
 using namespace chip::DeviceLayer;
 using namespace chip::app::Clusters::LevelControl;
+using namespace chip::app::Clusters;
 
 LightingManager LightingManager::sLight;
 
 CHIP_ERROR LightingManager::Init()
 {
     bool currentLedState;
+    uint8_t currentLedHue;
+    uint8_t currentLedSaturation;
+    uint8_t currentLedColorMode;
+    uint16_t currentLedColorTemperature;
     app::DataModel::Nullable<uint8_t> nullableCurrentLevel;
-    // read current on/off value on endpoint one.
+
+    EmberAfStatus status;
 
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
     Attributes::CurrentLevel::Get(1, nullableCurrentLevel);
-
+    status = ColorControl::Attributes::CurrentHue::Get(1, &currentLedHue);
+    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    {
+        mHSV.h = currentLedHue;
+    }
+    else
+    {
+        mHSV.h = kHSV.h;
+    }
+    status = ColorControl::Attributes::CurrentSaturation::Get(1, &currentLedSaturation);
+    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    {
+        mHSV.s = currentLedSaturation;
+    }
+    else
+    {
+        mHSV.s = kHSV.s;
+    }
+    status = ColorControl::Attributes::ColorMode::Get(1, &currentLedColorMode);
+    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    {
+    }
+    else
+    {
+    }
+    status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
+    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    {
+        mCT.ctMireds = currentLedColorTemperature;
+    }
 
     mLevel = nullableCurrentLevel.Value();
     mXY    = kBlueXY;
-    mHSV   = kHSV;
+    // mHSV   = kHSV;
     mHSV.v = mLevel;
-    mRGB   = HsvToRgb(mHSV);
+    if (currentLedColorMode == 0x0)
+        mRGB = HsvToRgb(mHSV);
+    else if (currentLedColorMode == 0x2)
+        mRGB = CctToRgb(mCT); 
     mState = currentLedState ? kState_On : kState_Off;
 
     return CHIP_NO_ERROR;
@@ -255,9 +293,8 @@ void LightingManager::SetColorTemperature(CtColor_t ct)
     mCT.ctMireds = ct.ctMireds;
     // info("===> mCT.ctMireds: %d\r\n", mCT.ctMireds);
     // info("===> Kelvin: %d\r\n", 1000000 / mCT.ctMireds);
-    mCW = CTToXY(mCT);
-    // info("===> C: %f, W: %f\r\n", mCW.c, mCW.w);
-    // UpdateLight();
+    mRGB = CctToRgb(mCT);
+    UpdateLight();
 }
 
 void LightingManager::Set(bool aOn)
@@ -279,7 +316,7 @@ void LightingManager::UpdateLight()
 
     if (mState == kState_On && mLevel > 1)
     {
-        // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+        // err("R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 
         rt582_led_level_ctl(2, mRGB.b);
         rt582_led_level_ctl(3, mRGB.r);

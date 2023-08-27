@@ -341,6 +341,7 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
     // Placeholder for light action completed
     uint8_t current_level = 0;
     RgbColor_t RGB;
+    
     if (aAction == LightingManager::ON_ACTION)
     {
         ChipLogProgress(NotSpecified, "Light On Action has been completed");
@@ -450,23 +451,24 @@ void AppTask::InitServer(intptr_t arg)
     }
     LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    // uint8_t current_level = 0;
-    // RgbColor_t RGB;
+    uint8_t current_level = 0;
+    RgbColor_t RGB;
 
-    // if (LightMgr().IsTurnedOn())
-    // {
-    //     current_level = LightMgr().GetLevel();
-    //     RGB = LightMgr().GetRgb();
-    //     rt582_led_level_ctl(2, RGB.b);
-    //     rt582_led_level_ctl(3, RGB.r);
-    //     rt582_led_level_ctl(4, RGB.g);
-    // }
-    // else
-    // {
-    //     rt582_led_level_ctl(2, 0); 
-    //     rt582_led_level_ctl(3, 0); 
-    //     rt582_led_level_ctl(4, 0);      
-    // }
+    if (LightMgr().IsTurnedOn())
+    {
+        current_level = LightMgr().GetLevel();
+        RGB = LightMgr().GetRgb();
+        err("R: %d, G: %d, B: %d\r\n", RGB.r, RGB.g, RGB.b);
+        rt582_led_level_ctl(2, RGB.b);
+        rt582_led_level_ctl(3, RGB.r);
+        rt582_led_level_ctl(4, RGB.g);
+    }
+    else
+    {
+        rt582_led_level_ctl(2, 0); 
+        rt582_led_level_ctl(3, 0); 
+        rt582_led_level_ctl(4, 0);      
+    }
 
 #if RT582_OTA_ENABLED
     OTAConfig::Init();

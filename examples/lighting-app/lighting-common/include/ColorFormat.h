@@ -53,4 +53,5 @@ struct CtColor_t
 
 RgbColor_t XYToRgb(uint8_t level, uint16_t currentX, uint16_t currentY);
 RgbColor_t HsvToRgb(HsvColor_t hsv);
+RgbColor_t CctToRgb(CtColor_t ct);
 CW_t CTToXY(CtColor_t ct);

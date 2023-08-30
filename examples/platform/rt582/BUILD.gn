@@ -58,6 +58,24 @@ source_set("openthread_core_config_rt582_chip_examples") {
   }
 }
 
+config("ICD-subscription-callback-config") {
+  defines = [ "CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS=1" ]
+}
+
+source_set("rt58x-ICD-subscription-callback") {
+  sources = [
+    "ICDSubscriptionCallback.cpp",
+    "ICDSubscriptionCallback.h",
+  ]
+
+  public_deps = [ 
+    "${rt582_sdk_build_root}:rt582_sdk",
+    "${chip_root}/src/app:app"
+  ]
+
+  public_configs = [ ":ICD-subscription-callback-config" ]
+}
+
 source_set("rt582-matter-shell") {
   if (chip_build_libshell) {
     defines = [ "ENABLE_CHIP_SHELL" ]

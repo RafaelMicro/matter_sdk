@@ -194,6 +194,12 @@ void AppTask::InitServer(intptr_t arg)
     {
         ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
     }
+
+#ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+    // Register ICD subscription callback to match subscription max intervals to its idle time interval
+    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&RT58xMatterConfig::mICDSubscriptionHandler);
+#endif // CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+
     if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
     {
         vTaskSuspendAll();

@@ -28,6 +28,7 @@
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
+#include <app/InteractionModelEngine.h>
 
 #include <assert.h>
 
@@ -53,6 +54,7 @@
 #include "init_lock_app_rt582Platform.h"
 #include "bsp.h"
 #include "bsp_button.h"
+#include "matter_config.h"
 
 
 using namespace chip;
@@ -66,7 +68,9 @@ using namespace ::chip::DeviceLayer;
 #define APP_EVENT_QUEUE_SIZE 10
 #define LIGHT_ENDPOINT_ID (1)
 
-
+#ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+ICDSubscriptionCallback RT58xMatterConfig::mICDSubscriptionHandler;
+#endif // CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
 
 namespace {
 
@@ -262,6 +266,12 @@ void AppTask::InitServer(intptr_t arg)
     {
         ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
     }
+    
+#ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+    // Register ICD subscription callback to match subscription max intervals to its idle time interval
+    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&RT58xMatterConfig::mICDSubscriptionHandler);
+#endif // CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+
     if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
     {
         vTaskSuspendAll();

@@ -130,6 +130,10 @@ rt582_executable("thermostat") {
     ]
   }
 
+  if (enable_sleepy_device) {
+    deps += [ "${examples_plat_dir}:rt58x-ICD-subscription-callback" ]
+  }
+
   deps += [
     "${chip_root}/src/lib/shell:shell_core",
     "${chip_root}/src/lib/shell",

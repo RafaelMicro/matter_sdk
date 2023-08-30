@@ -138,3 +138,5 @@
 #define CHIP_PROGRESS_LOGGING 1
 
 #define CHIP_DETAIL_LOGGING 0
+
+// #define CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL chip::System::Clock::Milliseconds32(60000)

@@ -71,10 +71,8 @@ rt582_sdk("sdk") {
 
 rt582_executable("lighting_app") {
   output_name = "chip-rt582-lighting-app-example.out"
-
   include_dirs = [ "include" ]
   defines = []
-
   sources = [
     "${examples_plat_dir}/heap_4_rt582.c",
     "${examples_plat_dir}/init_rt582Platform.cpp",
@@ -87,9 +85,7 @@ rt582_executable("lighting_app") {
     "src/init_lighting_rt582Platform.cpp",
     "src/main.cpp",
   ]
-  if (chip_build_libshell) {
-    sources += [ "${examples_plat_dir}/cmd_rafael.cpp" ]
-  }
+  
   deps = [
     ":sdk",
     "${chip_root}/examples/lighting-app/lighting-common",
@@ -98,7 +94,13 @@ rt582_executable("lighting_app") {
     "${chip_root}/src/lib",
     "${chip_root}/src/setup_payload",
     "${chip_root}/third_party/rafael/sdk/Portable/freertos",
+    "${chip_root}/src/lib/shell",
+    "${chip_root}/src/lib/shell:shell_core",
   ]
+
+  if (chip_build_libshell) {
+    sources += [ "${examples_plat_dir}/cmd_rafael.cpp" ]
+  }
 
   # OpenThread Settings
   if (chip_enable_openthread) {
@@ -109,10 +111,9 @@ rt582_executable("lighting_app") {
     ]
   }
 
-  deps += [
-    "${chip_root}/src/lib/shell",
-    "${chip_root}/src/lib/shell:shell_core",
-  ]
+  if (enable_sleepy_device) {
+    deps += [ "${examples_plat_dir}:rt58x-ICD-subscription-callback" ]
+  }
 
   if (chip_enable_ota_requestor) {
     defines += [ "RT582_OTA_ENABLED=1" ]
@@ -120,7 +121,6 @@ rt582_executable("lighting_app") {
   }
 
   ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
-
   inputs = [ ldscript ]
 
   ldflags = [ "-T" + rebase_path(ldscript, root_build_dir) ]
@@ -131,7 +131,6 @@ rt582_executable("lighting_app") {
     "-Wunused-variable",
   ]
 
-  # Attestation Credentials
   if (chip_build_platform_attestation_credentials_provider) {
     deps += [ "${chip_root}/src/platform/RT582:rt582-attestation-credentials" ]
   }

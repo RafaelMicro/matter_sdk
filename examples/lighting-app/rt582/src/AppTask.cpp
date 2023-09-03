@@ -470,7 +470,7 @@ void AppTask::InitServer(intptr_t arg)
     {
         current_level = LightMgr().GetLevel();
         RGB = LightMgr().GetRgb();
-        err("R: %d, G: %d, B: %d\r\n", RGB.r, RGB.g, RGB.b);
+        // err("R: %d, G: %d, B: %d\r\n", RGB.r, RGB.g, RGB.b);
         rt582_led_level_ctl(2, RGB.b);
         rt582_led_level_ctl(3, RGB.r);
         rt582_led_level_ctl(4, RGB.g);
@@ -617,9 +617,14 @@ CHIP_ERROR AppTask::Init()
 
 void AppTask::FactoryResetCheck()
 {
-    uint32_t i =0, reboot_cnt;
+    uint32_t i = 0, reboot_cnt = 0;
+    CHIP_ERROR err;
 
-    ConfigurationMgr().GetRebootCount(reboot_cnt);
+    err = ConfigurationMgr().GetRebootCount(reboot_cnt);
+    if (err != CHIP_NO_ERROR)
+    {
+        ConfigurationMgr().StoreRebootCount(reboot_cnt);
+    }
     ChipLogProgress(NotSpecified, "Cur reboot cnt : %d", reboot_cnt);
 
     if(reboot_cnt >= 6)

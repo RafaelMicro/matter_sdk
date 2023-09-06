@@ -124,6 +124,11 @@ struct InternalFlashFactoryData
         mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 2) << 16;
         mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 3) << 24;
 
+        if (mFlashData.pai_cert.len > 640)
+        {
+            mFlashData.pai_cert.len = 640;
+        }
+
         for (size_t i = 0; i < mFlashData.pai_cert.len; i++) 
         {
             mFlashData.pai_cert.data[i] = flash_read_byte(PAI_CERT_DATA_ADDR + i);
@@ -137,6 +142,11 @@ struct InternalFlashFactoryData
         mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 1) << 8;
         mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 2) << 16;
         mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 3) << 24;
+
+        if (mFlashData.dac_cert.len > 640)
+        {
+            mFlashData.dac_cert.len = 640;
+        }
 
         for (size_t i = 0; i < mFlashData.dac_cert.len; i++) 
         {
@@ -152,6 +162,11 @@ struct InternalFlashFactoryData
         mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 2) << 16;
         mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 3) << 24;
 
+        if (mFlashData.dac_privkey.len > 640)
+        {
+            mFlashData.dac_privkey.len = 640;
+        }
+
         for (size_t i = 0; i < mFlashData.dac_privkey.len; i++) 
         {
             mFlashData.dac_privkey.data[i] = flash_read_byte(DAC_PRIVKEY_DATA_ADDR + i);
@@ -165,6 +180,11 @@ struct InternalFlashFactoryData
         mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 1) << 8;
         mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 2) << 16;
         mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 3) << 24;
+
+        if (mFlashData.cd.len > 640)
+        {
+            mFlashData.cd.len = 640;
+        }
         mFactoryData->cd.len = mFlashData.cd.len;
 
         for (size_t i = 0; i < mFlashData.cd.len; i++) 
@@ -195,6 +215,10 @@ struct InternalFlashFactoryData
         mFactoryData->manualcode.len |= flash_read_byte(MANUALCODE_LEN_ADDR + 2) << 16;
         mFactoryData->manualcode.len |= flash_read_byte(MANUALCODE_LEN_ADDR + 3) << 24;
 
+        if (mFactoryData->manualcode.len > 32)
+        {
+            mFactoryData->manualcode.len = 32;
+        }
 
         for (size_t i = 0; i < mFactoryData->manualcode.len; i++)
         {
@@ -208,6 +232,11 @@ struct InternalFlashFactoryData
         mFactoryData->qrcode.len |= flash_read_byte(QRCODE_LEN_ADDR + 2) << 16;
         mFactoryData->qrcode.len |= flash_read_byte(QRCODE_LEN_ADDR + 3) << 24;
 
+        if (mFactoryData->qrcode.len > 191)
+        {
+            mFactoryData->qrcode.len = 191;
+        }
+
         for (size_t i = 0; i < mFactoryData->qrcode.len; i++)
         {
             mFactoryData->qrcode.data[i] = flash_read_byte(QRCODE_DATA_ADDR + i);
@@ -219,6 +248,11 @@ struct InternalFlashFactoryData
         mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 1) << 8;
         mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 2) << 16;
         mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 3) << 24; 
+
+        if (mFlashData.spake2_salt.len > 47)
+        {
+            mFlashData.spake2_salt.len = 47;
+        }
 
         for (size_t i = 0; i < mFlashData.spake2_salt.len; i++)
         {
@@ -236,6 +270,11 @@ struct InternalFlashFactoryData
         mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 1) << 8;
         mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 2) << 16;
         mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 3) << 24;
+
+        if (mFlashData.spake2_verifier.len > 255)
+        {
+            mFlashData.spake2_verifier.len = 255;
+        }
 
         for (size_t i = 0; i < mFlashData.spake2_verifier.len; i++)
         {

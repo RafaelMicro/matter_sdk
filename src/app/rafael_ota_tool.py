@@ -195,7 +195,7 @@ def lzma_compression(inputFileName, outputFileName):
     i = open(inputFileName, 'rb')
     o = open(outputFileName, 'wb')
     i.seek(0)
-    s = pylzma.compressfile(i, dictionary=8)
+    s = pylzma.compressfile(i, dictionary=16)
 
     statinfo = os.stat(inputFileName)
 

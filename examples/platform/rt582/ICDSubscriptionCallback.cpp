@@ -23,6 +23,7 @@
 CHIP_ERROR ICDSubscriptionCallback::OnSubscriptionRequested(chip::app::ReadHandler & aReadHandler,
                                                             chip::Transport::SecureSession & aSecureSession)
 {
+#if(CHIP_DEVICE_CONFIG_ENABLE_SED == 1)  
     using namespace chip::System::Clock;
 
     Seconds32 interval_s32 = std::chrono::duration_cast<Seconds32>(CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL);
@@ -61,6 +62,9 @@ CHIP_ERROR ICDSubscriptionCallback::OnSubscriptionRequested(chip::app::ReadHandl
     {
         decidedMaxInterval = maximumMaxInterval;
     }
-
+#else
+    uint32_t decidedMaxInterval = 240;
+#endif
     return aReadHandler.SetReportingIntervals(decidedMaxInterval);
+
 }

@@ -56,6 +56,9 @@ extern "C" {
 #include "crypto_util.h"
 #include "EnhancedFlashDataset.h"
 
+#define RANDOM_TIME_MAX        (10*100)
+#define RANDOM_TIME_MIN        (1*100)
+
 static void init_default_pin_mux(void)
 {
     int i, j;
@@ -98,14 +101,22 @@ static void init_wdt_init(void)
 
 void init_rt582Platform(void)
 {
+    uint32_t random = 0;
     NVIC_SetPriority(CommSubsystem_IRQn, 0x04);
     NVIC_SetPriority(Wdt_IRQn, 0x01);
     
     init_default_pin_mux();
+
+    Delay_Init();
+
+    //random = ((RANDOM_TIME_MAX - RANDOM_TIME_MIN) * (get_random_number() % 10000)) / ((RANDOM_TIME_MAX + 100) + RANDOM_TIME_MIN);
+
+    //Delay_ms(random);
+
 #if(CHIP_DEVICE_CONFIG_ENABLE_SED != 1)    
     init_wdt_init();
 #endif
-    Delay_Init();
+    
     dma_init();
     uartConsoleInit();
     crypto_lib_init();

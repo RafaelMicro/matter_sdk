@@ -85,17 +85,17 @@ rt582_executable("lighting_app") {
     "src/init_lighting_rt582Platform.cpp",
     "src/main.cpp",
   ]
-  
+
   deps = [
     ":sdk",
     "${chip_root}/examples/lighting-app/lighting-common",
     "${chip_root}/examples/lighting-app/lighting-common:color-format",
     "${chip_root}/examples/providers:device_info_provider",
     "${chip_root}/src/lib",
-    "${chip_root}/src/setup_payload",
-    "${chip_root}/third_party/rafael/sdk/Portable/freertos",
     "${chip_root}/src/lib/shell",
     "${chip_root}/src/lib/shell:shell_core",
+    "${chip_root}/src/setup_payload",
+    "${chip_root}/third_party/rafael/sdk/Portable/freertos",
   ]
 
   if (chip_build_libshell) {
@@ -114,7 +114,7 @@ rt582_executable("lighting_app") {
   if (enable_sleepy_device) {
     deps += [ "${examples_plat_dir}:rt58x-ICD-subscription-callback" ]
   }
-
+  deps += [ "${examples_plat_dir}:rt58x-ICD-subscription-callback" ]
   if (chip_enable_ota_requestor) {
     defines += [ "RT582_OTA_ENABLED=1" ]
     sources += [ "${examples_plat_dir}/OTAConfig.cpp" ]

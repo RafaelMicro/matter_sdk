@@ -59,6 +59,7 @@ CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
     if (err != CHIP_NO_ERROR)
     {
         softwareVer = CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION;
+        StoreSoftwareVersion(softwareVer);
     }
     ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
 

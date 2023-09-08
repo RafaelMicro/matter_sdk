@@ -28,7 +28,7 @@
 // #include "EFR32Config.h"
 #include <platform/RT582/RT582Config.h>
 #include "cm3_mcu.h"
-// #include "util_log.h"
+#include "util_log.h"
 #include "task.h"
 #include "fota_define.h"
 
@@ -232,17 +232,18 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 
         while (flash_check_busy());
         taskENTER_CRITICAL();
-        flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+        err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
         // info("===> write last page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
         taskEXIT_CRITICAL();
 
         // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mPageNo, mWriteOffset, writeBuffer, kAlignmentBytes);)
-        // if (err)
-        // {
+        if (err != STATUS_SUCCESS)
+        {
         //     ChipLogError(SoftwareUpdate, "ERROR: In HandleFinalize bootloader_eraseWriteStorage() error %ld", err);
-        //     imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
-        //     return;
-        // }
+            ChipLogError(SoftwareUpdate, "ERROR: In page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+            imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
+            return;
+        }
     }
 
     imageProcessor->ReleaseBlock();
@@ -253,6 +254,7 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 void OTAImageProcessorImpl::HandleApply(intptr_t context)
 {
     uint32_t err = SL_BOOTLOADER_OK;
+    uint32_t reboot_cnt = 0;
     fota_information_t t_bootloader_ota_info = {0};
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
@@ -263,7 +265,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
 
     // Force KVS to store pending keys such as data from StoreCurrentUpdateInfo()
     // chip::DeviceLayer::PersistedStorage::KeyValueStoreMgrImpl().ForceKeyMapSave();
-    chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(otaNewVersion);
+    // chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(otaNewVersion);
 
     // CORE_CRITICAL_SECTION(err = bootloader_verifyImage(mSlotId, NULL);)
     if (err != SL_BOOTLOADER_OK)
@@ -289,7 +291,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     t_bootloader_ota_info.signature_len = 0;
     t_bootloader_ota_info.target_startaddr = APP_START_ADDRESS;
     t_bootloader_ota_info.fotabank_datalen = imageProcessor->mParams.downloadedBytes;
-    t_bootloader_ota_info.reserved[0] = 0x1234;
+    t_bootloader_ota_info.reserved[0] = otaNewVersion;
     t_bootloader_ota_info.fota_result = 0xFF;
 
     t_bootloader_ota_info.fotabank_crc = GetCRC32(t_bootloader_ota_info.fotabank_startaddr, t_bootloader_ota_info.fotabank_datalen);
@@ -303,6 +305,16 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     taskENTER_CRITICAL();
     flash_write_page((uint32_t)&t_bootloader_ota_info, FOTA_UPDATE_BANK_INFO_ADDRESS);
     taskEXIT_CRITICAL();
+
+    chip::DeviceLayer::ConfigurationMgr().GetRebootCount(reboot_cnt);
+
+    if (reboot_cnt > 6)
+    {
+        err("warning!!!\r\n");
+        err("reboot_cnt: %d\r\n", reboot_cnt);
+        reboot_cnt = 0;
+        chip::DeviceLayer::ConfigurationMgr().StoreRebootCount(reboot_cnt);
+    }
 
     // This reboots the device
     ChipLogProgress(SoftwareUpdate, "system restarting...");
@@ -367,18 +379,19 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
             writeBufOffset = 0;
             while (flash_check_busy()) {}
             taskENTER_CRITICAL();
-            flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+            err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
             // info("===> write page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
             taskEXIT_CRITICAL();
             mPageNo++;
 
             // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mSlotId, mWriteOffset, writeBuffer, kAlignmentBytes);)
-            // if (err)
-            // {
+            if (err != STATUS_SUCCESS)
+            {
             //     ChipLogError(SoftwareUpdate, "ERROR: In HandleProcessBlock bootloader_eraseWriteStorage() error %ld", err);
-            //     imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
-            //     return;
-            // }
+                ChipLogError(SoftwareUpdate, "ERROR: In page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+                imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
+                return;
+            }
             mWriteOffset += kAlignmentBytes;
             imageProcessor->mParams.downloadedBytes += kAlignmentBytes;
         }

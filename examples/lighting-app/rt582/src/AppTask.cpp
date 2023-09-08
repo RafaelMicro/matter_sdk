@@ -57,6 +57,10 @@
 #include "bsp_button.h"
 #include "matter_config.h"
 
+#include "fota_define.h"
+#include "flashctl.h"
+#include "util_log.h"
+
 using namespace chip;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
@@ -250,6 +254,28 @@ void LockOpenThreadTask(void)
 void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
+}
+
+void MatterFotaInit(void)
+{
+    fota_information_t  *p_fota_info = (fota_information_t *)(FOTA_UPDATE_BANK_INFO_ADDRESS);
+
+    if (p_fota_info->fotabank_ready == FOTA_IMAGE_READY)
+    { 
+        if (p_fota_info->fota_result == FOTA_RESULT_SUCCESS)
+        {
+            // err("sw ver: %d\r\n", p_fota_info->reserved[0]);
+            chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(p_fota_info->reserved[0]);
+        } 
+        else
+        {
+            err("fota result: %d\r\n", p_fota_info->fota_result);
+        }  
+        while (flash_check_busy());
+        taskENTER_CRITICAL();
+        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
+        taskEXIT_CRITICAL();
+    }
 }
 
 void AppTask::IdentifyStartHandler(Identify *)
@@ -574,11 +600,9 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
 CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err;
-    // ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
-    
-    // chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
 
     FactoryResetCheck();
+    MatterFotaInit();
 
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
@@ -617,14 +641,10 @@ CHIP_ERROR AppTask::Init()
 
 void AppTask::FactoryResetCheck()
 {
-    uint32_t i = 0, reboot_cnt = 0;
-    CHIP_ERROR err;
+    uint32_t i = 0, reboot_cnt;
 
-    err = ConfigurationMgr().GetRebootCount(reboot_cnt);
-    if (err != CHIP_NO_ERROR)
-    {
-        ConfigurationMgr().StoreRebootCount(reboot_cnt);
-    }
+    ConfigurationMgr().GetRebootCount(reboot_cnt);
+
     ChipLogProgress(NotSpecified, "Cur reboot cnt : %d", reboot_cnt);
 
     if(reboot_cnt >= 6)

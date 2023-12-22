@@ -1,0 +1,165 @@
+/*
+ *  Copyright (c) 2021, The OpenThread Authors.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *  3. Neither the name of the copyright holder nor the
+ *     names of its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/**
+ * @file
+ *   This file includes all compile-time configuration constants used by
+ *   efr32 applications for OpenThread.
+ */
+#ifndef OPENTHREAD_CORE_RT58X_CONFIG_H_
+#define OPENTHREAD_CORE_RT58X_CONFIG_H_
+
+//#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
+//#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
+//#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+
+// Turn on a moderate level of logging in OpenThread
+// Enable use of external heap allocator (calloc/free) for OpenThread.
+#define OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE 1
+
+/*
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+
+#ifndef OPENTHREAD_CONFIG_PLATFORM_INFO
+#define OPENTHREAD_CONFIG_PLATFORM_INFO "RT58x"
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+ *
+ * The maximum number of children.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 16
+#endif
+
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
+ *
+ * Define to 1 if you want to enable software transmission security logic.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 0
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE 0
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+ *
+ * Define to 1 if you want to support microsecond timer in platform.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
+ *
+ * Define to 1 to enable otPlatFlash* APIs to support non-volatile storage.
+ *
+ * When defined to 1, the platform MUST implement the otPlatFlash* APIs instead of the otPlatSettings* APIs.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
+#define OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE
+ *
+ * The size of heap buffer when DTLS is enabled.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE
+#define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE (2048 * sizeof(void *))
+#endif
+/**
+ * @def OPENTHREAD_CONFIG_CLI_TX_BUFFER_SIZE
+ *
+ *  The size of CLI message buffer in bytes
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CLI_UART_TX_BUFFER_SIZE
+#define OPENTHREAD_CONFIG_CLI_UART_TX_BUFFER_SIZE 256
+#endif
+// disable unused features
+#define OPENTHREAD_CONFIG_COAP_API_ENABLE 0
+#define OPENTHREAD_CONFIG_JOINER_ENABLE 0
+#define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE 0
+#define OPENTHREAD_CONFIG_UDP_FORWARD_ENABLE 0
+#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 0
+#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE 0
+#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE 0
+#define OPENTHREAD_CONFIG_TCP_ENABLE 0
+
+#define OPENTHREAD_CONFIG_DTLS_ENABLE 0
+#define OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS_MANAGEMENT 0
+#define OPENTHREAD_CONFIG_PING_SENDER_ENABLE    0
+
+#define OPENTHREAD_CONFIG_ECDSA_ENABLE 1
+#define OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE 1
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 44
+#define OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_DIRECT 4
+#define OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_INDIRECT 8
+
+#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 0
+#define OPENTHREAD_CONFIG_LOG_PLATFORM 1
+#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
+
+#define OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT 0
+#define OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT 1
+
+//#define OPENTHREAD_CONFIG_IP6_FRAGMENTATION_ENABLE 1
+
+
+#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE 1
+//#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_2
+
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 0
+
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 0
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
+//#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 35000
+#endif // OPENTHREAD_CORE_RT58X_CONFIG_H_
+
+
+#define OPENTHREAD_CONFIG_DUA_ENABLE 0
+#define OPENTHREAD_CONFIG_MLR_ENABLE 1
+#define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE 1
+
+//#define OPENTHREAD_CONFIG_MLE_CHILD_TIMEOUT_DEFAULT 120

@@ -1,0 +1,190 @@
+# Copyright (c) 2020 Project CHIP Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build_overrides/chip.gni")
+import("//build_overrides/jlink.gni")
+import("//build_overrides/mbedtls.gni")
+import("//build_overrides/rt58x_sdk.gni")
+
+import("${chip_root}/src/lib/lib.gni")
+import("${chip_root}/src/platform/device.gni")
+
+declare_args() {
+  # Location of the rt58x SDK.
+  rt58x_sdk_root = "${chip_root}/third_party/rafael/sdk"
+  rt58x_static_sdk_root = "${chip_root}/third_party/rafael/rt58x_sdk"
+  sdk_support_root = "${chip_root}/third_party/rafael/matter_support"
+
+  # Build openthread with prebuilt rafael lib
+  use_rafael_thread_lib = false
+  enable_openthread_cli = false
+
+  kvs_max_entries = 75
+}
+
+assert(rt58x_sdk_root != "", "rt58x_sdk_root must be specified")
+
+# Defines an rt58x SDK build target.
+#
+# Parameters:
+#   rt58x_sdk_root - The location of the erf32 SDK.
+#   sources - The sources files to build.
+template("rt58x_sdk") {
+  if (defined(invoker.rt58x_sdk_root)) {
+    rt58x_sdk_root = invoker.rt58x_sdk_root
+  }
+
+  assert(rt58x_sdk_root != "", "rt58x_sdk_root must be specified")
+
+  sdk_target_name = target_name
+
+  config("${sdk_target_name}_config") {
+    include_dirs = []
+    libs = []
+    if (defined(invoker.include_dirs)) {
+      include_dirs += invoker.include_dirs
+    }
+
+    # Treat these includes as system includes, so warnings in them are not fatal.
+    _include_dirs = [
+      "${chip_root}/third_party/openthread/ot-rt58x/openthread/third_party/mbedtls/repo/include",
+      "${chip_root}/examples/platform/rt58x/config/",
+      "${chip_root}/third_party/rafael",
+      "${chip_root}/third_party/rafael/sdk/Portable/mib/",
+    ]
+
+    _include_dirs += [
+      "${rt58x_sdk_root}",
+      "${rt58x_sdk_root}/CMSIS/Include",
+      "${rt58x_sdk_root}/Driver/Include",
+      "${rt58x_sdk_root}/Driver/PHY/include",
+      "${rt58x_sdk_root}/Library/Include",
+      "${rt58x_sdk_root}/Driver/Peripheral/Include",
+      "${rt58x_sdk_root}/Portable/bsp/Include",
+      "${rt58x_sdk_root}/Portable/System/Include",
+      "${rt58x_sdk_root}/Portable/Utility/include",
+      "${rt58x_sdk_root}/Portable/freertos/repo/include",
+      "${rt58x_sdk_root}/Portable/freertos/repo/portable/GCC/ARM_CM3",
+      "${rt58x_sdk_root}/Portable/EnhancedFlashDataset/inc",
+
+      #Hardware Crypto Engine Inclide Dirs
+      "${chip_root}/third_party/mbedtls/repo/include/mbedtls",
+      "${chip_root}/third_party/mbedtls/repo/library",
+    ]
+
+    # Note that we're setting the mbedTLS and PSA configuration files through a
+    # define. This means the build system by default does not pick up changes in
+    # the content of these, only when changing the filename itself.
+    # To fix this, these files are also manually depended upon in the source set
+    # declared in rt58x_mbedtls_config further down this file.
+    defines = [ "USE_FREERTOS" ]
+
+    # if (defined(invoker.enable_sleepy_device)) {
+    #   if (invoker.enable_sleepy_device) {
+    #     defines += [ "CHIP_DEVICE_CONFIG_ENABLE_SED=1" ]
+    #   }
+    # }
+
+    if (rafael_board == "RT583") {
+      defines += [ "RAFAEL_BOARD=0x03" ]
+    }
+
+    if (chip_build_libshell) {  # matter shell
+      defines += [
+        "ENABLE_CHIP_SHELL",
+        "OPENTHREAD_CONFIG_CLI_TRANSPORT=OT_CLI_TRANSPORT_CONSOLE",
+        "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1",
+      ]
+    } else {
+      if (enable_openthread_cli) {  # ot-cli only
+        defines += [ "CHIP_DEVICE_CONFIG_THREAD_ENABLE_CLI=1" ]
+      }
+    }
+
+    cflags = []
+    foreach(include_dir, _include_dirs) {
+      cflags += [ "-isystem" + rebase_path(include_dir, root_build_dir) ]
+    }
+
+    cflags += [
+      "-Wno-unknown-pragmas",
+      "-Wno-sign-compare",
+      "-Wno-unused-function",
+      "-Wno-unused-parameter",
+      "-Wno-empty-body",
+      "-w",
+    ]
+
+    if (defined(invoker.defines)) {
+      defines += invoker.defines
+    }
+  }
+
+  source_set(sdk_target_name) {
+    sources = []
+    if (defined(invoker.sources)) {
+      sources += invoker.sources
+    }
+
+    # public_configs = [ ":${sdk_target_name}_config" ]
+    public_deps = [ ":RT_SDK" ]
+  }
+
+  static_library("RT_SDK") {
+    sources = []
+    if (defined(invoker.sources)) {
+      sources += invoker.sources
+    }
+    public_configs = [ ":${sdk_target_name}_config" ]
+
+    sources += [
+      "${rt58x_sdk_root}/Driver/Device/GCC/gcc_startup_cm3_mcu.S",
+      "${rt58x_sdk_root}/Driver/Device/system_cm3_mcu.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/Include/flashctl.h",
+      "${rt58x_sdk_root}/Driver/Peripheral/comparator.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/dma.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/flashctl.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/flashds.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/gpio.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/lpm.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/mp_sector.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/pwm.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/sadc.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/sysctrl.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/sysfun.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/timer.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/uart_retarget.c",
+      "${rt58x_sdk_root}/Driver/Peripheral/wdt.c",
+      "${rt58x_sdk_root}/Portable/EnhancedFlashDataset/src/EnhancedFlashDataset.c",
+      "${rt58x_sdk_root}/Portable/EnhancedFlashDataset/src/efd_kv.c",
+      "${rt58x_sdk_root}/Portable/EnhancedFlashDataset/src/efd_port.c",
+      "${rt58x_sdk_root}/Portable/EnhancedFlashDataset/src/efd_utils.c",
+      "${rt58x_sdk_root}/Portable/System/sys_arch.c",
+      "${rt58x_sdk_root}/Portable/System/sys_taskdbg.c",
+      "${rt58x_sdk_root}/Portable/Utility/util.c",
+      "${rt58x_sdk_root}/Portable/Utility/util_log.c",
+      "${rt58x_sdk_root}/Portable/Utility/util_printf.c",
+      "${rt58x_sdk_root}/Portable/Utility/util_queue.c",
+      "${rt58x_sdk_root}/Portable/Utility/util_string.c",
+      "${rt58x_sdk_root}/Portable/bsp/bsp.c",
+      "${rt58x_sdk_root}/Portable/bsp/bsp_button.c",
+      "${rt58x_sdk_root}/Portable/bsp/bsp_led.c",
+      "${rt58x_sdk_root}/Portable/bsp/bsp_uart.c",
+      "${rt58x_sdk_root}/Portable/bsp/bsp_uart_drv.c",
+      "${rt58x_sdk_root}/Portable/mib/mib_counters.c",
+    ]
+
+    libs = [ "${rt58x_sdk_root}/Library/librt58xsdk.a" ]
+  }
+}

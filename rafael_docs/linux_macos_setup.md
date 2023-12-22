@@ -77,15 +77,15 @@ which is expensive, so avoid running it unless the environment is out of date.
 ### Building project
 
 Run the following command to build a project: 1. Select target board
-(RT582/RT583) 2. Select OTA support or not 3. Select sleep end device (SED)
+(RT583) 2. Select OTA support or not 3. Select sleep end device (SED)
 support or not 4. Select certs support or not
 
 ```
-$ ./scripts/examples/gn_rt582_example.sh ./examples/<project-name>/rt582 ./out/<project-name> <Board(RT582/RT583)> <optional>
+$ ./scripts/examples/gn_rt58x_example.sh ./examples/<project-name>/rt58x ./out/<project-name> <Board(RT583)> <optional>
 Example:
-$ ./scripts/examples/gn_rt582_example.sh ./examples/lighting-app/rt582 ./out/lighting-app RT582
-$ ./scripts/examples/gn_rt582_example.sh ./examples/lighting-app/rt582 ./out/lighting-app RT582 --sed=yes --ota=yes
-$ ./scripts/examples/gn_rt582_example.sh ./examples/lighting-app/rt582 ./out/lighting-app RT583 --sed=yes --ota=yes --certs=yes
+$ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583
+$ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583 --sed=yes --ota=yes
+$ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583 --sed=yes --ota=yes --certs=yes
 ```
 
 ### Removing build artifacts

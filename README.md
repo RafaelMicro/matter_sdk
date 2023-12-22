@@ -72,7 +72,7 @@ imported during the compilation process.
 Please follow the steps below to create and test a fully functional Matter
 example on RT58x series of SoCs
 
--   Rafael(RT582/RT583) Getting Start Guide
+-   Rafael(RT58x) Getting Start Guide
     >The following application demo will need the specified tool providing by Rafael Micro, please go to the [Rafael Customer Support Portal](https://support.rafaelmicro.com:8088/) to download related files.
     -   [Setup Matter SDK Enviroment and Building an example application](./rafael_docs/matter_env_setup.md)
     -   Application Usage Guide

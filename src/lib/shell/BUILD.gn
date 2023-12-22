@@ -120,10 +120,10 @@ static_library("shell") {
       "MainLoopDefault.cpp",
       "streamer_asr.cpp",
     ]
-  } else if (chip_device_platform == "rt582") {
+  } else if (chip_device_platform == "rt58x") {
     sources += [
-      "MainLoopRT582.cpp",
-      "streamer_rt582.cpp",
+      "MainLoopRT58x.cpp",
+      "streamer_rt58x.cpp",
     ]
   } else {
     sources += [ "MainLoopDefault.cpp" ]

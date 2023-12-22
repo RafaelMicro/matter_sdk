@@ -162,9 +162,9 @@ bool GenericPlatformManagerImpl_FreeRTOS<ImplClass>::_IsChipStackLockedByCurrent
     //
     // Similarly, if mChipStackLock has not been created yet, might as well
     // return true.
-    return true;
-    //return (mEventLoopTask == nullptr) || (mChipStackLock == nullptr) ||
-    //    (xSemaphoreGetMutexHolder(mChipStackLock) == xTaskGetCurrentTaskHandle());
+    //return true;
+    return (mEventLoopTask == nullptr) || (mChipStackLock == nullptr) ||
+       (xSemaphoreGetMutexHolder(mChipStackLock) == xTaskGetCurrentTaskHandle());
 }
 #endif // CHIP_STACK_LOCK_TRACKING_ENABLED
 

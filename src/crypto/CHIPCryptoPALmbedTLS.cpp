@@ -69,7 +69,7 @@ extern int mbedtls_spake2p_prover_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp
 }
 #endif
 
-#define RT582_HW_CRYPTO_ENGINE_ENABLE
+#define RT583_HW_CRYPTO_ENGINE_ENABLE
 
 namespace chip {
 namespace Crypto {
@@ -1100,7 +1100,7 @@ CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::PointCofactorMul(void * R)
 {
     return CHIP_NO_ERROR;
 }
-#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
 CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeL(uint8_t * Lout, size_t * L_len, const uint8_t * w1in, size_t w1in_len)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;

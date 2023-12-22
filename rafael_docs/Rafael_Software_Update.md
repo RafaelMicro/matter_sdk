@@ -1,19 +1,19 @@
-# Rafael RT583 Matter OTA example
+# Rafael RT58x Matter OTA example
 
 ## Build Matter OTA example
 
 - On a Linux platform build the lighting-app with OTA feature as follow
 
-      ./scripts/examples/gn_rt582_example.sh examples/lighting-app/rt582/ out RT583 --ota=yes
+      ./scripts/examples/gn_rt58x_example.sh examples/lighting-app/rt58x/ out RT583 --ota=yes
 
 ## Create Matter OTA file
 - On a Linux platform create the Matter OTA file using Rafael OTA tool
 
-      ./src/app/rafael_ota_tool.py create -v 0xFFF1 -p 0x8005 -vn 2 -vs "2.0" -da sha256 out/RT583/chip-rt582-lighting-app-example.bin out/RT583/chip-rt582-lighting-app-example.ota
+      ./src/app/rafael_ota_tool.py create -v 0xFFF1 -p 0x8005 -vn 2 -vs "2.0" -da sha256 out/RT583/chip-rt58x-lighting-app-example.bin out/RT583/chip-rt58x-lighting-app-example.ota
         
 - To verify the Matter OTA file, run the script with following command
         
-      ./src/app/rafael_ota_tool.py show out/RT583/chip-rt582-lighting-app-example.ota
+      ./src/app/rafael_ota_tool.py show out/RT583/chip-rt58x-lighting-app-example.ota
 
 - Example output
 
@@ -35,7 +35,7 @@
 
       rm -r /tmp/chip_*
         
-      ./chip-ota-provider-app -f chip-rt582-lighting-app-example.ota --discriminator 3841
+      ./chip-ota-provider-app -f chip-rt58x-lighting-app-example.ota --discriminator 3841
 
 - In a Raspberry Pi terminal 2 run the chip-tool commands to provision the Provider
 
@@ -43,7 +43,7 @@
 
       ./chip-tool accesscontrol write acl '[{"fabricIndex": 1, "privilege": 5, "authMode": 2, "subjects": [112233], "targets": null}, {"fabricIndex": 1, "privilege": 3, "authMode": 2, "subjects": null, "targets": null}]' 2 0
 
-- If the RT583 had been previously commissioned, please hold Button SW2 for
+- If the RT58x had been previously commissioned, please hold Button SW2 for
     6 seconds to factory-reset the device
     
 - In a Raspberry Pi open a terminal 2 and enter following command with operationalDataset where is obtained from the OpenThread Border Router

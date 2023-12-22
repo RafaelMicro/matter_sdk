@@ -56,7 +56,7 @@ static void printf_callback(uint32_t event, void *p_context)
         if (sendbuf.rd_idx == sendbuf.wr_idx)
         {
             /* buffer empty ---
-               except ISR //printf(, sendbuf.wr_idx will not changed */
+               except ISR printf, sendbuf.wr_idx will not changed */
             send_state = STATE_SEND_IDLE;
         }
         else
@@ -167,8 +167,8 @@ static void uart_send(int ch)
     uint16_t   rd_index;
 
     /* this uart_send has two version:
-     * 1. for only single thread/FSM version: //printf( is only called by one task at any time.
-     * 2. there are multiple tasks version: //printf( maybe called for any thread at the same time.
+     * 1. for only single thread/FSM version: printf is only called by one task at any time.
+     * 2. there are multiple tasks version: printf maybe called for any thread at the same time.
      */
 
 wait_free_space:
@@ -187,7 +187,7 @@ wait_free_space:
     }
     else
     {
-        /*no space for //printf( buffer, relese critical section first*/
+        /*no space for printf buffer, relese critical section first*/
 
 #if (MODULE_ENABLE(SUPPORT_MULTITASKING))
         leave_critical_section();

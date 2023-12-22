@@ -17,10 +17,6 @@
 
 static int critical_counter = 0;
 
-void critical_section_init(void)
-{
-    critical_counter  = 0;
-}
 
 void enter_critical_section(void)
 {
@@ -108,9 +104,6 @@ uint32_t version_check(void)
 
 #endif
 
-
-
-
     return ret;
 
 }
@@ -168,4 +161,22 @@ void Sys_Software_Reset(void)
 
     NVIC_SystemReset();
 }
+/*
+ *  system PMU Mode
+ *
+ */
+pmu_mode_cfg_t GetPmuMode(void)
+{
+    pmu_mode_cfg_t Mode;
 
+    if ( (PMU->PMU_EN_CTRL.bit.EN_LLDO_NM == 0) && (PMU->PMU_EN_CTRL.bit.EN_DCDC_NM == 1))
+    {
+        Mode = PMU_MODE_DCDC;
+    }
+    else if ( (PMU->PMU_EN_CTRL.bit.EN_LLDO_NM == 1) && (PMU->PMU_EN_CTRL.bit.EN_DCDC_NM == 0))
+    {
+        Mode = PMU_MODE_LDO;
+    }
+
+    return Mode;
+}

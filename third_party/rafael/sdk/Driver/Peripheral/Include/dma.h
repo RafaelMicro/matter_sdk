@@ -97,12 +97,13 @@ typedef struct
  *
  */
 
-typedef struct
+typedef struct  __attribute__((packed))
 {
     uint8_t    *src_ptr;      /*!< linklist source pointer */
     uint8_t    *dest_ptr;     /*!< linklist destination pointer */
     uint32_t   size;          /*!< move bytes number */
-} dma_linklist_request_t;
+}
+dma_linklist_request_t;
 
 /**
  * @brief DMA finish routine callback for user application.

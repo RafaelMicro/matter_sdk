@@ -103,7 +103,15 @@ extern void leave_critical_section(void);
  */
 
 extern uint32_t version_check(void);
-
+/**
+ * @brief   check system pmu mode
+ * @details
+ *            return the system config pmu  mode
+ * @return
+ * @retval    0 --- LDO MODE
+ * @retval    1 --- DCDC Mode
+ */
+extern pmu_mode_cfg_t GetPmuMode(void);
 
 typedef enum
 {

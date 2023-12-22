@@ -18,7 +18,7 @@ extern "C"
  *  @{
  *  @brief  UART Retarget Driver header information
  *
- *  @details  let //printf( message output to uart. (default is uart0)
+ *  @details  let printf message output to uart. (default is uart0)
  *
  */
 
@@ -28,7 +28,7 @@ extern "C"
 /**
  *  @brief Initialize debug console
  *  This function configures and enable the debug console (UART0)
- *  So user appplication can call some stdout function like, //printf((...) or getchar()
+ *  So user appplication can call some stdout function like, printf(...) or getchar()
  *  for uart0
  *
  *  The uart0  will be configured as 8bit mode, NONE parity, and baudrate is set by

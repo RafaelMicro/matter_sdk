@@ -1,8 +1,8 @@
-# Configuring factory data for Rafael RT583 examples
+# Configuring factory data for Rafael RT58x examples
 
 ## Supported data
 
-Rafael MP tool with MPTCB supports adding following data to RT583:
+Rafael MP tool with MPTCB supports adding following data to RT58x:
 
 - Commissionalbe data
 
@@ -18,7 +18,7 @@ Rafael MP tool with MPTCB supports adding following data to RT583:
 
 ## Modify commissionable data
 
-In `matter_sdk/examples/lighting-app/rt582/include` folder, you can modify the following macro in the `CHIPProjectConfig.h`
+In `matter_sdk/examples/lighting-app/rt58x/include` folder, you can modify the following macro in the `CHIPProjectConfig.h`
    
    ```cpp
    #define CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE 20202021 
@@ -212,9 +212,9 @@ For example, we'll use Matter 's own test PAA certificate and signing key from M
 
 For example, build lighting-app with certificates and use MP tool with MPTCB to modify device attestation
 
-    ./scripts/examples/gn_rt582_example.sh examples/lighting-app/rt582/ out RT583 --certs=yes
+    ./scripts/examples/gn_rt58x_example.sh examples/lighting-app/rt58x/ out RT583 --certs=yes
 
-First of all, RT583 has to connect with MPTCB
+First of all, RT58x has to connect with MPTCB
 
 Furthermore, open Rafael MP tool and follow the steps to operate
 

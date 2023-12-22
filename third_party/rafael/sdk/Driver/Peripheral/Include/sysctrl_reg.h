@@ -23,11 +23,10 @@ typedef struct
     __IO uint32_t GPIO_MAP1;           /*0x14*/
     __IO uint32_t GPIO_MAP2;           /*0x18*/
     __IO uint32_t GPIO_MAP3;           /*0x1C*/
-
     __IO uint32_t GPIO_PULL_CTRL[4];    /*0x20 ~ 0x2C*/
     __IO uint32_t GPIO_DRV_CTRL[2];     /*0x30 ~ 0x34*/
     __IO uint32_t GPIO_OD_CTRL;         /*0x38*/
-    __IO uint32_t GPIO_AIO_CTRL;        /*0x3C*/
+    __IO uint32_t GPIO_AIO_CTRL;      /*0x3C*/
     __IO uint32_t TRNG0;                /*0x40*/
     __IO uint32_t TRNG1;                /*0x44*/
     __IO uint32_t TRNG2;                /*0x48*/
@@ -42,6 +41,9 @@ typedef struct
     __IO uint32_t CHIP_INFO;            /*0x90*/
 } SYSCTRL_T;
 
+
+#define     FLASH_DRV_SEL_MASK          (0x03<<16)
+#define     FLASH_DRV_SEL_SET           (0x01<<16)
 
 
 #define     HCLK_SEL_MASK            (3<<0)

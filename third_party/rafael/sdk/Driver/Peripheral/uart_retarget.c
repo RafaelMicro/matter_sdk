@@ -78,7 +78,7 @@ int uart_retarget_stdout_char(int ch)
 {
     return retarget_stdout_char(ch, sUartHandle[sUartId].uart);
 }
-#if defined(__CC_ARM) || defined(__CLANG_ARM)
+#if defined(__CC_ARM) || defined(__CLANG_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
 int fputc(int ch, FILE *p_file)
 {
     if (ch == 0x0a)

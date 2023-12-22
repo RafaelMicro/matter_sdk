@@ -86,7 +86,7 @@ uint32_t Wdt_Start(
 
     WDT->WINDOW_MIN = wdt_cfg_ticks.wdt_min_ticks;
     WDT->LOAD = wdt_cfg_ticks.wdt_ticks;
-    WDT->CONTROL = controller;
+    WDT->CONTROL.reg = controller.reg;
 
     return STATUS_SUCCESS;
 }
@@ -119,7 +119,7 @@ void Wdt_Handler(void)
         /*this is debug only.. it should be removed.*/
         while (1)
         {
-            //printf(("what ??? \n"); /*debug*/
+            printf("what ??? \n"); /*debug*/
         }
     }
 }

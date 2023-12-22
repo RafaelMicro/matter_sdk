@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define RT582_HW_CRYPTO_ENGINE_ENABLE
+#define RT583_HW_CRYPTO_ENGINE_ENABLE
 
 using chip::ByteSpan;
 using chip::MutableByteSpan;
@@ -418,7 +418,7 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
     SuccessOrExit(error = PointLoad(in, in_len, XY));
     SuccessOrExit(error = PointIsValid(XY));
 
-#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
 
         SuccessOrExit(error = ComputeZ(Z, xy, XY, w0, MN));
 #else
@@ -427,9 +427,9 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
         SuccessOrExit(error = PointCofactorMul(Z));
 
-#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */    
+#endif /* defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */    
 
-#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
 
     if (role == CHIP_SPAKE2P_ROLE::PROVER)
     {
@@ -451,7 +451,7 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         SuccessOrExit(error = PointMul(V, L, xy));
     }
 
-#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
+#endif /* defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */
 
     SuccessOrExit(error = PointCofactorMul(V));
     SuccessOrExit(error = PointWrite(Z, point_buffer, point_size));

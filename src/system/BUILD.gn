@@ -68,8 +68,8 @@ if (chip_device_platform == "cc13x2_26x2") {
   import("//build_overrides/mt793x_sdk.gni")
 } else if (chip_device_platform == "stm32") {
   import("//build_overrides/stm32_sdk.gni")
-} else if (chip_device_platform == "rt582") {
-  import("//build_overrides/rt582_sdk.gni")
+} else if (chip_device_platform == "rt58x") {
+  import("//build_overrides/rt58x_sdk.gni")
 }
 
 buildconfig_header("system_buildconfig") {
@@ -194,8 +194,8 @@ source_set("system_config_header") {
       if (chip_device_platform == "stm32") {
         public_deps += [ "${stm32_sdk_build_root}:stm32_sdk" ]
       }
-      if (chip_device_platform == "rt582") {
-        public_deps += [ "${rt582_sdk_build_root}:rt582_sdk" ]
+      if (chip_device_platform == "rt58x") {
+        public_deps += [ "${rt58x_sdk_build_root}:rt58x_sdk" ]
       }
 
       # Add platform here as needed.

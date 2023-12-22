@@ -52,6 +52,7 @@ static_library("RT582") {
     "InetPlatformConfig.h",
     "KeyValueStoreManagerImpl.cpp",
     "KeyValueStoreManagerImpl.h",
+    "../logging/LogV.h",
     "Logging.cpp",
     "PlatformManagerImpl.cpp",
     "PlatformManagerImpl.h",
@@ -90,7 +91,10 @@ static_library("RT582") {
     ]
 
     if (chip_mdns == "platform") {
-      sources += [ "../OpenThread/DnssdImpl.cpp" ]
+      sources += [ "../OpenThread/DnssdImpl.cpp",
+                   "../OpenThread/OpenThreadDnssdImpl.cpp",
+                   "../OpenThread/OpenThreadDnssdImpl.h",
+       ]
       deps += [ "${chip_root}/src/lib/dnssd:platform_header" ]
     }
   }

@@ -61,6 +61,7 @@
 
 
 using namespace chip;
+using namespace ::chip::app;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
@@ -101,7 +102,7 @@ static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 // };
 
 
-EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 
 /**********************************************************
  * Identify Callbacks
@@ -110,7 +111,7 @@ EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDEN
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
     ChipLogProgress(Zcl, "Trigger Identify Complete");
-    sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+    sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 
     //rt582_led_level_ctl(2, 0);
     //rt582_led_level_ctl(3, 0);
@@ -195,29 +196,29 @@ void OnTriggerIdentifyEffect(Identify * identify)
 
     switch (sIdentifyEffect)
     {
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK");
+    case Clusters::Identify::EffectIdentifierEnum::kBlink:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_BLINK");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBlink, identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE");
+    case Clusters::Identify::EffectIdentifierEnum::kBreathe:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_BREATHE");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBreathe, identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY");
+    case Clusters::Identify::EffectIdentifierEnum::kOkay:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_OKAY");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectOk, identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT");
+    case Clusters::Identify::EffectIdentifierEnum::kFinishEffect:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted, identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE");
+    case Clusters::Identify::EffectIdentifierEnum::kChannelChange:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectChannel, identify);
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(2), OnTriggerIdentifyEffectCompleted, identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT:
-        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT");
+    case Clusters::Identify::EffectIdentifierEnum::kStopEffect:
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT");
         (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
         break;    
     default:
@@ -229,7 +230,7 @@ Identify gIdentify = {
     LIGHT_ENDPOINT_ID,
     AppTask::IdentifyStartHandler,
     AppTask::IdentifyStopHandler,
-    EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LIGHT,
+    Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator,
     OnTriggerIdentifyEffect,
 };
 

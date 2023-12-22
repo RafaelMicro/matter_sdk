@@ -21,18 +21,16 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 
-#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/callback.h>
 #include <app-common/zap-generated/cluster-objects.h>
-#include <app-common/zap-generated/command-id.h>
+#include <app-common/zap-generated/ids/Commands.h>
 #include <app-common/zap-generated/enums.h>
-#include <app-common/zap-generated/ids/Attributes.h>
 
-#include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/attribute-type.h>
-#include <app-common/zap-generated/cluster-id.h>
+#include <app-common/zap-generated/ids/Clusters.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
@@ -68,6 +66,7 @@
 
 
 using namespace chip;
+using namespace ::chip::app;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
@@ -103,7 +102,7 @@ static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLe
                 = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
-static EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 /**********************************************************
  * Identify Callbacks
@@ -113,7 +112,7 @@ namespace {
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
     ChipLogProgress(Zcl, "Trigger Identify Complete");
-    sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+    sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 }
 } // namespace
 
@@ -121,29 +120,29 @@ void OnTriggerIdentifyEffect(Identify * identify)
 {
     sIdentifyEffect = identify->mCurrentEffectIdentifier;
 
-    if (identify->mCurrentEffectIdentifier == EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE)
+    if (identify->mCurrentEffectIdentifier == Clusters::Identify::EffectIdentifierEnum::kChannelChange)
     {
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE - Not supported, use effect variant %d",
-                        identify->mEffectVariant);
-        sIdentifyEffect = static_cast<EmberAfIdentifyEffectIdentifier>(identify->mEffectVariant);
+        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE - Not supported, use effect varriant %d",
+                        to_underlying(identify->mEffectVariant));
+        sIdentifyEffect = static_cast<Clusters::Identify::EffectIdentifierEnum>(identify->mEffectVariant);
     }
 
     switch (sIdentifyEffect)
     {
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK:
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE:
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY:
+    case Clusters::Identify::EffectIdentifierEnum::kBlink:
+    case Clusters::Identify::EffectIdentifierEnum::kBreathe:
+    case Clusters::Identify::EffectIdentifierEnum::kOkay:
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(5), OnTriggerIdentifyEffectCompleted,
                                                            identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT:
+    case Clusters::Identify::EffectIdentifierEnum::kFinishEffect:
         (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted,
                                                            identify);
         break;
-    case EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT:
+    case Clusters::Identify::EffectIdentifierEnum::kStopEffect:
         (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
-        sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
         break;
     default:
         ChipLogProgress(Zcl, "No identifier effect");
@@ -153,7 +152,7 @@ Identify gIdentify = {
     chip::EndpointId{ 1 },
     [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
     [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStop"); },
-    EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LED,
+    Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator,
     OnTriggerIdentifyEffect,
 };
 

@@ -62,7 +62,7 @@ int main(void)
     cmd_rafael_init();
 #endif
     info( "==================================================\n");
-    info( "chip-rt583-Thermostat-example starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    info( "chip-rt583-Thermostat-example(Matter 1.2) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "==================================================\n\n");
 
     err = PlatformMgr().InitChipStack();

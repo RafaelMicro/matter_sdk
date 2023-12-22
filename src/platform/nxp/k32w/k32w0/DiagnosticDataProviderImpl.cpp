@@ -117,8 +117,8 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetThreadMetrics(ThreadMetrics ** threadM
             thread->stackFreeMinimum.Emplace(taskStatusArray[x].usStackHighWaterMark);
 
             /* Unsupported metrics */
-            // thread->stackSize;
-            // thread->stackFreeCurrent;
+            thread->stackFreeCurrent.ClearValue();
+            thread->stackSize.ClearValue();
 
             thread->Next = head;
             head         = thread;
@@ -218,7 +218,7 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
     ifp->isOperational             = true;
     ifp->offPremiseServicesReachableIPv4.SetNull();
     ifp->offPremiseServicesReachableIPv6.SetNull();
-    ifp->type = InterfaceTypeEnum::EMBER_ZCL_INTERFACE_TYPE_ENUM_THREAD;
+    ifp->type = InterfaceTypeEnum::kThread;
     uint8_t macBuffer[ConfigurationManager::kPrimaryMACAddressLength];
     ConfigurationMgr().GetPrimary802154MACAddress(macBuffer);
     ifp->hardwareAddress = ByteSpan(macBuffer, ConfigurationManager::kPrimaryMACAddressLength);

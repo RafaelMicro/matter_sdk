@@ -152,7 +152,7 @@ enum PublicEventTypes
      *
      * Signals a change to the sleepy end device interval.
      */
-    kSEDIntervalChange,
+    kICDPollingIntervalChange,
 
     /**
      * CHIPoBLE Connection Established
@@ -513,6 +513,16 @@ struct ChipDeviceEvent final
             bool addNocCommandHasBeenInvoked;
             bool updateNocCommandHasBeenInvoked;
         } FailSafeTimerExpired;
+
+        struct
+        {
+            bool armed;
+        } FailSafeState;
+
+        struct
+        {
+            bool open;
+        } CommissioningWindowStatus;
 
         struct
         {

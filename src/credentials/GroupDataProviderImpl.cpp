@@ -24,8 +24,6 @@
 #include <lib/support/Pool.h>
 #include <stdlib.h>
 
-#include <platform/ConfigurationManager.h>
-
 namespace chip {
 namespace Credentials {
 

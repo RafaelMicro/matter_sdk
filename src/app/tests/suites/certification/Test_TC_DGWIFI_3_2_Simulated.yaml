@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 53.3.2. [TC-DGWIFI-3.2] Command Generated [DUT as Client]
+name: 52.3.1. [TC-DGWIFI-3.2] Command Generated [DUT as Client]
 
 PICS:
     - DGWIFI.C
@@ -23,10 +23,10 @@ config:
     endpoint: 0
 
 tests:
-    - label: "Wait for the device to be commissioned"
-      cluster: "DelayCommands"
-      command: "WaitForCommissioning"
+    #- label: "Wait for the device to be commissioned"
+    #  cluster: "DelayCommands"
+    #  command: "WaitForCommissioning"
 
     - label: "DUT sends ResetCounts command to TH"
-      PICS: DGTHREAD.C.C00.Tx
+      PICS: DGWIFI.S.C00.Tx
       wait: "ResetCounts"

@@ -33,9 +33,9 @@
 #endif // QR_CODE_ENABLED
 #endif // DISPLAY_ENABLED
 
-#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/attribute-type.h>
-#include <app-common/zap-generated/cluster-id.h>
+#include <app-common/zap-generated/ids/Clusters.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
@@ -73,6 +73,7 @@
 // #define APP_FUNCTION_BUTTON &sl_button_btn0
 
 using namespace chip;
+using namespace ::chip::app;
 using namespace ::chip::DeviceLayer;
 
 namespace {
@@ -97,7 +98,7 @@ bool sHaveBLEConnections = false;
 
 #endif // CHIP_DEVICE_CONFIG_ENABLE_SED
 
-EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 
 uint8_t sAppEventQueueBuffer[APP_EVENT_QUEUE_SIZE * sizeof(AppEvent)];
 StaticQueue_t sAppEventQueueStruct;

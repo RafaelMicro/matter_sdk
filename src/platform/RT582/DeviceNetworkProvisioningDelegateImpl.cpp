@@ -17,7 +17,7 @@
 
 #include "DeviceNetworkProvisioningDelegateImpl.h"
 // #include "NetworkCommissioningWiFiDriver.h"
-#include <lib/support/ErrorStr.h>
+#include <lib/core/ErrorStr.h>
 #include <lib/support/logging/CHIPLogging.h>
 
 #if CHIP_ENABLE_OPENTHREAD

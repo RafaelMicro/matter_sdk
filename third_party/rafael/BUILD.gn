@@ -13,33 +13,36 @@
 # limitations under the License.
 
 import("//build_overrides/chip.gni")
-import("//build_overrides/rt582_sdk.gni")
 import("//build_overrides/jlink.gni")
+import("//build_overrides/rt58x_sdk.gni")
 import("${chip_root}/src/platform/device.gni")
-import("${rt582_sdk_build_root}/rt582_sdk.gni")
+import("${rt58x_sdk_build_root}/rt58x_sdk.gni")
 
 # import("//build_overrides/openthread.gni")
 import("//build_overrides/mbedtls.gni")
 import("${mbedtls_root}/mbedtls.gni")
-
 declare_args() {
-  # Build target to use for rt582 SDK. Use this to set global SDK defines.
-  rt582_sdk_target = ""
-  rf_ot_rt582_root = "${chip_root}/third_party/openthread/ot-rt582"
-  rf_openthread_root = "${chip_root}/third_party/openthread/ot-rt582/openthread"
+  # Build target to use for rt58x SDK. Use this to set global SDK defines.
+  rt58x_sdk_target = ""
+  rf_ot_rt58x_root = "${chip_root}/third_party/openthread/ot-rt58x"
+  rf_openthread_root = "${chip_root}/third_party/openthread/ot-rt58x/openthread"
   use_thread_coap_lib = false
 }
 
-assert(rt582_sdk_target != "", "rt582_sdk_target must be specified")
+assert(rt58x_sdk_target != "", "rt58x_sdk_target must be specified")
 
-group("rt582_sdk") {
-  public_deps = [ rt582_sdk_target ]
+group("rt58x_sdk") {
+  public_deps = [ rt58x_sdk_target ]
 }
 
-config("mbedtls_rt582_config") {
+source_set("syscalls_stub") {
+  sources = [ "syscalls_stubs.cpp" ]
+}
+
+config("mbedtls_rt58x_config") {
   defines = [
-    "MBEDTLS_CONFIG_FILE=<third_party/openthread/ot-rt582/openthread/third_party/mbedtls/mbedtls-config.h>",
-    "MBEDTLS_USER_CONFIG_FILE=<src/platform/RT582/rt582-chip-mbedtls-config.h>",
+    "MBEDTLS_CONFIG_FILE=<third_party/openthread/ot-rt58x/openthread/third_party/mbedtls/mbedtls-config.h>",
+    "MBEDTLS_USER_CONFIG_FILE=<src/platform/RT58x/rt58x-chip-mbedtls-config.h>",
   ]
 
   include_dirs = [ chip_root ]
@@ -52,7 +55,8 @@ mbedtls_target("mbedtls") {
     # "${chip_root}/third_party/openthread/ot-ifx/src/cyw30739/mbedtls/library/sha256_alt.c",
   ]
 
-  public_configs = [ ":mbedtls_rt582_config" ]
+  public_configs = [ ":mbedtls_rt58x_config" ]
 
   public_deps = [ "${rf_openthread_root}/src/core:libopenthread_core_headers" ]
+  deps = [ ":syscalls_stub" ]
 }

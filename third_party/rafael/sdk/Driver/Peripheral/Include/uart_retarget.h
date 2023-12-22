@@ -45,7 +45,7 @@ typedef struct retarget_desc
 //                  Public Function Definition
 //=============================================================================
 /**
- *  @brief  initialize uart retarget for //printf(
+ *  @brief  initialize uart retarget for printf
  *
  *  @param [in] uart_retarget_desc_t     assign the user description of retarget
  *  @return

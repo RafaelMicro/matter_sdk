@@ -100,7 +100,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
       }
       ```
 
-   - In this case, we call the `init_light_switch_app_pin_mux()` function in the `init_light_switch_app_rt582Platform.cpp` file to set pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_light_switch_app_rt582Platform()` function to set TIMER to periodically update LED onoff status. RT583's peripheral SDK is in the matter_sdk/third_party/rafael/sdk/Driver/Peripheral folder.
+   - In this case, we call the `init_light_switch_app_pin_mux()` function in the `init_light_switch_app_rt58xPlatform.cpp` file to set pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_light_switch_app_rt58xPlatform()` function to set TIMER to periodically update LED onoff status. RT58x's peripheral SDK is in the matter_sdk/third_party/rafael/sdk/Driver/Peripheral folder.
 
       - Configurate GPIO20 for switch on and GPIO21 for switch off
 
@@ -118,7 +118,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
       - Configurate TIMER2 for flashing LED
 
       ```cpp
-      void init_light_switch_app_rt582Platform(void)
+      void init_light_switch_app_rt58xPlatform(void)
       {
           timer_config_mode_t cfg;
 
@@ -175,16 +175,16 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
                current_level = LightMgr().GetLevel();
                RGB = LightMgr().GetRgb();
-               rt582_led_level_ctl(2, RGB.b);
-               rt582_led_level_ctl(3, RGB.r);
-               rt582_led_level_ctl(4, RGB.g);
+               rt58x_led_level_ctl(2, RGB.b);
+               rt58x_led_level_ctl(3, RGB.r);
+               rt58x_led_level_ctl(4, RGB.g);
             }
             else if (aAction == LightingManager::OFF_ACTION)
             {
                ChipLogProgress(NotSpecified, "Light Off Action has been completed");
-               rt582_led_level_ctl(2, 0);
-               rt582_led_level_ctl(3, 0);
-               rt582_led_level_ctl(4, 0); 
+               rt58x_led_level_ctl(2, 0);
+               rt58x_led_level_ctl(3, 0);
+               rt58x_led_level_ctl(4, 0); 
             }
          }
          ```
@@ -194,7 +194,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
          LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
          ```
 
-   - In this case, we call the `init_lighting_pin_mux()` function in the `init_lighting_rt582Platform.cpp` file to set pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_lighting_app_rt582Platform()` function to control RGB LED using `PWMs` for dimmable light or set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder. 
+   - In this case, we call the `init_lighting_pin_mux()` function in the `init_lighting_rt58xPlatform.cpp` file to set pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_lighting_app_rt58xPlatform()` function to control RGB LED using `PWMs` for dimmable light or set `TIMER` to periodically update LED onoff status. RT58x's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder. 
       - Configurate GPIO21, GPIO22, GPIO23 for PWM2, PWM3, PWM4
          ```cpp
          static void init_lighting_pin_mux(void)
@@ -221,18 +221,18 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
       - Initialize PWM2, PWM3, PWM4 for LED level control and configurate TIMER2 for flashing LED
 
          ```cpp
-         void init_lighting_app_rt582Platform(void)
+         void init_lighting_app_rt58xPlatform(void)
          {
             timer_config_mode_t cfg;
 
             init_lighting_pin_mux();
 
-            init_rt582_led_level_ctl(2);
-            init_rt582_led_level_ctl(3);
-            init_rt582_led_level_ctl(4);
-            rt582_led_level_ctl(2, 0);
-            rt582_led_level_ctl(3, 0);
-            rt582_led_level_ctl(4, 0);
+            init_rt58x_led_level_ctl(2);
+            init_rt58x_led_level_ctl(3);
+            init_rt58x_led_level_ctl(4);
+            rt58x_led_level_ctl(2, 0);
+            rt58x_led_level_ctl(3, 0);
+            rt58x_led_level_ctl(4, 0);
 
             cfg.int_en = ENABLE;
             cfg.mode = TIMER_PERIODIC_MODE;
@@ -282,7 +282,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
          }
          ```
 
-   - In `init_lock_app_rt582Platform.cpp` file, you can call `init_lock_app_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_lock_app_rt582Platform()` function to set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
+   - In `init_lock_app_rt58xPlatform.cpp` file, you can call `init_lock_app_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_lock_app_rt58xPlatform()` function to set `TIMER` to periodically update LED onoff status. RT58x's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
    
       - Configurate GPIO22, GPIO23, GPIO24 for simulating door lock or unlock.
 
@@ -331,7 +331,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
          }
          ```
 
-   - In `init_smart-plug-app_rt582Platform.cpp` file, you can call `init_smart_plug_app_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_smart_plug_app_rt582Platform()` function to set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
+   - In `init_smart-plug-app_rt58xPlatform.cpp` file, you can call `init_smart_plug_app_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_smart_plug_app_rt58xPlatform()` function to set `TIMER` to periodically update LED onoff status. RT58x's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
 
       - Configurate GPIO21
       
@@ -353,7 +353,7 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
-   - In `init_thermostat_rt582Platform.cpp` file, you can call `init_thermostat_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_thermostat_rt582Platform()` function to set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
+   - In `init_thermostat_rt58xPlatform.cpp` file, you can call `init_thermostat_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_thermostat_rt58xPlatform()` function to set `TIMER` to periodically update LED onoff status. RT58x's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
       
       - Configurate GPIO20, GPIO21
          ```cpp
@@ -371,4 +371,4 @@ You can find example applications in `matter_sdk/examples/` folder. We support t
 
    - In `main.cpp` file, we initialize RT58x's platforms, memory alloction, matter protocol stack and application.
 
-   - In `init_window_rt582Platform.cpp` file, you can call `init_window_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT583's peripherals which you might need. And then you can also call the `init_window_app_rt582Platform()` function to set `TIMER` to periodically update LED onoff status. RT583's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.
+   - In `init_window_rt58xPlatform.cpp` file, you can call `init_window_pin_mux()` function to set GPIO pin mux. You can modify your application code and initialize RT58x's peripherals which you might need. And then you can also call the `init_window_app_rt58xPlatform()` function to set `TIMER` to periodically update LED onoff status. RT58x's peripheral SDK is in the `matter_sdk/third_party/rafael/sdk/Driver/Peripheral` folder.

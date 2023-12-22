@@ -141,6 +141,3 @@ void gpio_handler(void)
 
     return;
 }
-
-
-

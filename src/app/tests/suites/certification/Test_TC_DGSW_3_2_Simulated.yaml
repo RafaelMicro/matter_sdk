@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 44.3.2. [TC-DGSW-3.2] Commands Generated [DUT as Client]
+name: 43.3.1. [TC-DGSW-3.2] Attributes observation with client as DUT
 
 PICS:
     - DGSW.C
@@ -23,9 +23,9 @@ config:
     endpoint: 0
 
 tests:
-    - label: "Wait for the device to be commissioned"
-      cluster: "DelayCommands"
-      command: "WaitForCommissioning"
+    #- label: "Wait for the device to be commissioned"
+    #  cluster: "DelayCommands"
+    #  command: "WaitForCommissioning"
 
     - label: "DUT sends ResetWatermarks to TH"
       PICS: DGSW.C.C00.Tx

@@ -25,7 +25,7 @@
 //                  Constant Definition
 //=============================================================================
 #define BSP_UART_PORT_ID                1
-#define BSP_UART_BAUD_RATE              UART_BAUDRATE_2000000
+#define BSP_UART_BAUD_RATE              UART_BAUDRATE_115200
 
 #define TX_BUFF_SIZE                    512
 #define TX_BUFF_MASK                    (TX_BUFF_SIZE -1)

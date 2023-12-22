@@ -82,16 +82,16 @@
 
 #include <string.h>
 
-#define RT582_HW_CRYPTO_ENGINE_ENABLE
+#define RT583_HW_CRYPTO_ENGINE_ENABLE
 
-extern int rt582_spake2p_compute_L(uint8_t * L, uint8_t * w1);
+extern int rt583_spake2p_compute_L(uint8_t * L, uint8_t * w1);
 
-extern int rt582_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint8_t * P_y, uint8_t * n, uint8_t * Q_x,
+extern int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint8_t * P_y, uint8_t * n, uint8_t * Q_x,
                                uint8_t * Q_y);
-extern int rt582_spake2p_compute_Z(uint8_t * Z_x, uint8_t * Z_y, uint8_t * y, uint8_t * X_x, uint8_t * X_y, uint8_t * w0,
+extern int rt583_spake2p_compute_Z(uint8_t * Z_x, uint8_t * Z_y, uint8_t * y, uint8_t * X_x, uint8_t * X_y, uint8_t * w0,
                                    uint8_t * M_x, uint8_t * M_y);
-extern int rt582_spake2p_verifier_V(uint8_t * V_x, uint8_t * V_y, uint8_t * y, uint8_t * L_x, uint8_t * L_y);
-extern int rt582_spake2p_prover_V(uint8_t * V_x, uint8_t * V_y, uint8_t * w0, uint8_t * w1, uint8_t * Y_x, uint8_t * Y_y,
+extern int rt583_spake2p_verifier_V(uint8_t * V_x, uint8_t * V_y, uint8_t * y, uint8_t * L_x, uint8_t * L_y);
+extern int rt583_spake2p_prover_V(uint8_t * V_x, uint8_t * V_y, uint8_t * w0, uint8_t * w1, uint8_t * Y_x, uint8_t * Y_y,
                                   uint8_t * N_x, uint8_t * N_y);
 
 #if !defined(MBEDTLS_ECP_ALT)
@@ -2882,7 +2882,7 @@ int mbedtls_ecp_muladd(mbedtls_ecp_group * grp, mbedtls_ecp_point * R, const mbe
     ECP_VALIDATE_RET(n != NULL);
     ECP_VALIDATE_RET(Q != NULL);
 
-#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
     return (mbedtls_ecp_muladd_restartable(grp, R, m, P, n, Q, NULL));
 #else
     if (grp->id != MBEDTLS_ECP_DP_SECP256R1)
@@ -2897,7 +2897,7 @@ int mbedtls_ecp_muladd(mbedtls_ecp_group * grp, mbedtls_ecp_point * R, const mbe
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&R->Y, 32));
 
     /* doing the functions (R =  m * P + n * Q )*/
-    rt582_ecc_multi_add((uint8_t *) R->X.p, (uint8_t *) R->Y.p, (uint8_t *) m->p, (uint8_t *) P->X.p, (uint8_t *) P->Y.p,
+    rt583_ecc_multi_add((uint8_t *) R->X.p, (uint8_t *) R->Y.p, (uint8_t *) m->p, (uint8_t *) P->X.p, (uint8_t *) P->Y.p,
                         (uint8_t *) n->p, (uint8_t *) Q->X.p, (uint8_t *) Q->Y.p);
 
     ret = 0;
@@ -2906,14 +2906,14 @@ cleanup:
 
     return ret;
 
-#endif /* !defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
+#endif /* !defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */
 }
 
 int mbedtls_spake2p_compute_L(uint8_t * Buf, const uint8_t * w1in, size_t w1in_len)
 {
     int ret = 0;
 
-    rt582_spake2p_compute_L((uint8_t *) Buf, (uint8_t *) w1in);
+    rt583_spake2p_compute_L((uint8_t *) Buf, (uint8_t *) w1in);
 
     return (ret);
 }
@@ -2940,7 +2940,7 @@ int mbedtls_spake2p_compute_Z(mbedtls_ecp_group * grp, mbedtls_ecp_point * Z, mb
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&Z->X, 32));
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&Z->Y, 32));
 
-    ret = rt582_spake2p_compute_Z((uint8_t *) Z->X.p, (uint8_t *) Z->Y.p, (uint8_t *) y->p, (uint8_t *) X->X.p, (uint8_t *) X->Y.p,
+    ret = rt583_spake2p_compute_Z((uint8_t *) Z->X.p, (uint8_t *) Z->Y.p, (uint8_t *) y->p, (uint8_t *) X->X.p, (uint8_t *) X->Y.p,
                                   (uint8_t *) w0->p, (uint8_t *) M->X.p, (uint8_t *) M->Y.p);
 
 cleanup:
@@ -2970,7 +2970,7 @@ int mbedtls_spake2p_verifier_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp_poin
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&V->Y, 32));
 
     ret =
-        rt582_spake2p_verifier_V((uint8_t *) V->X.p, (uint8_t *) V->Y.p, (uint8_t *) y->p, (uint8_t *) L->X.p, (uint8_t *) L->Y.p);
+        rt583_spake2p_verifier_V((uint8_t *) V->X.p, (uint8_t *) V->Y.p, (uint8_t *) y->p, (uint8_t *) L->X.p, (uint8_t *) L->Y.p);
 
 cleanup:
 
@@ -2993,7 +2993,7 @@ int mbedtls_spake2p_prover_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp_point 
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&V->X, 32));
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&V->Y, 32));
 
-    ret = rt582_spake2p_prover_V((uint8_t *) V->X.p, (uint8_t *) V->Y.p, (uint8_t *) w0->p, (uint8_t *) w1->p, (uint8_t *) Y->X.p,
+    ret = rt583_spake2p_prover_V((uint8_t *) V->X.p, (uint8_t *) V->Y.p, (uint8_t *) w0->p, (uint8_t *) w1->p, (uint8_t *) Y->X.p,
                                  (uint8_t *) Y->Y.p, (uint8_t *) N->X.p, (uint8_t *) N->Y.p);
 
 cleanup:

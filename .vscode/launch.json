@@ -11,8 +11,8 @@
             "pid": "${command:pickProcess}"
         },
         {
-            "cwd": "${workspaceFolder}/out/${input:exampleproject}/${input:board}/",
-            "executable": "${workspaceFolder}/out/${input:exampleproject}/${input:board}/chip-rt582-${input:exampleproject}-example.out",
+            "cwd": "${workspaceFolder}/out/${input:exampleproject}/RT583/",
+            "executable": "${workspaceFolder}/out/${input:exampleproject}/RT583/chip-rt58x-${input:exampleproject}-example.out",
             "name": "(RT) Debug Microcontroller",
             "request": "launch",
             "type": "cortex-debug",
@@ -482,15 +482,5 @@
             "options": ["lighting-app", "light-switch-app", "lock-app", "smart-plug-app", "window-app"],
             "default": ""
         },
-        {
-            "type": "pickString",
-            "id": "board",
-            "description": "RT582 or RT583?",
-            "options": [
-                "RT582",
-                "RT583",
-            ],
-            "default": "RT582"
-        },        
     ]
 }

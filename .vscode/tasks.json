@@ -3,7 +3,7 @@
     "tasks": [
         {
             "label": "ISP flash tool",
-            "command": "/mnt/c/Users/nesti/OneDrive/桌面/isp_download_cmd/isp_download_tool.exe -a ${workspaceFolder}/out/${input:exampleproject}/${input:board}/chip-rt582-${input:exampleproject}-example.bin -p COM${input:COMPort}",
+            "command": "/mnt/c/Users/nesti/OneDrive/桌面/isp_download_cmd/isp_download_tool.exe -a ${workspaceFolder}/out/${input:exampleproject}/${input:board}/chip-rt58x-${input:exampleproject}-example.bin -p COM${input:COMPort}",
             "type": "shell",
             "isBackground": true,
             "problemMatcher": []
@@ -15,7 +15,6 @@
             "isBackground": true,
             "problemMatcher": []
         },
-
         {
             "label": "postDebugKill",
             "command": "echo ${input:terminate}",
@@ -44,9 +43,10 @@
             "group": "build"
         },
         {
-            "label": "Build RT example",
+            "label": 
+            "Build RT example",
             "type": "shell",
-            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt582_example.sh /var/chip/examples/${input:exampleproject}/rt582 /var/chip/out/${input:exampleproject} ${input:board} --sed=${input:sed} --ota=${input:OTA} --certs=${input:Certificate}",
+            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt58x_example.sh /var/chip/examples/${input:exampleproject}/rt58x /var/chip/out/${input:exampleproject} ${input:board} --sed=${input:sed} --ota=${input:OTA} --certs=${input:Certificate}",
             "group": "build"
         },
         {
@@ -54,7 +54,7 @@
             "type": "shell",
             "command": "sudo rm -fr out/${input:exampleproject}/${input:board}",
             "group": "build"
-        }
+        },
     ],
     "inputs": [
         {
@@ -74,9 +74,9 @@
         {
             "type": "pickString",
             "id": "board",
-            "description": "RT582 or RT583?",
-            "options": ["RT582", "RT583"],
-            "default": "RT582"
+            "description": "Rafael board type",
+            "options": ["RT583"],
+            "default": "RT583"
         },
         {
             "type": "pickString",

@@ -51,6 +51,7 @@ jobs:
               uses: ./.github/actions/build-example
               with:
                 example_name: lighting-app
+                opt_arg: --sed=no --ota=yes --certs=yes
                 upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
@@ -58,6 +59,7 @@ jobs:
               uses: ./.github/actions/build-example
               with:
                 example_name: light-switch-app
+                opt_arg: --sed=yes --ota=yes --certs=yes
                 upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 

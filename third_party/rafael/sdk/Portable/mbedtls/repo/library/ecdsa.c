@@ -32,11 +32,11 @@
 
 #include <string.h>
 
-#define RT582_HW_CRYPTO_ENGINE_ENABLE
+#define RT583_HW_CRYPTO_ENGINE_ENABLE
 
-extern int rt582_ecc_public_key_gen(uint8_t * pt_pri_k, uint8_t * pt_pub_k_x, uint8_t * pt_pub_k_y);
-extern int rt582_ecdsa_p256_sign(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t * pri_k, uint8_t * mod_k);
-extern int rt582_ecdsa_p256_verify(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t * key_x, uint8_t * key_y);
+extern int rt583_ecc_public_key_gen(uint8_t * pt_pri_k, uint8_t * pt_pub_k_x, uint8_t * pt_pub_k_y);
+extern int rt583_ecdsa_p256_sign(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t * pri_k, uint8_t * mod_k);
+extern int rt583_ecdsa_p256_verify(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t * key_x, uint8_t * key_y);
 
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC)
 #include "mbedtls/hmac_drbg.h"
@@ -413,7 +413,7 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group * grp, mbedtls_mpi * r, mbedtls_mpi * s
     ECDSA_VALIDATE_RET(f_rng != NULL);
     ECDSA_VALIDATE_RET(buf != NULL || blen == 0);
 
-#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
     /* Use the same RNG for both blinding and ephemeral key generation */
     return (ecdsa_sign_restartable(grp, r, s, d, buf, blen, f_rng, p_rng, f_rng, p_rng, NULL));
 #else
@@ -434,7 +434,7 @@ int mbedtls_ecdsa_sign(mbedtls_ecp_group * grp, mbedtls_mpi * r, mbedtls_mpi * s
     mbedtls_mpi_grow(r, 32);
     mbedtls_mpi_grow(s, 32);
 
-    ret = rt582_ecdsa_p256_sign((uint8_t *) r->p, (uint8_t *) s->p, (uint8_t *) buf, (uint8_t *) d->p, (uint8_t *) modk.p);
+    ret = rt583_ecdsa_p256_sign((uint8_t *) r->p, (uint8_t *) s->p, (uint8_t *) buf, (uint8_t *) d->p, (uint8_t *) modk.p);
 
 cleanup:
     mbedtls_mpi_free(&modk);
@@ -723,7 +723,7 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group * grp, const unsigned char * buf, siz
     ECDSA_VALIDATE_RET(s != NULL);
     ECDSA_VALIDATE_RET(buf != NULL || blen == 0);
 
-#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
     return (ecdsa_verify_restartable(grp, buf, blen, Q, r, s, NULL));
 #else
     int ret = 0;
@@ -734,14 +734,14 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group * grp, const unsigned char * buf, siz
         return (ret);
     }
 
-    if ((ret = rt582_ecdsa_p256_verify((uint8_t *) r->p, (uint8_t *) s->p, (uint8_t *) buf, (uint8_t *) Q->X.p,
+    if ((ret = rt583_ecdsa_p256_verify((uint8_t *) r->p, (uint8_t *) s->p, (uint8_t *) buf, (uint8_t *) Q->X.p,
                                        (uint8_t *) Q->Y.p)) != 0)
         ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
 
 cleanup:
     return (ret);
 
-#endif /* !defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
+#endif /* !defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */
 }
 #endif /* !MBEDTLS_ECDSA_VERIFY_ALT */
 
@@ -919,7 +919,7 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context * ctx, mbedtls_ecp_group_id gid, 
     if (ret != 0)
         return (ret);
 
-#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
     return (mbedtls_ecp_gen_keypair(&ctx->grp, &ctx->d, &ctx->Q, f_rng, p_rng));
 #else
 
@@ -940,12 +940,12 @@ int mbedtls_ecdsa_genkey(mbedtls_ecdsa_context * ctx, mbedtls_ecp_group_id gid, 
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&Q->X, 32));
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&Q->Y, 32));
 
-    rt582_ecc_public_key_gen((uint8_t *) d->p, (uint8_t *) Q->X.p, (uint8_t *) Q->Y.p);
+    rt583_ecc_public_key_gen((uint8_t *) d->p, (uint8_t *) Q->X.p, (uint8_t *) Q->Y.p);
 
 cleanup:
     return (ret);
 
-#endif /* !defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
+#endif /* !defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */
 }
 #endif /* !MBEDTLS_ECDSA_GENKEY_ALT */
 

@@ -435,15 +435,12 @@ void pin_set_mode(uint32_t pin_number, uint32_t mode)
     mask_offset = (pin_number & 0x7) << 2;
     mask = 0xF << mask_offset;
 
-    enter_critical_section();
     /*pin mux setting is share resource.*/
     reg = *((volatile unsigned int *) base);
     reg = reg & ~mask;
     reg = reg | (mode << mask_offset);
 
     *((volatile unsigned int *)base) =  reg;
-
-    leave_critical_section();
 
     return;
 }
@@ -480,9 +477,7 @@ void enable_perclk(uint32_t clock)
         return;     /*Invalid setting mode.*/
     }
 
-    enter_critical_section();
     SYSCTRL->SYS_CLK_CTRL |= (1 << clock) ;
-    leave_critical_section();
 }
 
 /*
@@ -498,9 +493,7 @@ void disable_perclk(uint32_t clock)
         return;     /*Invalid setting mode.*/
     }
 
-    enter_critical_section();
     SYSCTRL->SYS_CLK_CTRL &= ~(1 << clock);
-    leave_critical_section();
 }
 
 
@@ -520,15 +513,13 @@ void pin_set_pullopt(uint32_t pin_number, uint32_t mode)
     mask_offset = (pin_number & 0x7) << 2;
     mask = 0xF << mask_offset;
 
-    enter_critical_section();
+
     /*pin mux setting is share resource.*/
     reg = *((volatile unsigned int *) base);
     reg = reg & ~mask;
     reg = reg | (mode << mask_offset);
 
     *((volatile unsigned int *)base) =  reg;
-
-    leave_critical_section();
 
     return;
 }
@@ -552,15 +543,13 @@ void pin_set_drvopt(uint32_t pin_number, uint32_t mode)
     mask_offset = (pin_number & 0xF) << 1;
     mask = 0x3 << mask_offset;
 
-    enter_critical_section();
+
     /*pin mux setting is share resource.*/
     reg = *((volatile unsigned int *) base);
     reg = reg & ~mask;
     reg = reg | (mode << mask_offset);
 
     *((volatile unsigned int *)base) =  reg;
-
-    leave_critical_section();
 
     return;
 }
@@ -583,13 +572,10 @@ void enable_pin_opendrain(uint32_t pin_number)
     base = OD_BASE ;
     mask = 1 << pin_number ;
 
-    enter_critical_section();
     /*pin mux setting is share resource.*/
     reg = *((volatile unsigned int *) base);
     reg = reg | mask;
     *((volatile unsigned int *)base) =  reg;
-
-    leave_critical_section();
 
     return;
 }
@@ -612,13 +598,10 @@ void disable_pin_opendrain(uint32_t pin_number)
     base = OD_BASE ;
     mask = ~(1 << pin_number);
 
-    enter_critical_section();
     /*pin mux setting is share resource.*/
     reg = *((volatile unsigned int *) base);
     reg = reg & mask;
     *((volatile unsigned int *)base) =  reg;
-
-    leave_critical_section();
 
     return;
 }
@@ -636,19 +619,26 @@ sys_clk_sel_t Pll_Unlock_Check(void)
                 ((PLL_VIBIT_STATUS() == PLL_UNLOCK_VIBIT_B) && (PLL_BANK_VCO_STATUS() == PLL_UNLOCK_BANK_VCO_B))
            )
         {
+            enter_critical_section();
+
             Change_Ahb_System_Clk(SYS_32MHZ_CLK);
+
+            leave_critical_section();
 
             sys_clk_mode = Get_Ahb_System_Clk();
         }
         else  if (((PLL_VIBIT_STATUS() == PLL_UNLOCK_VIBIT_A)) || ((PLL_VIBIT_STATUS() == PLL_UNLOCK_VIBIT_B)))
         {
+            enter_critical_section();
+
             Change_Ahb_System_Clk(sys_clk_mode);
+
+            leave_critical_section();
 
             sys_clk_mode = Get_Ahb_System_Clk();
         }
         else
         {
-
             /*PLL Stable*/
         }
     }
@@ -688,8 +678,6 @@ uint32_t Change_Ahb_System_Clk(sys_clk_sel_t sys_clk_mode)
     {
         return STATUS_ERROR;
     }
-
-    enter_critical_section();
 
     SYSCTRL->SYS_CLK_CTRL = (SYSCTRL->SYS_CLK_CTRL & ~HCLK_SEL_MASK) | HCLK_SEL_32M;            //set pll to 32Mhz
     SYSCTRL->SYS_CLK_CTRL = (SYSCTRL->SYS_CLK_CTRL & ~BASEBAND_PLL_MASK);                       //baseband pll disable
@@ -791,8 +779,6 @@ uint32_t Change_Ahb_System_Clk(sys_clk_sel_t sys_clk_mode)
         }
     }
 
-    leave_critical_section();
-
     flash_timing_init();
 
     SystemFrequencyUpdate();
@@ -868,13 +854,10 @@ void set_slow_clock_source(uint32_t mode)
         return;    /*Invalid mode*/
     }
 
-    enter_critical_section();
-
     temp  = SYSCTRL->SYS_CLK_CTRL & ~(SLOW_CLOCK_SEL_MASK) ;
     temp |= (mode << SLOW_CLOCK_SEL_SHIFT);
     SYSCTRL->SYS_CLK_CTRL = temp;
 
-    leave_critical_section();
 }
 void set_ext32k_pin(uint32_t pin_number)
 {
@@ -884,11 +867,7 @@ void set_ext32k_pin(uint32_t pin_number)
         return;     /*Invalid setting mode.*/
     }
 
-    enter_critical_section();
-
     pin_set_mode(pin_number, MODE_EXT32K);
-
-    leave_critical_section();
 
     return;
 }

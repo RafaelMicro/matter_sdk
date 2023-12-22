@@ -1416,7 +1416,7 @@ static void gc_collect(void)
 {
     struct sector_meta_data sector;
     size_t empty_sec = 0;
-#if (LPWR_FLASH_PROTECT_ENABLE == 1 && CHIP_DEVICE_CONFIG_ENABLE_SED != 1)
+#if (LPWR_FLASH_PROTECT_ENABLE == 1 && CHIP_CONFIG_ENABLE_ICD_SERVER != 1)
     if (flash_vbat_read() < 2500)
         return;
 #endif

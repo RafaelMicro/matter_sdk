@@ -5,10 +5,10 @@
  */
 
 #include "bsp.h"
-#include "bsp_console.h"
-#include "bsp_uart.h"
 #include "bsp_button.h"
+#include "bsp_console.h"
 #include "bsp_led.h"
+#include "bsp_uart.h"
 //=============================================================================
 //                  Constant Definition
 //=============================================================================
@@ -45,6 +45,10 @@ int bsp_init(uint32_t u32_type, bsp_event_callback_t callback)
         if (u32_type & BSP_INIT_BUTTONS)
         {
             bsp_button_init(callback);
+        }
+        if (u32_type & BSP_INIT_UART)
+        {
+            bsp_uart_init(callback);
         }
 
     } while (0);

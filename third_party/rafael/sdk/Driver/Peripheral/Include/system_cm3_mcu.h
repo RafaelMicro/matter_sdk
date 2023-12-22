@@ -16,6 +16,17 @@ extern "C" {
 
 #include <stdint.h>
 
+/*----------------------------------------------------------------------------
+  Define PMU Mode
+ *----------------------------------------------------------------------------*/
+/*Define PMU mode type*/
+#define PMU_LDO_MODE     0
+#define PMU_DCDC_MODE    1
+
+#ifndef SET_PMU_MODE
+#define SET_PMU_MODE    PMU_DCDC_MODE
+#endif
+
 typedef enum
 {
     PMU_MODE_LDO = 0,               /*!< System PMU LDO Mode */
@@ -31,7 +42,6 @@ typedef enum
  * @return None
  */
 extern void SystemPmuSetMode(pmu_mode_cfg_t pmu_mode);
-
 extern uint32_t SystemFrequency;    /*!< System Clock Frequency (Core Clock)  */
 extern uint32_t SystemCoreClock;    /*!< Processor Clock Frequency            */
 
@@ -46,7 +56,6 @@ extern uint32_t SystemCoreClock;    /*!< Processor Clock Frequency            */
  *         Initialize the System and update the SystemCoreClock variable.
  */
 extern void SystemInit(void);
-
 /**
  * Update SystemCoreClock variable
  *

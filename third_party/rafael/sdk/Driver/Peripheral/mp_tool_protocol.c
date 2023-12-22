@@ -217,11 +217,11 @@ void Single_tone_start(uint32_t channel_idx, COMM_SUBSYSTEM_HOST_MODE_DATA_RATE 
 {
 
     uint8_t reg[4] = {0};
-    //printf(("RF_Freq\n");
+    printf("RF_Freq\n");
     commsubsystem_host_mode_set_RF_Freq(porotocol, channel_idx);
     if (porotocol == HAL_BLE)
     {
-        //printf(("BLE\n");
+        printf("BLE\n");
         commsubsystem_host_mode_ble_phy_init(radio_mode);
 
     }
@@ -233,9 +233,9 @@ void Single_tone_start(uint32_t channel_idx, COMM_SUBSYSTEM_HOST_MODE_DATA_RATE 
     commsubsystem_read_memory(0x3B4, reg, 4);
     reg[2] |= 0x1;
     commsubsystem_write_memory(0x3B4, reg, 4);
-    //printf(("single_tone_init\n");
+    printf("single_tone_init\n");
     commsubsystem_host_mode_single_tone_init();
-    //printf(("single_tone_en\n");
+    printf("single_tone_en\n");
     commsubsystem_host_mode_single_tone_en();
 
 
@@ -253,7 +253,7 @@ uint8_t Read_Tx_power_idx(void)
     uint8_t reg[4] = {0};
     //void commsubsystem_read_memory(uint16_t reg_address, uint8_t *p_rx_data, uint16_t rx_data_length)
     commsubsystem_read_memory(0x3A8, reg, 4);
-    ////printf(("0x3A8 : 0x%X, 0x%X, 0x%X, 0x%X\n",reg[0],reg[1],reg[2],reg[3]);
+    //printf("0x3A8 : 0x%X, 0x%X, 0x%X, 0x%X\n",reg[0],reg[1],reg[2],reg[3]);
     return reg[0];
 
 }

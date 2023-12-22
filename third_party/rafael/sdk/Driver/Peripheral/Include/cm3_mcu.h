@@ -130,6 +130,7 @@ typedef enum IRQn_Type
 #include "sysctrl_reg.h"
 #include "wdt_reg.h"
 #include "flashctl_reg.h"
+#include "flashds.h"
 #include "comm_subsystem_ahb_reg.h"
 #include "qspi_reg.h"
 #include "dma_reg.h"
@@ -407,7 +408,6 @@ typedef enum IRQn_Type
 
 #include "i2c_master.h"
 #include "flashctl.h"
-#include "flashds.h"
 #include "timer.h"
 #include "sysctrl.h"
 
@@ -423,6 +423,9 @@ typedef enum IRQn_Type
 #include "comparator.h"
 #include "swi.h"
 #include "lpm.h"
+
+
+#include "flash_protect.h"
 
 /*set debug port as uart0*/
 #define  DEBUGPORT            0

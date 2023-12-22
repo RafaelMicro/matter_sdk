@@ -53,13 +53,13 @@ bool commsubsystem_host_mode_set_ruci_cmd(uint8_t *cmd, uint32_t cmd_length, uin
 
     if (txCmdqError != SEND_TO_CMDQ_SUCCESS)
     {
-        //printf(("SEND TO CMDQ FAILS\n");
+        printf("SEND TO CMDQ FAILS\n");
         return false;
     }
     xTaskNotifyWait( 0, COMMUNICATION_ISR_EVEN_DONE, &ulNotifiedValue, portMAX_DELAY );
     if ((ulNotifiedValue & COMMUNICATION_ISR_EVEN_DONE) != COMMUNICATION_ISR_EVEN_DONE)
     {
-        //printf(("Not Even done\n");
+        printf("Not Even done\n");
         return false;
     }
     else
@@ -70,7 +70,7 @@ bool commsubsystem_host_mode_set_ruci_cmd(uint8_t *cmd, uint32_t cmd_length, uin
 
         if (rx_cmd_error != READ_RX_CMDQ_SUCCESS)
         {
-            //printf(("READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
+            printf("READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
             return false;
         }
     }
@@ -117,7 +117,7 @@ bool commsubsystem_host_mode_rx_disable_cmd(void)
     RUCI_ENDIAN_CONVERT((uint8_t *)&gdtm_set_rx_disable_cmd_s, RUCI_SET_RFE_RX_DISABLE);
     if (commsubsystem_host_mode_cmd_event_check(RUCI_PCI_COMMON_CMD_HEADER, RUCI_CODE_SET_RFE_RX_DISABLE, &gdtm_cnf_event_s) == false)
     {
-        //printf(("\r\nBLE DTM Rx disable fails");
+        printf("\r\nBLE DTM Rx disable fails");
         return false;
     }
 
@@ -134,7 +134,7 @@ bool commsubsystem_host_mode_rx_disable_cmd(void)
 
     /* Package RUCI RFE RX Disable command */
     SET_RUCI_PARA_SET_RFB_AUTO_STATE(&rx_disable_cmd, 0);
-    //printf(("rx_disable\n");
+    printf("rx_disable\n");
     commsubsystem_host_mode_set_ruci_cmd((uint8_t *)&rx_disable_cmd, RUCI_LEN_SET_RFB_AUTO_STATE, (uint8_t *)&sCnfEvent);
 
 
@@ -171,18 +171,18 @@ bool commsubsystem_host_mode_get_crc_count(uint32_t *crc_count_get, uint32_t *cr
 
     if (commsubsystem_host_mode_cmd_event_check(RUCI_PCI_COMMON_CMD_HEADER, RUCI_CODE_GET_CRC_COUNT, &sCnfEvent) == false)
     {
-        //printf(("\r\nFails to send a CRC cmd");
+        printf("\r\nFails to send a CRC cmd");
         return false;
     }
     else
     {
-        //printf(("\r\nSend a CRC cmd");
+        printf("\r\nSend a CRC cmd");
     }
 
     xTaskNotifyWait( 0, COMMUNICATION_ISR_EVEN_DONE, &ulNotifiedValue, portMAX_DELAY );
     if ((ulNotifiedValue & COMMUNICATION_ISR_EVEN_DONE) != COMMUNICATION_ISR_EVEN_DONE)
     {
-        //printf(("CRC Not Even done\n");
+        printf("CRC Not Even done\n");
         return false;
     }
     else
@@ -193,7 +193,7 @@ bool commsubsystem_host_mode_get_crc_count(uint32_t *crc_count_get, uint32_t *cr
 
         if (rx_cmd_error != READ_RX_CMDQ_SUCCESS)
         {
-            //printf(("RSSI READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
+            printf("RSSI READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
             return false;
         }
     }
@@ -205,11 +205,11 @@ bool commsubsystem_host_mode_get_crc_count(uint32_t *crc_count_get, uint32_t *cr
     {
         *crc_count_get = get_crc_event_s.crc_success_count;
         *crc_fail_count_get = get_crc_event_s.crc_fail_count;
-        //printf(("\r\nCRC = 0x%x", *crc_count_get);
+        printf("\r\nCRC = 0x%x", *crc_count_get);
     }
     else
     {
-        //printf(("\r\nCRC event error");
+        printf("\r\nCRC event error");
         return false;
     }
 
@@ -256,7 +256,7 @@ uint8_t commsubsystem_host_mode_report_rssi(void)
     RX_CMDQ_ERROR rx_cmd_error;
     uint32_t ulNotifiedValue;
 
-    ////printf(("wr_idx = %d, rd_idx = %d\n",commu_cmd_queue.wr_idx,commu_cmd_queue.rd_idx);
+    //printf("wr_idx = %d, rd_idx = %d\n",commu_cmd_queue.wr_idx,commu_cmd_queue.rd_idx);
 
 
     SET_RUCI_PARA_GET_RSSI(&sGetRSSICmd);
@@ -271,7 +271,7 @@ uint8_t commsubsystem_host_mode_report_rssi(void)
     xTaskNotifyWait( 0, COMMUNICATION_ISR_EVEN_DONE, &ulNotifiedValue, portMAX_DELAY );
     if ((ulNotifiedValue & COMMUNICATION_ISR_EVEN_DONE) != COMMUNICATION_ISR_EVEN_DONE)
     {
-        //printf(("RSSI Not Even done\n");
+        printf("RSSI Not Even done\n");
         return false;
     }
     else
@@ -282,7 +282,7 @@ uint8_t commsubsystem_host_mode_report_rssi(void)
 
         if (rx_cmd_error != READ_RX_CMDQ_SUCCESS)
         {
-            //printf(("RSSI READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
+            printf("RSSI READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
             return false;
         }
     }
@@ -665,7 +665,7 @@ bool commsubsystem_host_mode_rf_calibration(eHAL_MODE porotocol, uint8_t rf_band
     xTaskNotifyWait( 0, COMMUNICATION_ISR_EVEN_DONE, &ulNotifiedValue, portMAX_DELAY );
     if ((ulNotifiedValue & COMMUNICATION_ISR_EVEN_DONE) != COMMUNICATION_ISR_EVEN_DONE)
     {
-        //printf(("RF calib fails\n");
+        printf("RF calib fails\n");
         return false;
     }
     else
@@ -676,7 +676,7 @@ bool commsubsystem_host_mode_rf_calibration(eHAL_MODE porotocol, uint8_t rf_band
 
         if (rx_cmd_error != READ_RX_CMDQ_SUCCESS)
         {
-            //printf(("RF calib  READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
+            printf("RF calib  READ_RX_CMDQ_FIALURE:%d\n", rx_cmd_error);
             return false;
         }
     }
@@ -693,7 +693,7 @@ COMM_SUBSYSTEM_HOST_MODE_PHY_INIT_ERROR commsubsystem_host_mode_phy_init(eHAL_MO
     COMM_SUBSYSTEM_HOST_MODE_PHY_INIT_ERROR error = COMM_SUBSYSTEM_HOST_MODE_PHY_INIT_SUCCEED;
     if (porotocol == HAL_BLE)
     {
-        //printf(("ble_init\n");
+        printf("ble_init\n");
         error = commsubsystem_host_mode_ble_init();
     }
     else if (porotocol == HAL_SUBG)

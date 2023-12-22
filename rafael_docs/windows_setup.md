@@ -222,7 +222,7 @@ NOTE: When the first time building, Matter will setup the matter environment (GC
 ```
 
 -   Run VSCode task: "Build RT example":
-    1.  Select target board (RT582/RT583)
+    1.  Select target board (RT583)
     2.  Select OTA support or not
     3.  Select sleep end device (SED) support or not
     4.  Select certs support or not

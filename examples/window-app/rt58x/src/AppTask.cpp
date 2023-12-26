@@ -381,8 +381,11 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    //err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
-    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
+    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
+#else
+    err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
+#endif
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "ConnectivityMgr().SetThreadDeviceType() failed");

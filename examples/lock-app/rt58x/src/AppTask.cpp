@@ -177,15 +177,13 @@ void AppTask::OpenCommissioning(intptr_t arg)
 /**
  * Update cluster status after application level changes
  */
-void AppTask::UpdateClusterState(bool lockchipstack)
+void AppTask::UpdateClusterState(intptr_t arg)
 {
     using namespace chip::app::Clusters;
     auto newValue = BoltLockMgr().IsUnlocked() ? DoorLock::DlLockState::kUnlocked : DoorLock::DlLockState::kLocked;
 
     ChipLogProgress(NotSpecified, "UpdateClusterState");
-    if(lockchipstack) PlatformMgr().LockChipStack();
     EmberAfStatus status = DoorLock::Attributes::LockState::Set(1, newValue);
-    if(lockchipstack) PlatformMgr().UnlockChipStack();
 
     if (status != EMBER_ZCL_STATUS_SUCCESS)
     {
@@ -233,7 +231,7 @@ void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
 
     if (sAppTask.mSyncClusterToButtonAction)
     {
-        sAppTask.UpdateClusterState(true);
+        PlatformMgr().ScheduleWork(UpdateClusterState, 0);
         sAppTask.mSyncClusterToButtonAction = false;
     }
 }
@@ -300,7 +298,7 @@ void AppTask::InitServer(intptr_t arg)
     }
     BoltLockMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    UpdateClusterState(false);
+    PlatformMgr().ScheduleWork(UpdateClusterState, 0);
 }
 
 void AppTask::UpdateStatusLED()

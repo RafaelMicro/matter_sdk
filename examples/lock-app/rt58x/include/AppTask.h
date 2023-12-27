@@ -68,7 +68,7 @@ public:
     void ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction);
 
 private:
-    static void UpdateClusterState(bool lockchipstack);
+    static void UpdateClusterState(intptr_t arg);
     CHIP_ERROR Init();
     static void InitServer(intptr_t arg);
     static void ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor);

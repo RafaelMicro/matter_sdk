@@ -19,7 +19,7 @@ import("${chip_root}/src/platform/RT58x/args.gni")
 rt58x_sdk_target = get_label_info(":sdk", "label_no_toolchain")
 
 chip_enable_ota_requestor = false
-chip_build_libshell = true
+chip_build_libshell = false
 chip_build_platform_attestation_credentials_provider = false
 
 pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"

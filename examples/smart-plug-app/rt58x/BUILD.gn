@@ -43,7 +43,6 @@ declare_args() {
 
 rt58x_sdk("sdk") {
   sources = [
-    "${examples_plat_dir}/config/FreeRTOSConfig.h",
     "${rt58x_project_dir}/include/CHIPProjectConfig.h",
   ]
 
@@ -62,9 +61,6 @@ rt58x_sdk("sdk") {
 
   if (chip_build_platform_attestation_credentials_provider) {
     defines += [ "RAFAEL_CERTS_ENABLED=1" ]
-  }
-  if (chip_build_libshell) {
-    defines += [ "CONFIG_ENABLE_CHIP_SHELL=1" ]
   }
 }
 

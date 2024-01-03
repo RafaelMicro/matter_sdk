@@ -20,6 +20,7 @@
 #include "AppTask.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
+#include <OTAConfig.h>
 
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/util/attribute-storage.h>
@@ -55,6 +56,7 @@
 #include "bsp.h"
 #include "bsp_button.h"
 #include "matter_config.h"
+#include "fota_define.h"
 
 using namespace chip;
 using namespace ::chip::app;
@@ -165,6 +167,27 @@ void LockOpenThreadTask(void)
 void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
+}
+void MatterFotaInit(void)
+{
+    fota_information_t  *p_fota_info = (fota_information_t *)(FOTA_UPDATE_BANK_INFO_ADDRESS);
+
+    if (p_fota_info->fotabank_ready == FOTA_IMAGE_READY)
+    { 
+        if (p_fota_info->fota_result == FOTA_RESULT_SUCCESS)
+        {
+            // err("sw ver: %d\r\n", p_fota_info->reserved[0]);
+            chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(p_fota_info->reserved[0]);
+        } 
+        else
+        {
+            err("fota result: %d\r\n", p_fota_info->fota_result);
+        }  
+        while (flash_check_busy());
+        taskENTER_CRITICAL();
+        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
+        taskEXIT_CRITICAL();
+    }
 }
 void AppTask::OpenCommissioning(intptr_t arg)
 {
@@ -284,10 +307,14 @@ void AppTask::InitServer(intptr_t arg)
     {
         ChipLogError(NotSpecified, "LightSwitchMgr Init failed!");
     }
+#if RT58x_OTA_ENABLED
+    OTAConfig::Init();
+#endif
 }
 
 CHIP_ERROR AppTask::Init()
 {
+    MatterFotaInit();
     CHIP_ERROR err;
     // ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
     

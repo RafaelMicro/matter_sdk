@@ -35,7 +35,7 @@
 #include <mbedtls/aes.h>
 #include <mbedtls/platform.h>
 
-#if CONFIG_ENABLE_CHIP_SHELL
+#if ENABLE_CHIP_SHELL
 #include "matter_shell.h"
 #endif
 

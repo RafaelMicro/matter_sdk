@@ -115,7 +115,8 @@
         "condition_variable": "cpp",
         "numeric": "cpp",
         "random": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "util_log.h": "c"
     },
     // Configure paths or glob patterns to exclude from file watching.
     "files.watcherExclude": {
@@ -125,7 +126,7 @@
         "**/third_party/**": true
     },
     "files.eol": "\n",
-    "editor.formatOnSave": true,
+    "editor.formatOnSave": false,
     "better-comments.tags": [
         {
             "tag": "!",

@@ -30,7 +30,7 @@
 
 #include <lib/core/CHIPError.h>
 
-#if CONFIG_ENABLE_CHIP_SHELL
+#if ENABLE_CHIP_SHELL
 #include "matter_shell.h"
 #endif
 

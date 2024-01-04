@@ -31,6 +31,9 @@
 
 #include "util_log.h"
 
+/*Macro to correct RGB value proportional to current level*/
+#define CorrectRGB(v,l) ((uint8_t) ((uint16_t) (v) * (uint16_t) (l) / 255))
+
 // initialization values for Blue in XY color space
 constexpr XyColor_t kBlueXY = { 9830, 3932 };
 
@@ -49,7 +52,6 @@ CHIP_ERROR LightingManager::Init()
     bool currentLedState;
     uint8_t currentLedHue;
     uint8_t currentLedSaturation;
-    uint8_t currentLedColorMode;
     uint16_t currentLedColorTemperature;
     app::DataModel::Nullable<uint8_t> nullableCurrentLevel;
 
@@ -84,20 +86,17 @@ CHIP_ERROR LightingManager::Init()
     {
         mHSV.s = kHSV.s;
     }
-    status = ColorControl::Attributes::ColorMode::Get(1, &currentLedColorMode);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    status = ColorControl::Attributes::ColorMode::Get(1, &mColorMode);
+    if (status != EMBER_ZCL_STATUS_SUCCESS)
     {
-    }
-    else
-    {
-        currentLedColorMode = 0x0;
+        mColorMode = 0;
     }
     status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
     if (status == EMBER_ZCL_STATUS_SUCCESS)
     {
         mCT.ctMireds = currentLedColorTemperature;
     }
-    // err("color mode: %d\r\n", currentLedColorMode);
+    // err("color mode: %d\r\n", mColorMode);
     // err("level: %d\r\n", mHSV.v);
     // err("hue: %d\r\n", mHSV.h);
     // err("saturation: %d\r\n", mHSV.s);
@@ -105,11 +104,12 @@ CHIP_ERROR LightingManager::Init()
 
     mXY    = kBlueXY;
     // mHSV   = kHSV;
-    if (currentLedColorMode == 0x0)
+    if (mColorMode == 0x0)
         mRGB = HsvToRgb(mHSV);
-    else if (currentLedColorMode == 0x2)
+    else if (mColorMode == 0x2)
         mRGB = CctToRgb(mCT); 
     mState = currentLedState ? kState_On : kState_Off;
+    UpdateLight();
 
     return CHIP_NO_ERROR;
 }
@@ -272,8 +272,14 @@ void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
     mHSV.v = mLevel;
-    //mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
-    mRGB   = HsvToRgb(mHSV);
+    if(mColorMode == 0)
+    {
+        mRGB   = HsvToRgb(mHSV);
+    }
+    else if(mColorMode == 1)
+    {
+        mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+    }
     UpdateLight();
 }
 
@@ -310,6 +316,11 @@ void LightingManager::SetColorTemperature(CtColor_t ct)
     UpdateLight();
 }
 
+void LightingManager::SetColorMode(uint8_t ColorMode)
+{
+    mColorMode = ColorMode;
+}
+
 void LightingManager::Set(bool aOn)
 {
     if (aOn)
@@ -325,14 +336,22 @@ void LightingManager::Set(bool aOn)
 
 void LightingManager::UpdateLight()
 {
-    // ChipLogProgress(NotSpecified, "UpdateLight: %d L:%d R:%d G:%d B:%d", mState, mLevel, mRGB.r, mRGB.g, mRGB.b);
+    //ChipLogProgress(NotSpecified, "UpdateLight: %d Mode: %d L:%d R:%d G:%d B:%d", mState, mColorMode, mLevel, mRGB.r, mRGB.g, mRGB.b);
 
     if (mState == kState_On && mLevel > 1)
     {
         // err("R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-
-        rt58x_led_level_ctl(2, mRGB.b);
-        rt58x_led_level_ctl(3, mRGB.r);
-        rt58x_led_level_ctl(4, mRGB.g);
+        if(mColorMode == 2)//using color temperature
+        {
+            rt58x_led_level_ctl(2, CorrectRGB(mRGB.b,mLevel));
+            rt58x_led_level_ctl(3, CorrectRGB(mRGB.r,mLevel));
+            rt58x_led_level_ctl(4, CorrectRGB(mRGB.g,mLevel));
+        }
+        else
+        {
+            rt58x_led_level_ctl(2, mRGB.b);
+            rt58x_led_level_ctl(3, mRGB.r);
+            rt58x_led_level_ctl(4, mRGB.g);
+        }
     }
 }

@@ -53,40 +53,15 @@ if [ "$#" == "0" ]; then
             RT583
 
     <Build options> - optional noteworthy build options for RT58x
-        chip_build_libshell
-            Enable libshell support. (Default false)
-        chip_logging
-            Current value (Default true)
-        chip_openthread_ftd
-            Use openthread Full Thread Device, else, use Minimal Thread Device. (Default true)
-        enable_openthread_cli
-            Enables openthread cli without matter shell. (Default true)
-        kvs_max_entries
-            Set the maxium Kvs entries that can be store in NVM (Default 75)
-            Thresholds: 30 <= kvs_max_entries <= 255
-        setupDiscriminator
-            Discriminatoor value used for BLE connexion. (Default 3840)
-        setupPinCode
-            PIN code for PASE session establishment. (Default 20202021)
-        enable_sleepy_device
-            Enable Sleepy end device. (Default false)
-            Must also set chip_openthread_ftd=false
-        'import("//with_pw_rpc.gni")'
-            Use to build the example with pigweed RPC
-        OTA_periodic_query_timeout
-            Periodic query timeout variable for OTA in seconds
-        Presets
         --sed
             enable sleepy end device, set thread mtd
             For minimum consumption, disable openthread cli and qr code
-        --additional_data_advertising
-            enable Addition data advertissing and rotating device ID
-        --use_ot_lib
-            use the silabs openthread library
-        --rafael-ota
+        --ota
             matter ota for rafael rt583
-        --rafael-certs
-            rafael dac/pai/cd certificates
+        --certs
+            yes: using rafael dac/pai/cd
+            dac-only: using rafael dac/pai and example cd
+            no: using example dac/pai/cd
     "
 elif [ "$#" -lt "2" ]; then
     echo "Invalid number of arguments
@@ -118,6 +93,12 @@ else
 
         --certs=yes)
             optArgs+="chip_build_platform_attestation_credentials_provider=true "
+            # optArgs+="chip_build_platform_attestation_credentials_provider=true chip_use_transitional_commissionable_data_provider=false "
+            shift
+            ;;
+
+        --certs=dac-only)
+            optArgs+="chip_build_platform_attestation_credentials_provider=true chip_using_default_cd=true"
             # optArgs+="chip_build_platform_attestation_credentials_provider=true chip_use_transitional_commissionable_data_provider=false "
             shift
             ;;

@@ -96,7 +96,7 @@
             "type": "pickString",
             "id": "Certificate",
             "description": "Use attestation credentials?",
-            "options": ["yes", "no"],
+            "options": ["yes", "dac-only", "no"],
             "default": "no"
         },
         {

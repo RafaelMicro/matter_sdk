@@ -53,6 +53,9 @@ declare_args() {
   # OTA timeout in seconds
   OTA_periodic_query_timeout = 86400
 
+  #using default certification declaration
+  chip_using_default_cd = false
+  
   # Disable LCD on supported devices
   disable_lcd = true
 }
@@ -88,6 +91,9 @@ rt58x_sdk("sdk") {
 
   if (chip_build_platform_attestation_credentials_provider) {
     defines += [ "RAFAEL_CERTS_ENABLED=1" ]
+    if(chip_using_default_cd) {
+      defines += [ "RAFAEL_CERTS_USE_EXAMPLE_CD=1" ]
+    }
   }
   if (chip_enable_pw_rpc) {
     defines += [

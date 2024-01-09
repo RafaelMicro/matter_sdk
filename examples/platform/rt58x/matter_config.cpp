@@ -83,6 +83,7 @@ extern "C" void vApplicationIdleHook(void)
 
 extern "C" void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime_ms)
 {
+#if CHIP_CONFIG_ENABLE_ICD_SERVER
     TickType_t xModifiableIdleTime;
 
     __disable_irq();
@@ -125,4 +126,5 @@ extern "C" void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime_ms)
             __enable_irq();
         }
     }
+#endif
 }

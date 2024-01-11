@@ -302,7 +302,7 @@ void AppTask::InitServer(intptr_t arg)
         chip::app::DnssdServer::Instance().StartServer();
     }
 
-    err = LightSwitchMgr::GetInstance().Init(1, 1);
+    err = LightSwitchMgr::GetInstance().Init(1, 2);
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "LightSwitchMgr Init failed!");

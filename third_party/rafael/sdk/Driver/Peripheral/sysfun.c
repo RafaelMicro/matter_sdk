@@ -156,10 +156,24 @@ chip_model_t GetOtpVersion()
  */
 void Sys_Software_Reset(void)
 {
+    Wdt_Stop();
 
-    while (flash_check_busy()); //wait flash operation finish
+    sys_set_retention_reg(6, 7);
+    sys_set_retention_reg(7, 0);
+    wdt_config_mode_t wdt_mode;
+    wdt_config_tick_t wdt_cfg_ticks;
 
-    NVIC_SystemReset();
+    wdt_mode.int_enable = 0;
+    wdt_mode.reset_enable = 1;
+    wdt_mode.lock_enable = 0;
+    wdt_mode.prescale = WDT_PRESCALE_32;
+
+    wdt_cfg_ticks.wdt_ticks = 10 * 1000;
+    wdt_cfg_ticks.int_ticks = 0;
+    wdt_cfg_ticks.wdt_min_ticks = 0;
+
+    Wdt_Start(wdt_mode, wdt_cfg_ticks, NULL);
+    while(1);
 }
 /*
  *  system PMU Mode

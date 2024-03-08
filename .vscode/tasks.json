@@ -67,7 +67,11 @@
                 "lock-app",
                 "thermostat",
                 "window-app",
-                "smart-plug-app"
+                "smart-plug-app",
+                "temperature-measurement-app",
+                "occupancy-sensor-app",
+                "humidity-sensor-app",
+                "contact-sensor-app"
             ],
             "default": ""
         },

@@ -25,10 +25,12 @@
 #pragma once
 
 #include <stdint.h>
+#include "cm3_mcu.h"
 
 // ==================== General Platform Adaptations ====================
 
-#define CHIP_CONFIG_ABORT() abort()
+#define NL_ASSERT_ABORT()   Sys_Software_Reset()
+#define CHIP_CONFIG_ABORT() Sys_Software_Reset()
 
 #define CHIP_CONFIG_PERSISTED_STORAGE_KEY_TYPE uint16_t
 #define CHIP_CONFIG_PERSISTED_STORAGE_ENC_MSG_CNTR_ID 1

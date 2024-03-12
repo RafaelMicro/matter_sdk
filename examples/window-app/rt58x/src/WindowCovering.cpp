@@ -76,23 +76,47 @@ chip::Percent100ths WindowCovering::CalculateSingleStep(MoveType aMoveType)
 {
     EmberAfStatus status{};
     chip::Percent100ths percent100ths{};
+    chip::Percent100ths sPercentDelta{};
     NPercent100ths current{};
+    NPercent100ths target{};
     OperationalState opState{};
 
     if (aMoveType == MoveType::LIFT)
     {
-        status  = Attributes::CurrentPositionLiftPercent100ths::Get(Endpoint(), current);
+        status  = Attributes::CurrentPositionLiftPercent100ths::Get(Endpoint(), current);        
+        if (status == EMBER_ZCL_STATUS_SUCCESS)
+        {
+            status  = Attributes::TargetPositionLiftPercent100ths::Get(Endpoint(), target);
+        }
         opState = OperationalStateGet(Endpoint(), OperationalStatus::kLift);
     }
     else if (aMoveType == MoveType::TILT)
     {
         status  = Attributes::CurrentPositionTiltPercent100ths::Get(Endpoint(), current);
+        if (status == EMBER_ZCL_STATUS_SUCCESS)
+        {
+            status  = Attributes::TargetPositionTiltPercent100ths::Get(Endpoint(), target);
+        }
         opState = OperationalStateGet(Endpoint(), OperationalStatus::kTilt);
     }
 
-    if ((status == EMBER_ZCL_STATUS_SUCCESS) && !current.IsNull())
+    if ((status == EMBER_ZCL_STATUS_SUCCESS) && !current.IsNull() && !target.IsNull())
     {
-        static constexpr auto sPercentDelta{ WC_PERCENT100THS_MAX_CLOSED / 10 };
+        if(target.Value() != current.Value())
+        {
+            if(opState == OperationalState::MovingDownOrClose)
+            {
+                sPercentDelta = chip::min(WC_PERCENT100THS_MAX_CLOSED / 10, target.Value() - current.Value());
+            }
+            else if(opState == OperationalState::MovingUpOrOpen)
+            {
+                sPercentDelta = chip::min(WC_PERCENT100THS_MAX_CLOSED / 10, current.Value() - target.Value());
+            }
+        }
+        else
+        {
+            sPercentDelta = WC_PERCENT100THS_MAX_CLOSED / 10;
+        }
         percent100ths = ComputePercent100thsStep(opState, current.Value(), sPercentDelta);
     }
     else

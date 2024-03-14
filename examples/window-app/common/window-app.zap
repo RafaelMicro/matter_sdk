@@ -7235,13 +7235,6 @@
       "profileId": 259,
       "endpointId": 1,
       "networkId": 0
-    },
-    {
-      "endpointTypeName": "MA-windowcovering",
-      "endpointTypeIndex": 2,
-      "profileId": 259,
-      "endpointId": 2,
-      "networkId": 0
     }
   ],
   "log": []

@@ -65,6 +65,7 @@ using namespace ::chip::app;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
+using chip::Protocols::InteractionModel::Status;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)
@@ -206,9 +207,9 @@ void AppTask::UpdateClusterState(intptr_t arg)
     auto newValue = BoltLockMgr().IsUnlocked() ? DoorLock::DlLockState::kUnlocked : DoorLock::DlLockState::kLocked;
 
     ChipLogProgress(NotSpecified, "UpdateClusterState");
-    EmberAfStatus status = DoorLock::Attributes::LockState::Set(1, newValue);
+    Status status = DoorLock::Attributes::LockState::Set(1, newValue);
 
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    if (status != Status::Success)
     {
         ChipLogError(NotSpecified, "ERR: updating DoorLock %x", status);
     }

@@ -63,6 +63,7 @@ using namespace ::chip::app;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
+using chip::Protocols::InteractionModel::Status;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)

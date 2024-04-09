@@ -62,6 +62,9 @@ Davis, CA 95616, USA
     <revision revision="3" summary="New data model format and notation, added additional events"/>
     <revision revision="4" summary="Added feature map"/>
   </revisionHistory>
+  <clusterIds>
+    <clusterId id="0x0200" name="Pump Configuration and Control"/>
+  </clusterIds>
   <classification hierarchy="base" role="application" picsCode="PCC" scope="Endpoint"/>
   <features>
     <feature bit="0" code="PRSCONST" name="ConstantPressure" summary="Supports operating in constant pressure mode">
@@ -269,7 +272,7 @@ Davis, CA 95616, USA
         </optionalConform>
       </otherwiseConform>
     </attribute>
-    <attribute id="0x000a" name="MaxConstFlow" type="uint16" default="null">
+    <attribute id="0x000A" name="MaxConstFlow" type="uint16" default="null">
       <access read="true" readPrivilege="view"/>
       <quality changeOmitted="false" nullable="true" scene="false" persistence="fixed" reportable="false"/>
       <otherwiseConform>
@@ -281,7 +284,7 @@ Davis, CA 95616, USA
         </optionalConform>
       </otherwiseConform>
     </attribute>
-    <attribute id="0x000b" name="MinConstTemp" type="int16" default="null">
+    <attribute id="0x000B" name="MinConstTemp" type="int16" default="null">
       <access read="true" readPrivilege="view"/>
       <quality changeOmitted="false" nullable="true" scene="false" persistence="fixed" reportable="false"/>
       <otherwiseConform>
@@ -292,9 +295,9 @@ Davis, CA 95616, USA
           <feature name="AUTO"/>
         </optionalConform>
       </otherwiseConform>
-      <constraint type="between" from="-27315" to="max"/>
+      <constraint type="min" value="-27315"/>
     </attribute>
-    <attribute id="0x000c" name="MaxConstTemp" type="int16" default="null">
+    <attribute id="0x000C" name="MaxConstTemp" type="int16" default="null">
       <access read="true" readPrivilege="view"/>
       <quality changeOmitted="false" nullable="true" scene="false" persistence="fixed" reportable="false"/>
       <otherwiseConform>
@@ -305,7 +308,7 @@ Davis, CA 95616, USA
           <feature name="AUTO"/>
         </optionalConform>
       </otherwiseConform>
-      <constraint type="between" from="-27315" to="max"/>
+      <constraint type="min" value="-27315"/>
     </attribute>
     <attribute id="0x0010" name="PumpStatus" type="PumpStatusBitmap" default="0">
       <access read="true" readPrivilege="view"/>
@@ -410,27 +413,27 @@ Davis, CA 95616, USA
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0a" name="SensorFailure" priority="info">
+    <event id="0x0A" name="SensorFailure" priority="info">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0b" name="ElectronicNonFatalFailure" priority="info">
+    <event id="0x0B" name="ElectronicNonFatalFailure" priority="info">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0c" name="ElectronicFatalFailure" priority="critical">
+    <event id="0x0C" name="ElectronicFatalFailure" priority="critical">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0d" name="GeneralFault" priority="info">
+    <event id="0x0D" name="GeneralFault" priority="info">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0e" name="Leakage" priority="info">
+    <event id="0x0E" name="Leakage" priority="info">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>
-    <event id="0x0f" name="AirDetection" priority="info">
+    <event id="0x0F" name="AirDetection" priority="info">
       <access readPrivilege="view"/>
       <optionalConform/>
     </event>

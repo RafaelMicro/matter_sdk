@@ -44,6 +44,7 @@ using namespace chip;
 using namespace chip::DeviceLayer;
 using namespace chip::app::Clusters::LevelControl;
 using namespace chip::app::Clusters;
+using chip::Protocols::InteractionModel::Status;
 
 LightingManager LightingManager::sLight;
 
@@ -55,11 +56,11 @@ CHIP_ERROR LightingManager::Init()
     uint16_t currentLedColorTemperature;
     app::DataModel::Nullable<uint8_t> nullableCurrentLevel;
 
-    EmberAfStatus status;
+    Status status;
 
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
     status = Attributes::CurrentLevel::Get(1, nullableCurrentLevel);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    if (status == Status::Success)
     {
         mLevel = nullableCurrentLevel.Value();
     }
@@ -69,7 +70,7 @@ CHIP_ERROR LightingManager::Init()
     }
     mHSV.v = mLevel;
     status = ColorControl::Attributes::CurrentHue::Get(1, &currentLedHue);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    if (status == Status::Success)
     {
         mHSV.h = currentLedHue;
     }
@@ -78,7 +79,7 @@ CHIP_ERROR LightingManager::Init()
         mHSV.h = kHSV.h;
     }
     status = ColorControl::Attributes::CurrentSaturation::Get(1, &currentLedSaturation);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    if (status == Status::Success)
     {
         mHSV.s = currentLedSaturation;
     }
@@ -87,12 +88,12 @@ CHIP_ERROR LightingManager::Init()
         mHSV.s = kHSV.s;
     }
     status = ColorControl::Attributes::ColorMode::Get(1, &mColorMode);
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    if (status == Status::Success)
     {
         mColorMode = 0;
     }
     status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
-    if (status == EMBER_ZCL_STATUS_SUCCESS)
+    if (status == Status::Success)
     {
         mCT.ctMireds = currentLedColorTemperature;
     }

@@ -36,6 +36,7 @@
 
 using namespace ::chip;
 using namespace ::chip::app::Clusters;
+using chip::Protocols::InteractionModel::Status;
 
 void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & attributePath, uint8_t type, uint16_t size,
                                        uint8_t * value)
@@ -110,7 +111,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
                 // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
                 hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
                 // get saturation from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                Status status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
                 // assert(status == EMBER_ZCL_STATUS_SUCCESS);
 
                 // getH = true;
@@ -119,7 +120,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             {
                 hsv.h = *value;
                 // get saturation from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
+                Status status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
                 // assert(status == EMBER_ZCL_STATUS_SUCCESS);
 
                 event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
@@ -133,7 +134,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             {
                 hsv.s = *value;
                 // get hue from cluster value storage
-                EmberAfStatus status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
+                Status status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
                 // assert(status == EMBER_ZCL_STATUS_SUCCESS);
 
                 event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;

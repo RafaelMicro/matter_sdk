@@ -23,7 +23,6 @@ config("config") {
 chip_data_model("smart-plug-common") {
   zap_file = "smart-plug-app.zap"
 
-  zap_pregenerated_dir = "${chip_root}/zzz_generated/smart-plug-app/zap-generated"
   is_server = true
 }
 

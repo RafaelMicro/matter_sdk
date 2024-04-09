@@ -66,7 +66,7 @@ using namespace ::chip::app;
 using namespace chip::TLV;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer;
-
+using chip::Protocols::InteractionModel::Status;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
 #define APP_TASK_STACK_SIZE (2 * 1024)
@@ -342,9 +342,9 @@ void AppTask::UpdateClusterState(intptr_t arg)
     // ChipLogProgress(NotSpecified, "UpdateClusterState");
 
     // write the new on/off value
-    EmberAfStatus status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), true);
+    Status status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), true);
 
-    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    if (status != Status::Success)
     {
         ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
     }

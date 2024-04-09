@@ -29,7 +29,6 @@
 #include <app-common/zap-generated/callback.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <app-common/zap-generated/ids/Commands.h>
-#include <app-common/zap-generated/enums.h>
 
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/ids/Clusters.h>
@@ -157,6 +156,7 @@ void OnTriggerIdentifyEffect(Identify * identify)
         ChipLogProgress(Zcl, "No identifier effect");
     }
 }
+#if 0
 Identify gIdentify = {
     chip::EndpointId{ 1 },
     [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
@@ -164,7 +164,7 @@ Identify gIdentify = {
     Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator,
     OnTriggerIdentifyEffect,
 };
-
+#endif
 } // namespace
 
 constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;

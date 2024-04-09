@@ -29,7 +29,6 @@
 #include <app-common/zap-generated/callback.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <app-common/zap-generated/ids/Commands.h>
-#include <app-common/zap-generated/enums.h>
 
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/ids/Clusters.h>

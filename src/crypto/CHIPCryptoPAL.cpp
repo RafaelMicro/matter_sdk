@@ -21,6 +21,9 @@
  */
 
 #include "CHIPCryptoPAL.h"
+
+#include "SessionKeystore.h"
+
 #include <lib/asn1/ASN1.h>
 #include <lib/asn1/ASN1Macros.h>
 #include <lib/core/CHIPEncoding.h>
@@ -32,7 +35,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define RT583_HW_CRYPTO_ENGINE_ENABLE
+#define RT582_HW_CRYPTO_ENGINE_ENABLE
 
 using chip::ByteSpan;
 using chip::MutableByteSpan;
@@ -418,7 +421,7 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
     SuccessOrExit(error = PointLoad(in, in_len, XY));
     SuccessOrExit(error = PointIsValid(XY));
 
-#if defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
+#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
 
         SuccessOrExit(error = ComputeZ(Z, xy, XY, w0, MN));
 #else
@@ -427,9 +430,9 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         SuccessOrExit(error = PointAddMul(Z, XY, xy, MN, tempbn));
         SuccessOrExit(error = PointCofactorMul(Z));
 
-#endif /* defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */    
+#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */    
 
-#if defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
+#if defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
 
     if (role == CHIP_SPAKE2P_ROLE::PROVER)
     {
@@ -451,7 +454,7 @@ CHIP_ERROR Spake2p::ComputeRoundTwo(const uint8_t * in, size_t in_len, uint8_t *
         SuccessOrExit(error = PointMul(V, L, xy));
     }
 
-#endif /* defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */
+#endif /* defined(RT582_HW_CRYPTO_ENGINE_ENABLE) */
 
     SuccessOrExit(error = PointCofactorMul(V));
     SuccessOrExit(error = PointWrite(Z, point_buffer, point_size));
@@ -521,18 +524,11 @@ CHIP_ERROR Spake2p::KeyConfirm(const uint8_t * in, size_t in_len)
     return CHIP_NO_ERROR;
 }
 
-CHIP_ERROR Spake2p::GetKeys(uint8_t * out, size_t * out_len)
+CHIP_ERROR Spake2p::GetKeys(SessionKeystore & keystore, HkdfKeyHandle & key) const
 {
-    CHIP_ERROR error = CHIP_ERROR_INTERNAL;
+    VerifyOrReturnError(state == CHIP_SPAKE2P_STATE::KC, CHIP_ERROR_INTERNAL);
 
-    VerifyOrExit(state == CHIP_SPAKE2P_STATE::KC, error = CHIP_ERROR_INTERNAL);
-    VerifyOrExit(*out_len >= hash_size / 2, error = CHIP_ERROR_INVALID_ARGUMENT);
-
-    memcpy(out, Ke, hash_size / 2);
-    error = CHIP_NO_ERROR;
-exit:
-    *out_len = hash_size / 2;
-    return error;
+    return keystore.CreateKey(ByteSpan(Ke, hash_size / 2), key);
 }
 
 CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::InitImpl()

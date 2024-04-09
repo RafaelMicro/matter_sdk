@@ -68,7 +68,7 @@ assert(!(chip_enable_wifi && chip_enable_openthread))
 chip_data_model("window-common") {
   zap_file = "${chip_root}/examples/window-app/common/window-app.zap"
 
-  zap_pregenerated_dir = "${chip_root}/zzz_generated/window-app/zap-generated"
+  #zap_pregenerated_dir = "${chip_root}/zzz_generated/window-app/zap-generated"
   is_server = true
 }
 

@@ -19,6 +19,5 @@ import("${chip_root}/src/app/chip_data_model.gni")
 chip_data_model("occupancy-sensor-common") {
   zap_file = "occupancy_sensor_app.zap"
 
-  zap_pregenerated_dir = "${chip_root}/zzz_generated/occupancy_sensor_app/zap-generated"
   is_server = true
 }

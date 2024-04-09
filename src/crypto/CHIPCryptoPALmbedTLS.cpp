@@ -69,7 +69,7 @@ extern int mbedtls_spake2p_prover_compute_V(mbedtls_ecp_group * grp, mbedtls_ecp
 }
 #endif
 
-#define RT583_HW_CRYPTO_ENGINE_ENABLE
+#define RT582_HW_CRYPTO_ENGINE_ENABLE
 
 namespace chip {
 namespace Crypto {
@@ -115,7 +115,8 @@ CHIP_ERROR AES_CCM_encrypt(const uint8_t * plaintext, size_t plaintext_length, c
     }
 
     // Size of key is expressed in bits, hence the multiplication by 8.
-    result = mbedtls_ccm_setkey(&context, MBEDTLS_CIPHER_ID_AES, key.As<Aes128KeyByteArray>(), sizeof(Aes128KeyByteArray) * 8);
+    result = mbedtls_ccm_setkey(&context, MBEDTLS_CIPHER_ID_AES, key.As<Symmetric128BitsKeyByteArray>(),
+                                sizeof(Symmetric128BitsKeyByteArray) * 8);
     VerifyOrExit(result == 0, error = CHIP_ERROR_INTERNAL);
 
     // Encrypt
@@ -152,7 +153,8 @@ CHIP_ERROR AES_CCM_decrypt(const uint8_t * ciphertext, size_t ciphertext_len, co
     }
 
     // Size of key is expressed in bits, hence the multiplication by 8.
-    result = mbedtls_ccm_setkey(&context, MBEDTLS_CIPHER_ID_AES, key.As<Aes128KeyByteArray>(), sizeof(Aes128KeyByteArray) * 8);
+    result = mbedtls_ccm_setkey(&context, MBEDTLS_CIPHER_ID_AES, key.As<Symmetric128BitsKeyByteArray>(),
+                                sizeof(Symmetric128BitsKeyByteArray) * 8);
     VerifyOrExit(result == 0, error = CHIP_ERROR_INTERNAL);
 
     // Decrypt
@@ -216,8 +218,6 @@ Hash_SHA256_stream::Hash_SHA256_stream()
 
 Hash_SHA256_stream::~Hash_SHA256_stream()
 {
-    mbedtls_sha256_context * context = to_inner_hash_sha256_context(&mContext);
-    mbedtls_sha256_free(context);
     Clear();
 }
 
@@ -289,6 +289,9 @@ CHIP_ERROR Hash_SHA256_stream::Finish(MutableByteSpan & out_buffer)
 
 void Hash_SHA256_stream::Clear()
 {
+    mbedtls_sha256_context * context = to_inner_hash_sha256_context(&mContext);
+    mbedtls_sha256_free(context);
+
     mbedtls_platform_zeroize(this, sizeof(*this));
 }
 
@@ -340,6 +343,13 @@ CHIP_ERROR HMAC_sha::HMAC_SHA256(const uint8_t * key, size_t key_length, const u
     VerifyOrReturnError(result == 0, CHIP_ERROR_INTERNAL);
 
     return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR HMAC_sha::HMAC_SHA256(const Hmac128KeyHandle & key, const uint8_t * message, size_t message_length, uint8_t * out_buffer,
+                                 size_t out_length)
+{
+    return HMAC_SHA256(key.As<Symmetric128BitsKeyByteArray>(), sizeof(Symmetric128BitsKeyByteArray), message, message_length,
+                       out_buffer, out_length);
 }
 
 CHIP_ERROR PBKDF2_sha256::pbkdf2_sha256(const uint8_t * password, size_t plen, const uint8_t * salt, size_t slen,
@@ -469,7 +479,7 @@ static inline const mbedtls_ecp_keypair * to_const_keypair(const P256KeypairCont
 
 CHIP_ERROR P256Keypair::ECDSA_sign_msg(const uint8_t * msg, const size_t msg_length, P256ECDSASignature & out_signature) const
 {
-    VerifyOrReturnError(mInitialized, CHIP_ERROR_WELL_UNINITIALIZED);
+    VerifyOrReturnError(mInitialized, CHIP_ERROR_UNINITIALIZED);
     VerifyOrReturnError((msg != nullptr) && (msg_length > 0), CHIP_ERROR_INVALID_ARGUMENT);
 
     uint8_t digest[kSHA256_Hash_Length];
@@ -612,7 +622,7 @@ CHIP_ERROR P256Keypair::ECDH_derive_secret(const P256PublicKey & remote_public_k
 
     const mbedtls_ecp_keypair * keypair = to_const_keypair(&mKeypair);
 
-    VerifyOrExit(mInitialized, error = CHIP_ERROR_WELL_UNINITIALIZED);
+    VerifyOrExit(mInitialized, error = CHIP_ERROR_UNINITIALIZED);
 
     result = mbedtls_ecp_group_load(&ecp_grp, MapECPGroupId(remote_public_key.Type()));
     VerifyOrExit(result == 0, error = CHIP_ERROR_INTERNAL);
@@ -806,7 +816,7 @@ CHIP_ERROR P256Keypair::NewCertificateSigningRequest(uint8_t * out_csr, size_t &
     pk.CHIP_CRYPTO_PAL_PRIVATE(pk_ctx)  = to_keypair(&mKeypair);
     VerifyOrExit(pk.CHIP_CRYPTO_PAL_PRIVATE(pk_info) != nullptr, error = CHIP_ERROR_INTERNAL);
 
-    VerifyOrExit(mInitialized, error = CHIP_ERROR_WELL_UNINITIALIZED);
+    VerifyOrExit(mInitialized, error = CHIP_ERROR_UNINITIALIZED);
 
     mbedtls_x509write_csr_set_key(&csr, &pk);
 
@@ -1100,7 +1110,7 @@ CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::PointCofactorMul(void * R)
 {
     return CHIP_NO_ERROR;
 }
-#if !defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
+#if !defined(RT582_HW_CRYPTO_ENGINE_ENABLE)
 CHIP_ERROR Spake2p_P256_SHA256_HKDF_HMAC::ComputeL(uint8_t * Lout, size_t * L_len, const uint8_t * w1in, size_t w1in_len)
 {
     CHIP_ERROR error = CHIP_NO_ERROR;

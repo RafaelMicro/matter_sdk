@@ -128,8 +128,7 @@ const ChipBleUUID ChipUUID_CHIPoBLEChar_TX = { { 0x18, 0xEE, 0x2E, 0xF5, 0x26, 0
 static uint8_t g_use_slow_adv_interval = false;
 
 #define BLE_ERR_STATE_TRANSLATE(state)  (state == BLE_ERR_OK)?CHIP_NO_ERROR:\
-                                        (state == BLE_ERR_UNKNOW_TYPE)?CHIP_ERROR_WELL_EMPTY:\
-                                        (state == BLE_ERR_NOT_INIT)?CHIP_ERROR_WELL_UNINITIALIZED:\
+                                        (state == BLE_ERR_NOT_INIT)?CHIP_ERROR_UNINITIALIZED:\
                                         (state == BLE_ERR_DUPLICATE_INIT)?CHIP_NO_ERROR:\
                                         (state == BLE_ERR_DATA_MALLOC_FAIL)?CHIP_ERROR_NO_MEMORY:\
                                         (state == BLE_ERR_QUEUE_MALLOC_FAIL)?CHIP_ERROR_NO_MEMORY:\

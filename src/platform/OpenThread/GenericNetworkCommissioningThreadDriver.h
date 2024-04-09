@@ -44,21 +44,7 @@ public:
         Platform::MemoryFree(mpScanResponse);
         mpScanResponse = nullptr;
     }
-    bool Replace(T * pResponse)
-    {
-        size_t index = 0;
 
-        while (index < itemCount)
-        {
-            if (mpScanResponse[index].panId == pResponse->panId)
-            {
-                memcpy(&(mpScanResponse[index]), pResponse, kItemSize);
-                return true;
-            }
-            index++;
-        }
-        return false;
-    }
     void Add(T * pResponse)
     {
         size_t tempCount = itemCount + 1;
@@ -110,6 +96,8 @@ public:
     uint8_t GetMaxNetworks() override { return 1; }
     uint8_t GetScanNetworkTimeoutSeconds() override { return scanNetworkTimeoutSeconds; }
     uint8_t GetConnectNetworkTimeoutSeconds() override { return connectNetworkTimeout; }
+    ThreadCapabilities GetSupportedThreadFeatures() override;
+    uint16_t GetThreadVersion() override;
 
     void SetScanNetworkTimeoutSeconds(uint8_t scanTimeoutSec) { scanNetworkTimeoutSeconds = scanTimeoutSec; }
     void SetConnectNetworkTimeoutSeconds(uint8_t connectTimeoutSec) { connectNetworkTimeout = connectTimeoutSec; }
@@ -128,6 +116,7 @@ public:
 private:
     uint8_t scanNetworkTimeoutSeconds;
     uint8_t connectNetworkTimeout;
+    static void OnThreadStateChangeHandler(const ChipDeviceEvent * event, intptr_t arg);
     Status MatchesNetworkId(const Thread::OperationalDataset & dataset, const ByteSpan & networkId) const;
     CHIP_ERROR BackupConfiguration();
 

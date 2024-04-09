@@ -29,6 +29,7 @@
 using namespace ::chip;
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::DoorLock;
+using chip::Protocols::InteractionModel::Status;
 
 void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & path, uint8_t type, uint16_t size, uint8_t * value)
 {    
@@ -109,8 +110,8 @@ void emberAfDoorLockClusterInitCallback(EndpointId endpoint)
 {
     DoorLockServer::Instance().InitServer(endpoint);
 
-    const auto logOnFailure = [](EmberAfStatus status, const char * attributeName) {
-        if (status != EMBER_ZCL_STATUS_SUCCESS)
+    const auto logOnFailure = [](Status status, const char * attributeName) {
+        if (status != Status::Success)
         {
             ChipLogError(Zcl, "Failed to set DoorLock %s: %x", attributeName, status);
         }

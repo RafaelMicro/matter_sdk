@@ -1,4 +1,4 @@
-# Copyright (c) 2020 Project CHIP Authors
+# Copyright (c) 2023 Project CHIP Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ import("//build_overrides/chip.gni")
 import("${chip_root}/src/app/chip_data_model.gni")
 
 chip_data_model("temperature-measurement-common") {
-  zap_file = "temperature-measurement-app.zap"
-
-  zap_pregenerated_dir = "${chip_root}/zzz_generated/temperature-measurement-app/zap-generated"
+  zap_file = "temperature-measurement.zap"
   is_server = true
 }

@@ -19,6 +19,5 @@ import("${chip_root}/src/app/chip_data_model.gni")
 chip_data_model("humidity-sensor-common") {
   zap_file = "humidity-sensor-app.zap"
 
-  zap_pregenerated_dir = "${chip_root}/zzz_generated/humidity-sensor-app/zap-generated"
   is_server = true
 }

@@ -246,6 +246,11 @@ enum PublicEventTypes
      */
     kServerReady,
 
+    /**
+     * Signals that BLE is deinitialized.
+     */
+    kBLEDeinitialized,
+    
     kRemoveFabricEvent,
 
     kOnOffAttributeChanged,

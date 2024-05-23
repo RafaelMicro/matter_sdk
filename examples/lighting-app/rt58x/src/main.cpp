@@ -71,7 +71,7 @@ int main(void)
 #endif
 
     info( "==================================================\r\n");
-    info( "chip-rt58x-lighting-example(Matter 1.3) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    info( "Rafael-Light-example(Matter 1.3) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "==================================================\r\n");
 
     err = PlatformMgr().InitChipStack();

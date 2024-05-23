@@ -137,17 +137,6 @@ template("rt58x_sdk") {
       sources += invoker.sources
     }
 
-    # public_configs = [ ":${sdk_target_name}_config" ]
-    public_deps = [ ":RT_SDK" ]
-  }
-
-  static_library("RT_SDK") {
-    sources = []
-    if (defined(invoker.sources)) {
-      sources += invoker.sources
-    }
-    public_configs = [ ":${sdk_target_name}_config" ]
-
     sources += [
       "${rt58x_sdk_root}/Driver/Device/GCC/gcc_startup_cm3_mcu.S",
       "${rt58x_sdk_root}/Driver/Device/system_cm3_mcu.c",
@@ -182,8 +171,20 @@ template("rt58x_sdk") {
       "${rt58x_sdk_root}/Portable/bsp/bsp_led.c",
       "${rt58x_sdk_root}/Portable/bsp/bsp_uart.c",
       "${rt58x_sdk_root}/Portable/bsp/bsp_uart_drv.c",
+      #"${rt58x_sdk_root}/Driver/Peripheral/uart_drv.c",
       "${rt58x_sdk_root}/Portable/mib/mib_counters.c",
     ]
+    # public_configs = [ ":${sdk_target_name}_config" ]
+    public_deps = [ ":RT_SDK" ]
+  }
+
+  static_library("RT_SDK") {
+    sources = []
+    if (defined(invoker.sources)) {
+      sources += invoker.sources
+    }
+    public_configs = [ ":${sdk_target_name}_config" ]
+
 
     libs = [ "${rt58x_sdk_root}/Library/librt58xsdk.a" ]
   }

@@ -82,6 +82,9 @@ public:
     void PostLightActionRequest(int32_t aActor, AppTask::Action_t aAction);
     void PostEvent(const AppEvent * event);
     void UpdateClusterState();
+    static void IdentifyStartHandler(Identify *);
+    static void IdentifyStopHandler(Identify *);
+    static void IdentifyHandleOp(AppEvent * aEvent);
 
 private:
     friend AppTask & GetAppTask(void);

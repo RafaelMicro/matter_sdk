@@ -62,7 +62,7 @@ int main(void)
     cmd_rafael_init();
 #endif
     info( "=============================================================================\n");
-    info( "chip-rt583-%s-example(Matter 1.3) starting Version %d\r\n", DEVICE_NAME, CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    info( "Rafael-Contact-Sensor-example(Matter 1.3) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "=============================================================================\n\n");
 
     err = PlatformMgr().InitChipStack();

@@ -32,7 +32,7 @@ chip_detail_logging = false
 pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"
 pw_assert_BACKEND = "$dir_pw_assert_log:check_backend"
 chip_enable_openthread = true
-chip_openthread_ftd = false
+chip_openthread_ftd = true
 pw_rpc_CONFIG = "$dir_pw_rpc:disable_global_mutex"
 
 openthread_external_platform =

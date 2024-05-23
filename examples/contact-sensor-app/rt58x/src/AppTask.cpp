@@ -125,6 +125,18 @@ void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * 
 }
 } // namespace
 
+void IdentifyToggleOnOff(bool onoff)
+{
+    //turn on/off led indicator
+    if(onoff)
+    {
+        gpio_pin_clear(20);
+    }
+    else
+    {
+        gpio_pin_set(20);
+    }
+}
 void OnTriggerIdentifyEffect(Identify * identify)
 {
     sIdentifyEffect = identify->mCurrentEffectIdentifier;
@@ -159,8 +171,8 @@ void OnTriggerIdentifyEffect(Identify * identify)
 }
 Identify gIdentify = {
     chip::EndpointId{ 1 },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStop"); },
+    AppTask::IdentifyStartHandler,
+    AppTask::IdentifyStopHandler,
     Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator,
     OnTriggerIdentifyEffect,
 };
@@ -203,6 +215,49 @@ void MatterFotaInit(void)
         taskEXIT_CRITICAL();
     }
 }
+
+void AppTask::IdentifyStartHandler(Identify *)
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Start;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);
+}
+
+void AppTask::IdentifyStopHandler(Identify *)
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Stop;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);
+}
+
+void AppTask::IdentifyHandleOp(AppEvent * aEvent)
+{
+    static uint32_t identifyState = 0;
+    static bool identify_onoff = 0;
+
+    // ChipLogProgress(NotSpecified, "identify effect = %x", aEvent->Type);
+
+    if (aEvent->Type == AppEvent::kEventType_Identify_Start)
+    {
+        identifyState = 1;
+        identify_onoff = 0;
+    }
+
+    else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
+    {
+        identify_onoff = !identify_onoff;
+        IdentifyToggleOnOff(identify_onoff);
+    }
+
+    else if (aEvent->Type == AppEvent::kEventType_Identify_Stop)
+    {
+        identifyState = 0;
+        IdentifyToggleOnOff(0);
+        ChipLogProgress(NotSpecified, "identify stop");
+    }
+}
 void AppTask::InitServer(intptr_t arg)
 {
     CHIP_ERROR err;
@@ -239,7 +294,6 @@ void AppTask::InitServer(intptr_t arg)
     {
         chip::app::DnssdServer::Instance().StartServer();   
         sCommissioned = true;
-        UpdateStatusLED();
     }
     err = SensorMgr().Init();
     if (err != CHIP_NO_ERROR)
@@ -261,18 +315,14 @@ void AppTask::InitServer(intptr_t arg)
 
 void AppTask::UpdateStatusLED()
 {
-#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)    
-    if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
+#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)
+    if (sCommissioned)
     {
-        init_rt58x_led_flash(20, 250, 150);
+        init_rt58x_led_flash(20, 0, 0);
     }
-    else if (sIsThreadProvisioned && sIsThreadEnabled)
+    else
     {
-        init_rt58x_led_flash(20, 850, 150);
-    }
-    else if (sHaveBLEConnections)
-    {
-        init_rt58x_led_flash(20, 50, 50);
+        init_rt58x_led_flash(20, 500, 500);
     }
 #endif    
 }
@@ -284,26 +334,26 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
         sIsThreadBLEAdvertising = true;
-        UpdateStatusLED();   
         break;
     case DeviceEventType::kCHIPoBLEConnectionClosed:
     case DeviceEventType::kFailSafeTimerExpired:
         sHaveBLEConnections = false;
-        UpdateStatusLED();
         break;
     case DeviceEventType::kThreadStateChange:
         sIsThreadProvisioned = ConnectivityMgr().IsThreadProvisioned();
         sIsThreadEnabled     = ConnectivityMgr().IsThreadEnabled();
-        UpdateStatusLED();    
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
-
     case DeviceEventType::kCHIPoBLEConnectionEstablished:
         sHaveBLEConnections = true;
-        UpdateStatusLED(); 
         break;
-
+    case DeviceEventType::kServerReady:
+        if(sCommissioned)
+        {
+            UpdateStatusLED();
+        }
+        break;
     case DeviceEventType::kCommissioningComplete:
         sCommissioned = true;
         UpdateStatusLED();
@@ -348,6 +398,7 @@ CHIP_ERROR AppTask::Init()
     }
     PlatformMgr().ScheduleWork(InitServer, 0);
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
+    UpdateStatusLED();
     return CHIP_NO_ERROR;
 }
 

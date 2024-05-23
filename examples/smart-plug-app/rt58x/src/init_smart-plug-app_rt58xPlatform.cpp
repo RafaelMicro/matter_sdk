@@ -48,7 +48,8 @@ static void init_smart_plug_app_pin_mux(void)
     
     gpio_cfg_output(SMART_PLUG_TRIGGER_GPIO);
     gpio_pin_set(SMART_PLUG_TRIGGER_GPIO);
-
+    gpio_cfg_output(20);
+    gpio_pin_set(20);
     return;
 }
 

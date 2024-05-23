@@ -32,18 +32,6 @@
 #include "FactoryDataParser.h"
 #include "cm3_mcu.h"
 
-#if RAFAEL_CERTS_ENABLED
-#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_ID                 0x1346
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID                0x400E
-// #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION_STRING   "1.0"
-// #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION          0x0001
-#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING   "1.0"
-#define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION          0x0001
-#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "DimmableLight"
-// #define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER               "RAFAEL0001"
-#endif
-
 namespace chip {
 namespace {
 
@@ -538,6 +526,7 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersion(uint16_t & 
     // err("enter %s\r\n", __FUNCTION__);
     // VerifyOrReturnError(mFactoryData.hwVerPresent, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
     // hardwareVersion = mFactoryData.hw_ver;
+    hardwareVersion = CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION;
     return CHIP_NO_ERROR;
 }
 
@@ -550,6 +539,7 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersionString(char 
 
     // memcpy(buf, mFactoryData.hw_ver_str.data, mFactoryData.hw_ver_str.len);
     // buf[mFactoryData.hw_ver_str.len] = 0;
+    strcpy(buf, CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION_STRING);
 
     return CHIP_NO_ERROR;
 }

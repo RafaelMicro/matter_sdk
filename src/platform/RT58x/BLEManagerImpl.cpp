@@ -83,8 +83,6 @@ namespace {
 
 #define APP_TRSP_P_HOST_ID              0
 
-// Advertising device name
-#define DEVICE_NAME                     'R', 'A', 'F', '*', 'L', 'I', 'G', 'H', 'T'
 
 /* FreeRTOS sw timer */
 TimerHandle_t sbleAdvTimeoutTimer;

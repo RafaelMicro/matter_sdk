@@ -67,6 +67,9 @@ public:
     void PostEvent(const AppEvent * event);
     void UpdateThermoStatUI();
 
+    static void IdentifyStartHandler(Identify *);
+    static void IdentifyStopHandler(Identify *);
+    static void IdentifyHandleOp(AppEvent * aEvent);
 private:
     friend AppTask & GetAppTask(void);
 

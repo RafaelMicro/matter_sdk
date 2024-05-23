@@ -65,6 +65,24 @@
 #define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8005
 #endif
 
+// Advertising device name
+#define DEVICE_NAME                     'R', 'a', 'f', 'a', 'e', 'l'
+
+#if RAFAEL_CERTS_ENABLED
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "ContactSensor"
+#endif
+/**
+ * CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX
+ *
+ * A prefix string used in forming the BLE device name.  The remainder of the name
+ * typically contains the setup discriminator as a 4-digit decimal number.
+ *
+ * NOTE: The device layer limits the total length of a device name to 16 characters.
+ * However, due to other data sent in CHIPoBLE advertise packets, the device name
+ * may need to be shorter.
+ */
+#define CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX "MATTER-"
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION
  *
@@ -75,6 +93,7 @@
  */
 #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION 1
 
+#define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION_STRING "1.0"
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING
  *
@@ -134,5 +153,7 @@
 #define CHIP_DEVICE_CONFIG_EVENT_LOGGING_DEBUG_BUFFER_SIZE (512)
 
 #define CHIP_DEVICE_CONFIG_ENABLE_EXTENDED_DISCOVERY 0
+
+#define CHIP_DEVICE_CONFIG_DEVICE_TYPE 0x0015
 
 // #define CHIP_DEVICE_CONFIG_ICD_SLOW_POLL_INTERVAL chip::System::Clock::Milliseconds32(60000)

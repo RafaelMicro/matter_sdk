@@ -26,11 +26,17 @@ extern "C" {
 #include <stdio.h>
 
 #include "uart_retarget.h"
+#if (MODULE_ENABLE(USE_BSP_UART_DRV))
 #include "bsp_uart_drv.h"
+#else
+#include "uart_drv.h"
+#endif
 
 #include "util_log.h"
 #include "util_printf.h"
 
+#define UART_ACT_BAUD_RATE UART_BAUDRATE_115200
+#define UART_ACT_DBG_PORT_ID 0
 #define UART_CACHE_SIZE 256
 #define UART_CACHE_MASK (UART_CACHE_SIZE - 1)
 
@@ -63,8 +69,13 @@ static char bsp_c_g_msg[64] __attribute__((aligned(4))) = {0};
 
 exception_ctxt_t __exi_ctxt;
 
+#if !(MODULE_ENABLE(USE_BSP_UART_DRV))
+static uint8_t gu8_uart_rx_cache[4];
+#endif
+
 extern void otSysEventSignalPending(void);
 
+#if (MODULE_ENABLE(USE_BSP_UART_DRV))
 void uart_isr_event_handle(void)
 {
     // receive data
@@ -96,10 +107,32 @@ void uart_isr_event_handle(void)
     } while (0);
     return;
 }
+#else
+static void uart_isr_event_handle(uint32_t event, void *p_context)
+{
+    uint32_t pos;
+    if (event & UART_EVENT_RX_DONE)
+    {
+        pos = (g_uart_rx_io.wr_idx + 1) % UART_CACHE_SIZE;
+        if (pos != g_uart_rx_io.rd_idx)
+        {
+            g_uart_rx_io.uart_cache[g_uart_rx_io.wr_idx] = gu8_uart_rx_cache[0];
+            g_uart_rx_io.wr_idx = pos;
+#if ENABLE_CHIP_SHELL
+            chip::NotifyShellProcessFromISR();
+#endif
+            //otSysEventSignalPending();
+        }
+        uart_rx(UART_ACT_DBG_PORT_ID, gu8_uart_rx_cache, 1);
+    }
+}
+#endif //MODULE_ENABLE(USE_BSP_UART_DRV)
 
 void uartConsoleInit(void)
 {
     int rval = 0;
+
+#if (MODULE_ENABLE(USE_BSP_UART_DRV))
     bsp_uart_config_t debug_console_drv_config;
     uart_retarget_desc_t t_retarget_desc;
     do
@@ -109,24 +142,59 @@ void uartConsoleInit(void)
         pin_set_mode(17, MODE_UART); /*GPIO17 as UART0 TX*/
 
         /*init debug console uart0, 8bits 1 stopbit, none parity, no flow control.*/
-        debug_console_drv_config.baud_rate = UART_BAUDRATE_115200;
+        debug_console_drv_config.baud_rate = UART_ACT_BAUD_RATE;
         debug_console_drv_config.word_length = UART_DATA_BITS_8;
         debug_console_drv_config.hwfc = UART_HWFC_DISABLED;
         debug_console_drv_config.parity = UART_PARITY_NONE;
         debug_console_drv_config.stop_bits = UART_STOPBIT_ONE;
-        debug_console_drv_config.irq_priority = 6;
+        debug_console_drv_config.irq_priority = 0x06;
 
-        rval = bsp_uart_drv_init(0, &debug_console_drv_config, uart_isr_event_handle);
+        rval = bsp_uart_drv_init(UART_ACT_DBG_PORT_ID, &debug_console_drv_config, uart_isr_event_handle);
 
         if (rval != 0)
         {
             break;
         }
-        t_retarget_desc.uart_id = 0;
+        // m_callback = callback;
+
+        t_retarget_desc.uart_id = UART_ACT_DBG_PORT_ID;
 
         uart_retarget_init(&t_retarget_desc);
     } while (0);
 
+#else
+
+    uart_config_t debug_console_drv_config;
+    uart_retarget_desc_t t_retarget_desc;
+
+    do
+    {
+
+        /*uart0 pinmux*/
+        pin_set_mode(16, MODE_UART); /*GPIO16 as UART0 RX*/
+        pin_set_mode(17, MODE_UART); /*GPIO17 as UART0 TX*/
+
+        /*init debug console uart0, 8bits 1 stopbit, none parity, no flow control.*/
+        debug_console_drv_config.baudrate = (uart_baudrate_t)UART_ACT_BAUD_RATE;
+        debug_console_drv_config.databits = UART_DATA_BITS_8;
+        debug_console_drv_config.hwfc = UART_HWFC_DISABLED;
+        debug_console_drv_config.parity = UART_PARITY_NONE;
+        debug_console_drv_config.stopbit = UART_STOPBIT_ONE;
+        debug_console_drv_config.interrupt_priority = 0x06;
+
+        rval = uart_init(UART_ACT_DBG_PORT_ID, &debug_console_drv_config, uart_isr_event_handle);
+
+        if (rval != 0)
+        {
+            break;
+        }
+
+        t_retarget_desc.uart_id = UART_ACT_DBG_PORT_ID;
+
+        uart_retarget_init(&t_retarget_desc);
+        uart_rx(UART_ACT_DBG_PORT_ID, gu8_uart_rx_cache, 1);
+    } while (0);
+#endif
     utility_register_stdout(uart_retarget_stdout_char, uart_retarget_stdout_string);
 
     util_log_init();

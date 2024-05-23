@@ -29,6 +29,9 @@ struct AppEvent
         kEventType_Button = 0,
         kEventType_Timer,
         kEventType_Install,
+        kEventType_Identify_Start,
+        kEventType_Identify_Identify,
+        kEventType_Identify_Stop,
     };
 
     enum AppActionTypes

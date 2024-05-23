@@ -110,86 +110,119 @@ Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::E
  * Identify Callbacks
  *********************************************************/
 
+void IdentifyToggleOnOff(bool onoff)
+{
+    //turn on/off led indicator
+    if(onoff)
+    {
+        gpio_pin_clear(20);
+    }
+    else
+    {
+        gpio_pin_set(20);
+    }
+}
+void IdentifyChannelMinLevel(void)
+{
+        gpio_pin_set(20);
+}
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
     ChipLogProgress(Zcl, "Trigger Identify Complete");
     sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
-
-    //rt58x_led_level_ctl(2, 0);
-    //rt58x_led_level_ctl(3, 0);
-    //rt58x_led_level_ctl(4, 0);
+    gpio_pin_set(20);
 }
 
 void OnTriggerIdentifyEffectBlink(chip::System::Layer * systemLayer, void * appState)
 {
-    uint32_t i = 0;
-#if 0
-    for (uint32_t cnt = 0; cnt < 1; cnt++) {
-
-        rt58x_led_level_ctl(2, 254);
-        rt58x_led_level_ctl(3, 254);
-        rt58x_led_level_ctl(4, 254);
-        vTaskDelay(500);
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0);
-        vTaskDelay(500);
+    Identify * identify = static_cast<Identify *>(appState);
+    static uint8_t blink_cnt;
+    static bool onoff = true;
+    if(sIdentifyEffect == Clusters::Identify::EffectIdentifierEnum::kStopEffect) blink_cnt = 2;
+    if(blink_cnt < 2)
+    {
+        IdentifyToggleOnOff(onoff);
+        blink_cnt++;
+        onoff =!onoff;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectBlink, identify);        
     }
-#endif    
+    else
+    {
+        blink_cnt = 0;
+        onoff = true;
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectCompleted, 0);
+    }
 }
 
 void OnTriggerIdentifyEffectBreathe(chip::System::Layer * systemLayer, void * appState)
 {
-    uint32_t i = 0;
-#if 0
-    for (uint32_t cnt = 0; cnt < 15; cnt++) {
-
-        rt58x_led_level_ctl(2, 254);
-        rt58x_led_level_ctl(3, 254);
-        rt58x_led_level_ctl(4, 254);
-        vTaskDelay(50);
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0);
-        vTaskDelay(50);
+    Identify * identify = static_cast<Identify *>(appState);
+    static uint8_t breath_cnt;
+    static bool onoff = true;
+    if(sIdentifyEffect == Clusters::Identify::EffectIdentifierEnum::kStopEffect) breath_cnt = 30;
+    if(breath_cnt < 30)
+    {
+        IdentifyToggleOnOff(onoff);
+        onoff =!onoff;
+        breath_cnt++;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectBreathe, identify);        
     }
-#endif    
+    else
+    {
+        breath_cnt = 0;
+        onoff = true;
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectCompleted, 0);
+    }
 }
 
 void OnTriggerIdentifyEffectOk(chip::System::Layer * systemLayer, void * appState)
 {
-    uint32_t i = 0;
-#if 0
-    for (uint32_t cnt = 0; cnt < 2; cnt++) {
-
-        rt58x_led_level_ctl(2, 254);
-        rt58x_led_level_ctl(3, 254);
-        rt58x_led_level_ctl(4, 254);
-        vTaskDelay(250);
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0);
-        vTaskDelay(250);
+    Identify * identify = static_cast<Identify *>(appState);
+    static uint8_t okay_cnt;
+    static bool onoff = true;
+    if(sIdentifyEffect == Clusters::Identify::EffectIdentifierEnum::kStopEffect) okay_cnt = 4;
+    if(okay_cnt < 4)
+    {
+        IdentifyToggleOnOff(onoff);
+        onoff =!onoff;
+        okay_cnt++;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectOk, identify);        
     }
-#endif    
+    else
+    {
+        okay_cnt = 0;
+        onoff = true;
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectCompleted, 0);
+    }
 }
 
 void OnTriggerIdentifyEffectChannel(chip::System::Layer * systemLayer, void * appState)
 {
-    uint32_t i = 0;
-#if 0
-    for (uint32_t cnt = 0; cnt < 1; cnt++) {
-
-        rt58x_led_level_ctl(2, 254);
-        rt58x_led_level_ctl(3, 254);
-        rt58x_led_level_ctl(4, 254);
-        vTaskDelay(500);
-        rt58x_led_level_ctl(2, 20);
-        rt58x_led_level_ctl(3, 20);
-        rt58x_led_level_ctl(4, 20);
-        vTaskDelay(1500);
+    Identify * identify = static_cast<Identify *>(appState);
+    static uint8_t channel_cnt;
+    if(sIdentifyEffect == Clusters::Identify::EffectIdentifierEnum::kStopEffect) channel_cnt = 16;
+    if(channel_cnt < 16)
+    {
+        if(channel_cnt == 0)
+        {
+            IdentifyToggleOnOff(1);
+        }
+        else
+        {
+            IdentifyChannelMinLevel();
+        }
+        channel_cnt++;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectChannel, identify);        
     }
-#endif    
+    else
+    {
+        channel_cnt = 0;
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
+        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(500), OnTriggerIdentifyEffectCompleted, 0);
+    }    
 }
 
 void OnTriggerIdentifyEffect(Identify * identify)
@@ -199,29 +232,28 @@ void OnTriggerIdentifyEffect(Identify * identify)
     switch (sIdentifyEffect)
     {
     case Clusters::Identify::EffectIdentifierEnum::kBlink:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_BLINK");
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BLINK");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBlink, identify);
         break;
     case Clusters::Identify::EffectIdentifierEnum::kBreathe:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_BREATHE");
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_BREATHE");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectBreathe, identify);
         break;
     case Clusters::Identify::EffectIdentifierEnum::kOkay:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_OKAY");
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_OKAY");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectOk, identify);
         break;
     case Clusters::Identify::EffectIdentifierEnum::kFinishEffect:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT");
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted, identify);
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_FINISH_EFFECT");
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
         break;
     case Clusters::Identify::EffectIdentifierEnum::kChannelChange:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE");
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE");
         (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectChannel, identify);
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(2), OnTriggerIdentifyEffectCompleted, identify);
         break;
     case Clusters::Identify::EffectIdentifierEnum::kStopEffect:
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT");
-        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
+        ChipLogProgress(Zcl, "EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT");
+        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
         break;    
     default:
         ChipLogProgress(Zcl, "No identifier effect");
@@ -301,24 +333,26 @@ void AppTask::PostAppIdentify()
 void AppTask::IdentifyHandleOp(AppEvent * aEvent)
 {
     static uint32_t identifyState = 0;
+    static bool identify_onoff = 0;
 
     // ChipLogProgress(NotSpecified, "identify effect = %x", aEvent->Type);
 
     if (aEvent->Type == AppEvent::kEventType_Identify_Start)
     {
         identifyState = 1;
-        ChipLogProgress(NotSpecified, "identify start");
+        identify_onoff = 0;
     }
 
     else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
     {
-
-        ChipLogProgress(NotSpecified, "identify");
+        identify_onoff = !identify_onoff;
+        IdentifyToggleOnOff(identify_onoff);
     }
 
     else if (aEvent->Type == AppEvent::kEventType_Identify_Stop)
     {
         identifyState = 0;
+        IdentifyToggleOnOff(0);
         ChipLogProgress(NotSpecified, "identify stop");
     }
 }
@@ -426,7 +460,6 @@ void AppTask::InitServer(intptr_t arg)
     {
         chip::app::DnssdServer::Instance().StartServer();   
         sCommissioned = true;
-        UpdateStatusLED();
     }
 
     // Setup light
@@ -460,18 +493,14 @@ void AppTask::InitServer(intptr_t arg)
 
 void AppTask::UpdateStatusLED()
 {
-#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)    
-    if (sIsThreadBLEAdvertising && !sHaveBLEConnections)
+#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)
+    if (sCommissioned)
     {
-        init_rt58x_led_flash(20, 250, 150);
+        init_rt58x_led_flash(20, 0, 0);
     }
-    else if (sIsThreadProvisioned && sIsThreadEnabled)
+    else
     {
-        init_rt58x_led_flash(20, 850, 150);
-    }
-    else if (sHaveBLEConnections)
-    {
-        init_rt58x_led_flash(20, 50, 50);
+        init_rt58x_led_flash(20, 500, 500);
     }
 #endif    
 }
@@ -551,6 +580,7 @@ CHIP_ERROR AppTask::Init()
     }
     PlatformMgr().ScheduleWork(InitServer, 0);
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
+    UpdateStatusLED();
 
     return CHIP_NO_ERROR;
 }

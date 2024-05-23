@@ -83,6 +83,24 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
 #define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_ID 0x8005
 #endif
 
+// Advertising device name
+#define DEVICE_NAME                     'R', 'a', 'f', 'a', 'e', 'l'
+
+#if RAFAEL_CERTS_ENABLED
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "DimmableLight"
+#endif
+/**
+ * CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX
+ *
+ * A prefix string used in forming the BLE device name.  The remainder of the name
+ * typically contains the setup discriminator as a 4-digit decimal number.
+ *
+ * NOTE: The device layer limits the total length of a device name to 16 characters.
+ * However, due to other data sent in CHIPoBLE advertise packets, the device name
+ * may need to be shorter.
+ */
+#define CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX "MATTER-"
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION
  *
@@ -93,6 +111,7 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
  */
 #define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION 1
 
+#define CHIP_DEVICE_CONFIG_DEVICE_HARDWARE_VERSION_STRING "1.0"
 /**
  * CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING
  *
@@ -112,24 +131,6 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
 /* The SoftwareVersion attribute of the Basic cluster. */
 #ifndef CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION
 #define CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION 0x0001
-#endif
-
-/**
- * CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME
- *
- * Human readable vendor name for the organization responsible for producing the device.
- */
-#ifndef CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME
-#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME "RafaelMicro"
-#endif
-
-/**
- * CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
- *
- * Human readable name of the device model.
- */
-#ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "DimmableLight"
 #endif
 
 /**

@@ -647,50 +647,6 @@ cluster LocalizationConfiguration = 43 {
   readonly attribute int16u clusterRevision = 65533;
 }
 
-/** Nodes should be expected to be deployed to any and all regions of the world. These global regions
-      may have differing preferences for how dates and times are conveyed. As such, Nodes that visually
-      or audibly convey time information need a mechanism by which they can be configured to use a
-      user’s preferred format. */
-cluster TimeFormatLocalization = 44 {
-  revision 1; // NOTE: Default/not specifically set
-
-  enum CalendarTypeEnum : enum8 {
-    kBuddhist = 0;
-    kChinese = 1;
-    kCoptic = 2;
-    kEthiopian = 3;
-    kGregorian = 4;
-    kHebrew = 5;
-    kIndian = 6;
-    kIslamic = 7;
-    kJapanese = 8;
-    kKorean = 9;
-    kPersian = 10;
-    kTaiwanese = 11;
-    kUseActiveLocale = 255;
-  }
-
-  enum HourFormatEnum : enum8 {
-    k12hr = 0;
-    k24hr = 1;
-    kUseActiveLocale = 255;
-  }
-
-  bitmap Feature : bitmap32 {
-    kCalendarFormat = 0x1;
-  }
-
-  attribute access(write: manage) HourFormatEnum hourFormat = 0;
-  attribute access(write: manage) optional CalendarTypeEnum activeCalendarType = 1;
-  readonly attribute optional CalendarTypeEnum supportedCalendarTypes[] = 2;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-}
-
 /** This cluster is used to manage global aspects of the Commissioning flow. */
 cluster GeneralCommissioning = 48 {
   revision 1; // NOTE: Default/not specifically set
@@ -1321,273 +1277,6 @@ cluster ThreadNetworkDiagnostics = 53 {
   command access(invoke: manage) ResetCounts(): DefaultSuccess = 0;
 }
 
-/** The Wi-Fi Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
-cluster WiFiNetworkDiagnostics = 54 {
-  revision 1; // NOTE: Default/not specifically set
-
-  enum AssociationFailureCauseEnum : enum8 {
-    kUnknown = 0;
-    kAssociationFailed = 1;
-    kAuthenticationFailed = 2;
-    kSsidNotFound = 3;
-  }
-
-  enum ConnectionStatusEnum : enum8 {
-    kConnected = 0;
-    kNotConnected = 1;
-  }
-
-  enum SecurityTypeEnum : enum8 {
-    kUnspecified = 0;
-    kNone = 1;
-    kWEP = 2;
-    kWPA = 3;
-    kWPA2 = 4;
-    kWPA3 = 5;
-  }
-
-  enum WiFiVersionEnum : enum8 {
-    kA = 0;
-    kB = 1;
-    kG = 2;
-    kN = 3;
-    kAc = 4;
-    kAx = 5;
-    kAh = 6;
-  }
-
-  bitmap Feature : bitmap32 {
-    kPacketCounts = 0x1;
-    kErrorCounts = 0x2;
-  }
-
-  info event Disconnection = 0 {
-    int16u reasonCode = 0;
-  }
-
-  info event AssociationFailure = 1 {
-    AssociationFailureCauseEnum associationFailureCause = 0;
-    int16u status = 1;
-  }
-
-  info event ConnectionStatus = 2 {
-    ConnectionStatusEnum connectionStatus = 0;
-  }
-
-  readonly attribute nullable octet_string<6> bssid = 0;
-  readonly attribute nullable SecurityTypeEnum securityType = 1;
-  readonly attribute nullable WiFiVersionEnum wiFiVersion = 2;
-  readonly attribute nullable int16u channelNumber = 3;
-  readonly attribute nullable int8s rssi = 4;
-  readonly attribute optional nullable int32u beaconLostCount = 5;
-  readonly attribute optional nullable int32u beaconRxCount = 6;
-  readonly attribute optional nullable int32u packetMulticastRxCount = 7;
-  readonly attribute optional nullable int32u packetMulticastTxCount = 8;
-  readonly attribute optional nullable int32u packetUnicastRxCount = 9;
-  readonly attribute optional nullable int32u packetUnicastTxCount = 10;
-  readonly attribute optional nullable int64u currentMaxRate = 11;
-  readonly attribute optional nullable int64u overrunCount = 12;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  /** Reception of this command SHALL reset the Breacon and Packet related count attributes to 0 */
-  command ResetCounts(): DefaultSuccess = 0;
-}
-
-/** The Ethernet Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
-cluster EthernetNetworkDiagnostics = 55 {
-  revision 1; // NOTE: Default/not specifically set
-
-  enum PHYRateEnum : enum8 {
-    kRate10M = 0;
-    kRate100M = 1;
-    kRate1G = 2;
-    kRate25G = 3;
-    kRate5G = 4;
-    kRate10G = 5;
-    kRate40G = 6;
-    kRate100G = 7;
-    kRate200G = 8;
-    kRate400G = 9;
-  }
-
-  bitmap Feature : bitmap32 {
-    kPacketCounts = 0x1;
-    kErrorCounts = 0x2;
-  }
-
-  readonly attribute optional nullable PHYRateEnum PHYRate = 0;
-  readonly attribute optional nullable boolean fullDuplex = 1;
-  readonly attribute optional int64u packetRxCount = 2;
-  readonly attribute optional int64u packetTxCount = 3;
-  readonly attribute optional int64u txErrCount = 4;
-  readonly attribute optional int64u collisionCount = 5;
-  readonly attribute optional int64u overrunCount = 6;
-  readonly attribute optional nullable boolean carrierDetect = 7;
-  readonly attribute optional int64u timeSinceReset = 8;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  /** Reception of this command SHALL reset the attributes: PacketRxCount, PacketTxCount, TxErrCount, CollisionCount, OverrunCount to 0 */
-  command access(invoke: manage) ResetCounts(): DefaultSuccess = 0;
-}
-
-/** Accurate time is required for a number of reasons, including scheduling, display and validating security materials. */
-cluster TimeSynchronization = 56 {
-  revision 2;
-
-  enum GranularityEnum : enum8 {
-    kNoTimeGranularity = 0;
-    kMinutesGranularity = 1;
-    kSecondsGranularity = 2;
-    kMillisecondsGranularity = 3;
-    kMicrosecondsGranularity = 4;
-  }
-
-  enum StatusCode : enum8 {
-    kTimeNotAccepted = 2;
-  }
-
-  enum TimeSourceEnum : enum8 {
-    kNone = 0;
-    kUnknown = 1;
-    kAdmin = 2;
-    kNodeTimeCluster = 3;
-    kNonMatterSNTP = 4;
-    kNonMatterNTP = 5;
-    kMatterSNTP = 6;
-    kMatterNTP = 7;
-    kMixedNTP = 8;
-    kNonMatterSNTPNTS = 9;
-    kNonMatterNTPNTS = 10;
-    kMatterSNTPNTS = 11;
-    kMatterNTPNTS = 12;
-    kMixedNTPNTS = 13;
-    kCloudSource = 14;
-    kPTP = 15;
-    kGNSS = 16;
-  }
-
-  enum TimeZoneDatabaseEnum : enum8 {
-    kFull = 0;
-    kPartial = 1;
-    kNone = 2;
-  }
-
-  bitmap Feature : bitmap32 {
-    kTimeZone = 0x1;
-    kNTPClient = 0x2;
-    kNTPServer = 0x4;
-    kTimeSyncClient = 0x8;
-  }
-
-  struct DSTOffsetStruct {
-    int32s offset = 0;
-    epoch_us validStarting = 1;
-    nullable epoch_us validUntil = 2;
-  }
-
-  struct FabricScopedTrustedTimeSourceStruct {
-    node_id nodeID = 0;
-    endpoint_no endpoint = 1;
-  }
-
-  struct TimeZoneStruct {
-    int32s offset = 0;
-    epoch_us validAt = 1;
-    optional char_string<64> name = 2;
-  }
-
-  struct TrustedTimeSourceStruct {
-    fabric_idx fabricIndex = 0;
-    node_id nodeID = 1;
-    endpoint_no endpoint = 2;
-  }
-
-  info event DSTTableEmpty = 0 {
-  }
-
-  info event DSTStatus = 1 {
-    boolean DSTOffsetActive = 0;
-  }
-
-  info event TimeZoneStatus = 2 {
-    int32s offset = 0;
-    optional char_string name = 1;
-  }
-
-  info event TimeFailure = 3 {
-  }
-
-  info event MissingTrustedTimeSource = 4 {
-  }
-
-  readonly attribute nullable epoch_us UTCTime = 0;
-  readonly attribute GranularityEnum granularity = 1;
-  readonly attribute optional TimeSourceEnum timeSource = 2;
-  readonly attribute optional nullable TrustedTimeSourceStruct trustedTimeSource = 3;
-  readonly attribute optional nullable char_string<128> defaultNTP = 4;
-  readonly attribute optional TimeZoneStruct timeZone[] = 5;
-  readonly attribute optional DSTOffsetStruct DSTOffset[] = 6;
-  readonly attribute optional nullable epoch_us localTime = 7;
-  readonly attribute optional TimeZoneDatabaseEnum timeZoneDatabase = 8;
-  readonly attribute optional boolean NTPServerAvailable = 9;
-  readonly attribute optional int8u timeZoneListMaxSize = 10;
-  readonly attribute optional int8u DSTOffsetListMaxSize = 11;
-  readonly attribute optional boolean supportsDNSResolve = 12;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  request struct SetUTCTimeRequest {
-    epoch_us UTCTime = 0;
-    GranularityEnum granularity = 1;
-    optional TimeSourceEnum timeSource = 2;
-  }
-
-  request struct SetTrustedTimeSourceRequest {
-    nullable FabricScopedTrustedTimeSourceStruct trustedTimeSource = 0;
-  }
-
-  request struct SetTimeZoneRequest {
-    TimeZoneStruct timeZone[] = 0;
-  }
-
-  response struct SetTimeZoneResponse = 3 {
-    boolean DSTOffsetRequired = 0;
-  }
-
-  request struct SetDSTOffsetRequest {
-    DSTOffsetStruct DSTOffset[] = 0;
-  }
-
-  request struct SetDefaultNTPRequest {
-    nullable char_string<128> defaultNTP = 0;
-  }
-
-  /** This command MAY be issued by Administrator to set the time. */
-  command access(invoke: administer) SetUTCTime(SetUTCTimeRequest): DefaultSuccess = 0;
-  /** This command SHALL set TrustedTimeSource. */
-  fabric command access(invoke: administer) SetTrustedTimeSource(SetTrustedTimeSourceRequest): DefaultSuccess = 1;
-  /** This command SHALL set TimeZone. */
-  command access(invoke: manage) SetTimeZone(SetTimeZoneRequest): SetTimeZoneResponse = 2;
-  /** This command SHALL set DSTOffset. */
-  command access(invoke: manage) SetDSTOffset(SetDSTOffsetRequest): DefaultSuccess = 4;
-  /** This command is used to set DefaultNTP. */
-  command access(invoke: administer) SetDefaultNTP(SetDefaultNTPRequest): DefaultSuccess = 5;
-}
-
 /** This cluster exposes interactions with a switch device, for the purpose of using those interactions by other devices.
 Two types of switch devices are supported: latching switch (e.g. rocker switch) and momentary switch (e.g. push button), distinguished with their feature flags.
 Interactions with the switch device are exposed as attributes (for the latching switch) and as events (for both types of switches). An interested party MAY subscribe to these attributes/events and thus be informed of the interactions, and can perform actions based on this, for example by sending commands to perform an action such as controlling a light or a window shade. */
@@ -1895,43 +1584,6 @@ cluster GroupKeyManagement = 63 {
   fabric command access(invoke: administer) KeySetRemove(KeySetRemoveRequest): DefaultSuccess = 3;
   /** Return the list of Group Key Sets associated with the accessing fabric */
   fabric command access(invoke: administer) KeySetReadAllIndices(): KeySetReadAllIndicesResponse = 4;
-}
-
-/** The Fixed Label Cluster provides a feature for the device to tag an endpoint with zero or more read only
-labels. */
-cluster FixedLabel = 64 {
-  revision 1; // NOTE: Default/not specifically set
-
-  struct LabelStruct {
-    char_string<16> label = 0;
-    char_string<16> value = 1;
-  }
-
-  readonly attribute LabelStruct labelList[] = 0;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-}
-
-/** The User Label Cluster provides a feature to tag an endpoint with zero or more labels. */
-cluster UserLabel = 65 {
-  revision 1; // NOTE: Default/not specifically set
-
-  struct LabelStruct {
-    char_string<16> label = 0;
-    char_string<16> value = 1;
-  }
-
-  attribute access(write: manage) LabelStruct labelList[] = 0;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute event_id eventList[] = 65530;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
 }
 
 /** Allows servers to ensure that listed clients are notified when a server is available for communication. */
@@ -2540,13 +2192,7 @@ endpoint 0 {
     callback attribute hardwareVersionString;
     callback attribute softwareVersion;
     callback attribute softwareVersionString;
-    callback attribute manufacturingDate;
-    callback attribute partNumber;
-    callback attribute productURL;
-    callback attribute productLabel;
     callback attribute serialNumber;
-    persist  attribute localConfigDisabled default = 0;
-    callback attribute uniqueID;
     callback attribute capabilityMinima;
     callback attribute specificationVersion;
     callback attribute maxPathsPerInvoke;
@@ -2571,14 +2217,6 @@ endpoint 0 {
   server cluster LocalizationConfiguration {
     ram      attribute activeLocale;
     callback attribute supportedLocales;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
-  }
-
-  server cluster TimeFormatLocalization {
-    persist  attribute hourFormat;
-    persist  attribute activeCalendarType;
-    callback attribute supportedCalendarTypes;
     ram      attribute featureMap default = 0;
     ram      attribute clusterRevision default = 1;
   }
@@ -2655,10 +2293,12 @@ endpoint 0 {
     callback attribute currentHeapFree;
     callback attribute currentHeapUsed;
     callback attribute currentHeapHighWatermark;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute eventList;
+    callback attribute attributeList;
     callback attribute featureMap;
     ram      attribute clusterRevision default = 1;
-
-    handle command ResetWatermarks;
   }
 
   server cluster ThreadNetworkDiagnostics {
@@ -2668,7 +2308,6 @@ endpoint 0 {
     callback attribute panId;
     callback attribute extendedPanId;
     callback attribute meshLocalPrefix;
-    callback attribute overrunCount;
     callback attribute neighborTable;
     callback attribute routeTable;
     callback attribute partitionId;
@@ -2676,130 +2315,12 @@ endpoint 0 {
     callback attribute dataVersion;
     callback attribute stableDataVersion;
     callback attribute leaderRouterId;
-    callback attribute detachedRoleCount;
-    callback attribute childRoleCount;
-    callback attribute routerRoleCount;
-    callback attribute leaderRoleCount;
-    callback attribute attachAttemptCount;
-    callback attribute partitionIdChangeCount;
-    callback attribute betterPartitionAttachAttemptCount;
-    callback attribute parentChangeCount;
-    callback attribute txTotalCount;
-    callback attribute txUnicastCount;
-    callback attribute txBroadcastCount;
-    callback attribute txAckRequestedCount;
-    callback attribute txAckedCount;
-    callback attribute txNoAckRequestedCount;
-    callback attribute txDataCount;
-    callback attribute txDataPollCount;
-    callback attribute txBeaconCount;
-    callback attribute txBeaconRequestCount;
-    callback attribute txOtherCount;
-    callback attribute txRetryCount;
-    callback attribute txDirectMaxRetryExpiryCount;
-    callback attribute txIndirectMaxRetryExpiryCount;
-    callback attribute txErrCcaCount;
-    callback attribute txErrAbortCount;
-    callback attribute txErrBusyChannelCount;
-    callback attribute rxTotalCount;
-    callback attribute rxUnicastCount;
-    callback attribute rxBroadcastCount;
-    callback attribute rxDataCount;
-    callback attribute rxDataPollCount;
-    callback attribute rxBeaconCount;
-    callback attribute rxBeaconRequestCount;
-    callback attribute rxOtherCount;
-    callback attribute rxAddressFilteredCount;
-    callback attribute rxDestAddrFilteredCount;
-    callback attribute rxDuplicatedCount;
-    callback attribute rxErrNoFrameCount;
-    callback attribute rxErrUnknownNeighborCount;
-    callback attribute rxErrInvalidSrcAddrCount;
-    callback attribute rxErrSecCount;
-    callback attribute rxErrFcsCount;
-    callback attribute rxErrOtherCount;
-    callback attribute activeTimestamp;
-    callback attribute pendingTimestamp;
-    callback attribute delay;
     callback attribute securityPolicy;
     callback attribute channelPage0Mask;
     callback attribute operationalDatasetComponents;
     callback attribute activeNetworkFaultsList;
     ram      attribute featureMap default = 0x000F;
     ram      attribute clusterRevision default = 2;
-
-    handle command ResetCounts;
-  }
-
-  server cluster WiFiNetworkDiagnostics {
-    emits event Disconnection;
-    emits event AssociationFailure;
-    emits event ConnectionStatus;
-    callback attribute bssid;
-    callback attribute securityType;
-    callback attribute wiFiVersion;
-    callback attribute channelNumber;
-    callback attribute rssi;
-    callback attribute beaconLostCount;
-    callback attribute beaconRxCount;
-    callback attribute packetMulticastRxCount;
-    callback attribute packetMulticastTxCount;
-    callback attribute packetUnicastRxCount;
-    callback attribute packetUnicastTxCount;
-    callback attribute currentMaxRate;
-    callback attribute overrunCount;
-    ram      attribute featureMap default = 3;
-    ram      attribute clusterRevision default = 1;
-
-    handle command ResetCounts;
-  }
-
-  server cluster EthernetNetworkDiagnostics {
-    callback attribute PHYRate;
-    callback attribute fullDuplex;
-    callback attribute packetRxCount;
-    callback attribute packetTxCount;
-    callback attribute txErrCount;
-    callback attribute collisionCount;
-    callback attribute overrunCount;
-    callback attribute carrierDetect;
-    callback attribute timeSinceReset;
-    ram      attribute featureMap default = 3;
-    ram      attribute clusterRevision default = 1;
-
-    handle command ResetCounts;
-  }
-
-  server cluster TimeSynchronization {
-    emits event DSTTableEmpty;
-    emits event DSTStatus;
-    emits event TimeZoneStatus;
-    emits event TimeFailure;
-    emits event MissingTrustedTimeSource;
-    callback attribute UTCTime;
-    callback attribute granularity;
-    ram      attribute timeSource default = 0x00;
-    callback attribute trustedTimeSource;
-    callback attribute defaultNTP;
-    callback attribute timeZone;
-    callback attribute DSTOffset;
-    callback attribute localTime;
-    ram      attribute timeZoneDatabase default = 0;
-    callback attribute timeZoneListMaxSize;
-    callback attribute DSTOffsetListMaxSize;
-    ram      attribute supportsDNSResolve default = false;
-    callback attribute generatedCommandList;
-    callback attribute acceptedCommandList;
-    callback attribute attributeList;
-    ram      attribute featureMap default = 0x0B;
-    ram      attribute clusterRevision default = 1;
-
-    handle command SetUTCTime;
-    handle command SetTrustedTimeSource;
-    handle command SetTimeZone;
-    handle command SetTimeZoneResponse;
-    handle command SetDSTOffset;
-    handle command SetDefaultNTP;
   }
 
   server cluster AdministratorCommissioning {
@@ -2851,18 +2372,6 @@ endpoint 0 {
     handle command KeySetRemove;
     handle command KeySetReadAllIndices;
     handle command KeySetReadAllIndicesResponse;
-  }
-
-  server cluster FixedLabel {
-    callback attribute labelList;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
-  }
-
-  server cluster UserLabel {
-    callback attribute labelList;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
   }
 
   server cluster IcdManagement {

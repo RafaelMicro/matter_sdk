@@ -17,7 +17,7 @@ import("//build_overrides/chip.gni")
 import("${chip_root}/src/app/chip_data_model.gni")
 
 chip_data_model("occupancy-sensor-common") {
-  zap_file = "occupancy_sensor_app.zap"
+  zap_file = "occupancy-sensor-app.zap"
 
   is_server = true
 }

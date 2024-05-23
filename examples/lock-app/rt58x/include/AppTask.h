@@ -67,6 +67,9 @@ public:
     void PostEvent(const AppEvent * event);
     void ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction);
 
+    static void IdentifyStartHandler(Identify *);
+    static void IdentifyStopHandler(Identify *);
+    static void IdentifyHandleOp(AppEvent * aEvent);
 private:
     static void UpdateClusterState(intptr_t arg);
     CHIP_ERROR Init();

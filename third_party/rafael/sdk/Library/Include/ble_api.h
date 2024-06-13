@@ -183,12 +183,19 @@ typedef enum
      */
     TYPE_BLE_GAP_PHY_UPDATE,
 
-    /** @brief BLE read RSSI value.
+    /** @brief BLE read PHY.
      *  @par   BLE_GAP_EVT_PHY_READ
      *
      *  @param @ref ble_gap_phy_read_param_t
      */
     TYPE_BLE_GAP_PHY_READ,
+
+    /** @brief BLE default PHY set.
+     *  @par   BLE_GAP_EVT_DEFAULT_PHY_SET
+     *
+     *  @param @ref ble_gap_default_phy_set_param_t
+     */
+    TYPE_BLE_GAP_DEFAULT_PHY_SET,
 
     /** @brief BLE read RSSI value.
      *  @par   BLE_GAP_EVT_RSSI_READ
@@ -507,6 +514,13 @@ typedef enum
      */
     TYPE_BLE_SM_PASSKEY_SET,
 
+    /** @brief Set BLE numeric comparison result.
+     *  @par   none
+     *
+     *  @param @ref ble_sm_passkey_param_t
+     */
+    TYPE_BLE_SM_NUMERIC_COMP_RESULT_SET,
+
     /** @brief BLE send security request.
      *  @par   none
      *
@@ -527,6 +541,13 @@ typedef enum
      *  @param ble_sm_irk_param_t
      */
     TYPE_BLE_SM_IDENTITY_RESOLVING_KEY_SET,
+
+    /** @brief BLE LESC init.
+     *  @par   none
+     *
+     *  @param none
+     */
+    TYPE_BLE_SM_LESC_INIT,
 
     //====================================================================
     //     BLE VENDOR API
@@ -632,15 +653,6 @@ typedef struct
 int ble_host_stack_init(ble_cfg_t *pt_cfg);
 
 
-/** @brief Set to BLE host stack delete.
- *
- * @ingroup ble_api
- *
- * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
- */
-int ble_host_stack_deinit(void);
-
-
 /** @brief BLE event message receive function.
  *
  * @ingroup ble_api
@@ -669,3 +681,4 @@ int ble_event_msg_sendto(ble_tlv_t *pt_tlv);
 #endif
 
 #endif /* __BLE_API_H__*/
+

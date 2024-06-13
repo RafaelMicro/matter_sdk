@@ -43,7 +43,7 @@ extern "C" {
 /** @brief REF_SIZE_LE_HOST_PARA for checking host parameter size in application layer and host layer.
  * @attention Do NOT modify this definition.
  */
-#define REF_SIZE_LE_HOST_PARA             188
+#define REF_SIZE_LE_HOST_PARA             268
 /** @} */
 
 static const uint8_t g_ble_default_public_addr[BLE_ADDR_LEN] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};    /**< Default BLE public address..*/
@@ -315,4 +315,3 @@ ble_err_t ble_cmd_antenna_info_read(void);
 #endif
 
 #endif /* __BLE_COMMON_H__*/
-

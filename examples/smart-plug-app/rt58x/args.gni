@@ -21,6 +21,8 @@ rt58x_sdk_target = get_label_info(":sdk", "label_no_toolchain")
 chip_enable_ota_requestor = false
 chip_build_libshell = false
 chip_build_platform_attestation_credentials_provider = false
+# Enable subscription resumption after timeout - separate configuration for power use measurement
+chip_subscription_timeout_resumption = false
 
 # Enable error logging.
 chip_error_logging = true
@@ -28,6 +30,9 @@ chip_error_logging = true
 chip_progress_logging = true
 # Enable detail logging.
 chip_detail_logging = false
+
+#enable matter+ble multi control
+raf_enable_multi_control = false
 
 pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"
 pw_assert_BACKEND = "$dir_pw_assert_log:check_backend"

@@ -1,9 +1,6 @@
 #ifndef _BLE_SERVICE_DIS_H_
 #define _BLE_SERVICE_DIS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**************************************************************************//**
  * @file  ble_service_dis.h
  * @brief Provide the Definition of DIS.
@@ -48,14 +45,7 @@ extern const uint16_t attr_uuid_dis_charc_pnp_id[];                      /**< DI
  * @note Return the "Read data" when central send "Read Request".
 */
 
-extern const uint8_t ATTR_VALUE_DIS_SERIAL_NUMBER_STRING_PRESENTATION_FORMAT[];     /**< DIS serial number string presentation format value. */
-extern const uint8_t ATTR_VALUE_DIS_COMMON_PRESENTATION_FORMAT[];                   /**< DIS common presentation format value. */
-extern const uint8_t ATTR_VALUE_DIS_MANUFACTURER_NAME_STRING_PRESENTATION_FORMAT[]; /**< DIS manufacturer name string presentation format value. */
 extern const uint8_t ATTR_VALUE_DIS_SYSTEM_ID[];                                    /**< DIS system ID string value. */
-extern const uint8_t ATTR_VALUE_DIS_FIRMWARE_REVISION_STRING_PRESENTATION_FORMAT[]; /**< DIS firmware revision presentation string value. */
-extern const uint8_t ATTR_VALUE_DIS_MODEL_NUMBER_STRING_PRESENTATION_FORMAT[];      /**< DIS model number string presentation format value. */
-extern const uint8_t ATTR_VALUE_DIS_HARDWARE_REVISION_STRING_PRESENTATION_FORMAT[]; /**< DIS hardware revision string presentation format value. */
-extern const uint8_t ATTR_VALUE_DIS_SOFTWARE_REVISION_STRING_PRESENTATION_FORMAT[]; /**< DIS software revision string presentation format value. */
 extern const uint8_t ATTR_VALUE_DIS_PNP_ID[];                                       /**< DIS PnP ID value. */
 /** @} */
 
@@ -75,24 +65,18 @@ extern const uint8_t ATTR_VALUE_DIS_PNP_ID[];                                   
 extern const ble_att_param_t att_dis_primary_service;                                 /**< DIS primary service. */
 extern const ble_att_param_t att_dis_characteristic_serial_number_string;             /**< DIS characteristic SERIAL_NUMBER_STRING. */
 extern const ble_att_param_t att_dis_serial_number_string;                            /**< DIS SERIAL_NUMBER_STRING value. */
-extern const ble_att_param_t att_dis_serial_number_string_presentation_format;        /**< DIS SERIAL_NUMBER_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_manufacturer_name_string;         /**< DIS characteristic MANUFACTURER_NAME_STRING. */
 extern const ble_att_param_t att_dis_manufacturer_name_string;                        /**< DIS MANUFACTURER_NAME_STRING value. */
-extern const ble_att_param_t att_dis_manufacturer_name_string_presentation_format;    /**< DIS MANUFACTURER_NAME_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_system_id;                        /**< DIS characteristic SYSTEM_ID. */
 extern const ble_att_param_t att_dis_system_id;                                       /**< DIS SYSTEM_ID value. */
 extern const ble_att_param_t att_dis_characteristic_firmware_revision_string;         /**< DIS characteristic FIRMWARE_REVISION_STRING. */
 extern const ble_att_param_t att_dis_firmware_revision_string;                        /**< DIS FIRMWARE_REVISION_STRING value. */
-extern const ble_att_param_t att_dis_firmware_revision_string_presentation_format;    /**< DIS FIRMWARE_REVISION_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_model_number_string;              /**< DIS characteristic MODEL_NUMBER_STRING. */
 extern const ble_att_param_t att_dis_model_number_string;                             /**< DIS MODEL_NUMBER_STRING value. */
-extern const ble_att_param_t att_dis_model_number_string_presentation_format;         /**< DIS MODEL_NUMBER_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_hardware_revision_string;         /**< DIS characteristic HARDWARE_REVISION_STRING. */
 extern const ble_att_param_t att_dis_hardware_revision_string;                        /**< DIS HARDWARE_REVISION_STRING value. */
-extern const ble_att_param_t att_dis_hardware_revision_string_presentation_format;    /**< DIS HARDWARE_REVISION_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_software_revision_string;         /**< DIS characteristic SOFTWARE_REVISION_STRING. */
 extern const ble_att_param_t att_dis_software_revision_string;                        /**< DIS SOFTWARE_REVISION_STRING value. */
-extern const ble_att_param_t att_dis_software_revision_string_presentation_format;    /**< DIS SOFTWARE_REVISION_STRING presentation format. */
 extern const ble_att_param_t att_dis_characteristic_pnp_id;                           /**< DIS characteristic PNP_ID. */
 extern const ble_att_param_t att_dis_pnp_id;                                          /**< DIS PNP_ID value. */
 /** @} */
@@ -105,24 +89,18 @@ extern const ble_att_param_t att_dis_pnp_id;                                    
     &att_dis_primary_service,                                       \
     &att_dis_characteristic_serial_number_string,                   \
     &att_dis_serial_number_string,                                  \
-    &att_dis_serial_number_string_presentation_format,              \
     &att_dis_characteristic_manufacturer_name_string,               \
     &att_dis_manufacturer_name_string,                              \
-    &att_dis_manufacturer_name_string_presentation_format,          \
     &att_dis_characteristic_system_id,                              \
     &att_dis_system_id,                                             \
     &att_dis_characteristic_firmware_revision_string,               \
     &att_dis_firmware_revision_string,                              \
-    &att_dis_firmware_revision_string_presentation_format,          \
     &att_dis_characteristic_model_number_string,                    \
     &att_dis_model_number_string,                                   \
-    &att_dis_model_number_string_presentation_format,               \
     &att_dis_characteristic_hardware_revision_string,               \
     &att_dis_hardware_revision_string,                              \
-    &att_dis_hardware_revision_string_presentation_format,          \
     &att_dis_characteristic_software_revision_string,               \
     &att_dis_software_revision_string,                              \
-    &att_dis_software_revision_string_presentation_format,          \
     &att_dis_characteristic_pnp_id,                                 \
     &att_dis_pnp_id                                                 \
 
@@ -205,18 +183,12 @@ extern const ble_att_param_t att_dis_pnp_id;                                    
 typedef struct ble_svcs_dis_handles_s
 {
     uint16_t hdl_serial_number_string;                            /**< Handle of SERIAL_NUMBER_STRING. */
-    uint16_t hdl_serial_number_string_presentation_format;        /**< Handle of SERIAL_NUMBER_STRING presentation format. */
     uint16_t hdl_manufacturer_name_string;                        /**< Handle of MANUFACTURER_NAME_STRING. */
-    uint16_t hdl_manufacturer_name_string_presentation_format;    /**< Handle of MANUFACTURER_NAME_STRING presentation format. */
     uint16_t hdl_system_id;                                       /**< Handle of SYSTEM_ID. */
     uint16_t hdl_firmware_revision_string;                        /**< Handle of FIRMWARE_REVISION_STRING. */
-    uint16_t hdl_firmware_revision_string_presentation_format;    /**< Handle of FIRMWARE_REVISION_STRING presentation format. */
     uint16_t hdl_model_number_string;                             /**< Handle of MODEL_NUMBER_STRING. */
-    uint16_t hdl_model_number_string_presentation_format;         /**< Handle of MODEL_NUMBER_STRING presentation format. */
     uint16_t hdl_hardware_revision_string;                        /**< Handle of HARDWARE_REVISION_STRING. */
-    uint16_t hdl_hardware_revision_string_presentation_format;    /**< Handle of HARDWARE_REVISION_STRING presentation format. */
     uint16_t hdl_software_revision_string;                        /**< Handle of SOFTWARE_REVISION_STRING. */
-    uint16_t hdl_software_revision_string_presentation_format;    /**< Handle of SOFTWARE_REVISION_STRING presentation format. */
     uint16_t hdl_pnp_id;                                          /**< Handle of PNP_ID. */
 } ble_svcs_dis_handles_t;
 
@@ -250,18 +222,12 @@ typedef struct PnPId_Format
 typedef struct ble_svcs_dis_data_s
 {
     string_format_t                   *serial_number_str;           /**< Serial number string. */
-    char_presentation_format_t        *serial_number_format;        /**< Serial number string characteristic presentation format. */
     string_format_t                   *manufacturer_name_str;       /**< Manufacturer name string. */
-    char_presentation_format_t        *manufacturer_name_format;    /**< Manufacturer name string characteristic presentation format. */
     SystemId_Format                   *system_id;                   /**< System ID */
     string_format_t                   *firmware_rev_str;            /**< Firmware revision string */
-    char_presentation_format_t        *firmware_rev_format;         /**< Firmware revision string characteristic presentation format. */
     string_format_t                   *model_number_str;            /**< Model number string */
-    char_presentation_format_t        *model_number_format;         /**< Model number string characteristic presentation format. */
     string_format_t                   *hardware_rev_str;            /**< Hardware revision string */
-    char_presentation_format_t        *hardware_rev_format;         /**< Hardware revision string characteristic presentation format. */
     string_format_t                   *software_rev_str;            /**< Software revision string */
-    char_presentation_format_t        *software_rev_format;         /**< Software revision string characteristic presentation format. */
     PnPId_Format                      *pnp_id;                      /**< PnP ID */
 } ble_svcs_dis_data_t;
 
@@ -340,7 +306,5 @@ ble_err_t ble_svcs_dis_init(uint8_t host_id, ble_gatt_role_t role, ble_svcs_dis_
 ble_err_t ble_svcs_dis_handles_get(uint8_t host_id, ble_gatt_role_t role, ble_svcs_dis_info_t *p_info);
 
 
-#ifdef __cplusplus
-};
-#endif
+
 #endif //_BLE_SERVICE_DIS_H_

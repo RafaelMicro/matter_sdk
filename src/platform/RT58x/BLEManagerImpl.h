@@ -25,8 +25,16 @@
 #pragma once
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
 
+#include <ble/CHIPBleServiceData.h>
+
+#include "ble_profile.h"
+
 #include "FreeRTOS.h"
 #include "timers.h"
+
+#ifndef RAFAEL_APP_BLE_DEVICE_NAME_PREFIX
+#define RAFAEL_APP_BLE_DEVICE_NAME_PREFIX "Rafael_"
+#endif
 
 namespace chip {
 namespace DeviceLayer {
@@ -94,6 +102,8 @@ private:
         kRestartAdvertising     = 0x0008,
         kRTBLEStackInitialized  = 0x0010,
         kDeviceNameSet          = 0x0020,
+        kAdvertisingLink0       = 0x0040,
+        kAdvertisingLink1       = 0x0080,
     };
     BitFlags<BLEManagerImpl::Flags> mFlags;
 
@@ -112,12 +122,10 @@ private:
 
     CHIPoBLEServiceMode mServiceMode;
     char mDeviceName[kMaxDeviceNameLength + 1];
+    char mDeviceNameLink1[kMaxDeviceNameLength + 1];
 
     void DriveBLEState(void);
-    CHIP_ERROR ConfigureAdvertising(void);
-    CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
-    CHIP_ERROR ConfigureAdvertisingData(void);
 
     static void ble_evt_task(void * arg);
     static void ble_evt_indication_cb(uint32_t data_len);
@@ -138,6 +146,19 @@ private:
     void CancelBleConnTimeoutTimer(void);
     void CancelBleAdvTimeoutTimer(void);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
+#if RAF_ENABLE_MULTI_CONTROL
+    CHIP_ERROR ConfigureAdvertisingData(uint8_t host_id);
+    static void BleLinkTimerHandler(TimerHandle_t xTimer);
+    static void StartLinkTimer(intptr_t arg);
+    void StartBleConnTimeoutTimer(void);
+    static void ble_svcs_trsps_evt_handler(void *p_matter_evt_param);
+    static int server_profile_init_link1(uint8_t host_id);
+    void HandleAppToBleEvent(const ChipDeviceEvent * event);
+#else
+    CHIP_ERROR ConfigureAdvertising(void);
+    CHIP_ERROR StartAdvertising(void);
+    CHIP_ERROR ConfigureAdvertisingData(void);
+#endif
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();

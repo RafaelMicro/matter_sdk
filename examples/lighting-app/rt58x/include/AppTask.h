@@ -36,6 +36,7 @@
 #include <ble/BLEEndPoint.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
+#include <platform/RT58x/BLEManagerImpl.h>
 
 #include "bsp.h"
 #include "FactoryDataProvider.h"

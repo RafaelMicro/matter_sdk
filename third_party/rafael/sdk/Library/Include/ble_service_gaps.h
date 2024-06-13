@@ -1,9 +1,6 @@
 #ifndef _BLE_SERVICE_GAPS_H_
 #define _BLE_SERVICE_GAPS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**************************************************************************//**
  * @file  ble_service_gaps.h
  * @brief Provide the Definition of GAPS.
@@ -238,7 +235,5 @@ ble_err_t ble_svcs_gaps_peripheral_conn_param_set(ble_gap_conn_param_t *p_param)
 */
 ble_err_t ble_svcs_gaps_handles_get(uint8_t host_id, ble_gatt_role_t role, ble_svcs_gaps_info_t *p_info);
 
-#ifdef __cplusplus
-};
-#endif
 #endif //_BLE_SERVICE_GAPS_H_
+

@@ -1,9 +1,6 @@
 #ifndef _BLE_SERVICE_GATTS_H_
 #define _BLE_SERVICE_GATTS_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**************************************************************************//**
  * @file  ble_service_gatts.h
  * @brief Provide the Definition of GATTS.
@@ -188,7 +185,5 @@ ble_err_t ble_svcs_gatts_init(uint8_t host_id, ble_gatt_role_t role, ble_svcs_ga
 */
 ble_err_t ble_svcs_gatts_handles_get(uint8_t host_id, ble_gatt_role_t role, ble_svcs_gatts_info_t *p_info);
 
-#ifdef __cplusplus
-};
-#endif
 #endif //_BLE_SERVICE_GATTS_H_
+

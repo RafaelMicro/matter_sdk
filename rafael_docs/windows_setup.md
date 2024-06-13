@@ -226,7 +226,7 @@ NOTE: When the first time building, Matter will setup the matter environment (GC
     2.  Select OTA support or not
     3.  Select sleep end device (SED) support or not
     4.  Select certs support or not
-
+<!-- 
 ## Debugger setup
 
 ### Pre-request
@@ -272,4 +272,4 @@ WSL's environment values)**
     ex: /mnt/c/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe ( in WSL
     C:/ should change to /mnt/c/) **Note: This debugger's Arm Toolchain and
     execute file will use matter code and decker env, so you need setup matter
-    env before the debugger**
+    env before the debugger** -->

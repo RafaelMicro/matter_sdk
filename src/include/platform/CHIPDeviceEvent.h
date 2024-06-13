@@ -258,6 +258,9 @@ enum PublicEventTypes
     kColorControlAttributeXYChanged,
     kColorControlAttributeHSVChanged,
     kColorControlAttributeCTChanged,
+    
+    kBleToApp,
+    kAppToBle,
 };
 
 /**
@@ -568,6 +571,12 @@ struct ChipDeviceEvent final
         {
             uint16_t ctMireds;
         } ColorControlCTChanged;
+        
+        struct 
+        {
+            uint8_t len;
+            uint8_t* data;
+        } TRSPData;
     };
 
     void Clear() { memset(this, 0, sizeof(*this)); }

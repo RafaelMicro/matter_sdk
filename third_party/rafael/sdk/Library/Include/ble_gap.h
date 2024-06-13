@@ -388,6 +388,15 @@ typedef struct ble_gap_phy_read_param_s
     uint8_t                 host_id;          /**< Host id. */
 } ble_gap_phy_read_param_t;
 
+/** @brief Set BLE Preferred PHY parameter.
+ * @ingroup ble_gap
+*/
+typedef struct ble_gap_default_phy_set_param_s
+{
+    ble_phy_t               tx_phy;           /**< @ref ble_cmd_phy "TX PHY".*/
+    ble_phy_t               rx_phy;           /**< @ref ble_cmd_phy "RX PHY".*/
+} ble_gap_default_phy_set_param_t;
+
 
 /** @brief Read BLE RSSI parameter.
  * @ingroup ble_gap
@@ -513,6 +522,14 @@ typedef struct __attribute__((packed)) ble_evt_gap_phy_s
     ble_evt_phy_t           rx_phy;          /**< @ref ble_cmd_phy "RX PHY". */
 } ble_evt_gap_phy_t;
 
+/**
+ * @brief BLE Preferred PHY Related Event Parameters.
+ * @ingroup ble_gap
+*/
+typedef struct __attribute__((packed)) ble_evt_gap_default_phy_s
+{
+    uint8_t                 status;          /**< @ref hci_cmd_param_error_code "ble_hci_error_code_t". */
+} ble_evt_gap_default_phy_t;
 
 /**
  * @brief Set BLE Device Address Event Parameters.
@@ -553,6 +570,7 @@ typedef struct ble_evt_gap_s
         ble_evt_gap_conn_param_update_t  evt_conn_param_update; /**< BLE connection update parameter event parameters. */
         ble_evt_gap_disconn_complete_t   evt_disconn_complete;  /**< BLE disconnection complete event parameters. */
         ble_evt_gap_phy_t                evt_phy;               /**< BLE PHY related event parameters. */
+        ble_evt_gap_default_phy_t        evt_default_phy;       /**< BLE default PHY event parameters. */
         ble_evt_gap_rssi_read_t          evt_rssi;              /**< BLE read RSSI event parameters. */
         ble_evt_gap_ch_map_read_t        evt_channel_map;       /**< BLE read channel map event parameters. */
     } param;                                                    /**< Event parameters. */
@@ -662,6 +680,17 @@ ble_err_t ble_cmd_phy_update(ble_gap_phy_update_param_t *p_param);
  * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
  */
 ble_err_t ble_cmd_phy_read(uint8_t host_id);
+
+
+/** @brief BLE set default PHY.
+ *
+ * @ingroup ble_gap
+ *
+ * @param[in] p_param : a pointer to the set default PHY parameter.
+ *
+ * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
+ */
+ble_err_t ble_cmd_default_phy_set(ble_gap_default_phy_set_param_t *p_param);
 
 
 /** @brief BLE read RSSI value.

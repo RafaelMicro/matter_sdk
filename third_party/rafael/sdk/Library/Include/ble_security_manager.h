@@ -98,6 +98,15 @@ typedef struct
     uint32_t  passkey;
 } ble_sm_passkey_param_t;
 
+/**
+ * @brief BLE numeric comparison parameter.
+ * @ingroup ble_sec
+ */
+typedef struct
+{
+    uint8_t   host_id;
+    uint8_t   same_numeric;
+} ble_sm_numeric_comp_result_param_t;
 
 /**
  * @brief BLE io capabilities parameter.
@@ -151,6 +160,16 @@ typedef struct __attribute__((packed)) ble_evt_sm_passkey_confirm_param_s
     uint8_t      host_id;               /**< Host id. */
 } ble_evt_sm_passkey_confirm_param_t;
 
+/**
+ * @brief Numeric Comparison Event Parameters.
+ * @ingroup ble_sec
+*/
+typedef struct __attribute__((packed)) ble_evt_sm_numeric_comparison_param_t
+{
+    uint8_t      host_id;               /**< Host id. */
+    uint32_t     comparison_value;      /**< Comparison Value. */
+} ble_evt_sm_numeric_comparison_param_t;
+
 
 /**
  * @brief Authentication Event Parameters.
@@ -160,6 +179,8 @@ typedef struct __attribute__((packed)) ble_evt_sm_auth_status_s
 {
     uint8_t      host_id;               /**< Host id. */
     uint8_t      status;                /**< Status. */
+    uint8_t      lesc: 1;               /**< LESC or legacy pairing. */
+    uint8_t      reserved: 7;           /**< Status. */
 } ble_evt_sm_auth_status_t;
 
 
@@ -201,13 +222,14 @@ typedef struct ble_evt_sm_s
 {
     union
     {
-        ble_evt_sm_stk_gen_method_t          evt_stk_gen_method;         /**< STK generation method event parameters. */
-        ble_evt_sm_passkey_confirm_param_t   evt_passkey_confirm_param;  /**< Passkey confirmation event parameters. */
-        ble_evt_sm_auth_status_t             evt_auth_status;            /**< Authentication event parameters. */
-        ble_evt_sm_irk_resolving_fail_t      evt_irk_resolving_fail;     /**< Resolving private address fail status event parameters. */
-        ble_evt_sm_io_cap_t                  evt_io_caps;                /**< IO Capabilities event parameters. */
-        ble_evt_sm_bonding_flag_t            evt_bonding_flag;           /**< Bonding flag event parameters. */
-    } param;                                                          /**< Event parameters. */
+        ble_evt_sm_stk_gen_method_t           evt_stk_gen_method;           /**< STK generation method event parameters. */
+        ble_evt_sm_passkey_confirm_param_t    evt_passkey_confirm_param;    /**< Passkey confirmation event parameters. */
+        ble_evt_sm_numeric_comparison_param_t evt_numeric_comparison_param; /**< Numeric Comparison event parameters. */
+        ble_evt_sm_auth_status_t              evt_auth_status;              /**< Authentication event parameters. */
+        ble_evt_sm_irk_resolving_fail_t       evt_irk_resolving_fail;       /**< Resolving private address fail status event parameters. */
+        ble_evt_sm_io_cap_t                   evt_io_caps;                  /**< IO Capabilities event parameters. */
+        ble_evt_sm_bonding_flag_t             evt_bonding_flag;             /**< Bonding flag event parameters. */
+    } param;                                                                /**< Event parameters. */
 
 } ble_evt_sm_t;
 
@@ -240,6 +262,17 @@ ble_err_t ble_cmd_security_request_set(uint8_t host_id);
  * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
  */
 ble_err_t ble_cmd_passkey_set(ble_sm_passkey_param_t *p_param);
+
+
+/** Set BLE numeric comparison result value.
+ *
+ * @ingroup ble_sec
+ *
+ * @param p_param : a pointer to the numeric comparison result parameter.
+ *
+ * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
+ */
+ble_err_t ble_cmd_numeric_comp_result_set(ble_sm_numeric_comp_result_param_t *p_param);
 
 
 /** Set BLE IO capabilities.
@@ -292,6 +325,15 @@ ble_err_t ble_cmd_bonding_space_init(void);
  */
 ble_err_t ble_cmd_write_identity_resolving_key(ble_sm_irk_param_t *p_param);
 
+
+
+/** Initialization LE secure connections command.
+ *
+ * @ingroup ble_sec
+ *
+ * @return @ref BLE_ERR_OK is success or an @ref ble_err_t "error".
+ */
+ble_err_t ble_cmd_lesc_init(void);
 
 #ifdef __cplusplus
 };

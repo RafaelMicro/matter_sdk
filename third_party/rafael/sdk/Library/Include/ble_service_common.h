@@ -1,9 +1,6 @@
 #ifndef _BLE_SERVICE_COMMON_H_
 #define _BLE_SERVICE_COMMON_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 /**************************************************************************//**
  * @file  ble_service_common.h
  * @brief Provide the Common Definition of BLE Profile.
@@ -204,7 +201,5 @@ ble_err_t ble_svcs_cccd_set(uint8_t host_id, uint16_t handle_num, ble_gatt_cccd_
  */
 ble_err_t ble_svcs_data_send(uint16_t type, ble_gatt_data_param_t *p_param);
 
-#ifdef __cplusplus
-};
-#endif
+
 #endif // _BLE_SERVICE_COMMON_H_

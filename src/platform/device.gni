@@ -88,6 +88,7 @@ declare_args() {
   chip_enable_ota_requestor = false
 
   # Rafael Platform
+  raf_enable_multi_control = false
   rafael_board = "RT58x"
 
   # Select DNS-SD implementation
@@ -112,7 +113,7 @@ declare_args() {
   if (chip_device_platform == "darwin" || chip_device_platform == "linux" ||
       chip_device_platform == "fake" || chip_device_platform == "efr32" ||
       chip_device_platform == "SiWx917"
-      #|| chip_device_platform == "rt58x"
+      || chip_device_platform == "rt58x"
       ) {
     chip_persist_subscriptions = true
   } else {

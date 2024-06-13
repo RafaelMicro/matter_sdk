@@ -49,6 +49,10 @@
 
 #include <lib/core/CHIPError.h>
 
+#if RAF_ENABLE_MULTI_CONTROL
+#include <platform/RT58x/RafaelMultiControl.h>
+#endif
+
 #include "uart.h"
 #include "cm3_mcu.h"
 #include "init_rt58xPlatform.h"
@@ -424,6 +428,9 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
         rt58x_led_level_ctl(2, RGB.b);
         rt58x_led_level_ctl(3, RGB.r);
         rt58x_led_level_ctl(4, RGB.g);
+#if RAF_ENABLE_MULTI_CONTROL
+        RafMCMgr().ReportOnoff(1,1);
+#endif
     }
     else if (aAction == LightingManager::OFF_ACTION)
     {
@@ -431,6 +438,16 @@ void AppTask::ActionCompleted(LightingManager::Action_t aAction)
         rt58x_led_level_ctl(2, 0);
         rt58x_led_level_ctl(3, 0);
         rt58x_led_level_ctl(4, 0); 
+#if RAF_ENABLE_MULTI_CONTROL
+        RafMCMgr().ReportOnoff(1,0);
+#endif
+    }
+    else if (aAction == LightingManager::LEVEL_ACTION)
+    {
+        current_level = LightMgr().GetLevel();
+#if RAF_ENABLE_MULTI_CONTROL
+        RafMCMgr().ReportLevel(1,current_level);
+#endif
     }
 
     if (sAppTask.mSyncClusterToButtonAction)
@@ -611,6 +628,11 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
                                   sizeof(aEvent->ColorControlCTChanged), 
                                   (uint8_t *)&aEvent->ColorControlCTChanged);
         break;
+#if RAF_ENABLE_MULTI_CONTROL
+    case DeviceEventType::kBleToApp:
+        RafMCMgr().HandleBleMessage(aEvent);
+        break;
+#endif
     default:
         break;
     }

@@ -17,21 +17,25 @@ extern "C" {
 #include "ble_service_gaps.h"
 #include "ble_service_gatts.h"
 #include "ble_service_matter.h"
+#include "ble_service_trsps.h"
 
 /**************************************************************************
  * Profile Application GENERAL Public Definitions and Functions
  **************************************************************************/
 /** Define the maximum number of BLE GAPS link. */
-#define MAX_NUM_CONN_GAPS      1
+#define MAX_NUM_CONN_GAPS      2
 
 /** Define the maximum number of BLE GATTS link. */
-#define MAX_NUM_CONN_GATTS     1
+#define MAX_NUM_CONN_GATTS     2
 
 /** Define the maximum number of BLE DIS link. */
-#define MAX_NUM_CONN_DIS       1
+#define MAX_NUM_CONN_DIS       2
 
 /** Define the maximum number of BLE Matter link. */
-#define MAX_NUM_CONN_MATTER    1
+#define MAX_NUM_CONN_MATTER    2
+
+/** Define the maximum number of BLE TRSP link. */
+#define MAX_NUM_CONN_TRSPS     2
 
 /**************************************************************************
  * Profile Application LINK Public Definitions and Functions
@@ -45,6 +49,14 @@ typedef struct ble_info_link0_s
     ble_svcs_dis_info_t       svcs_info_dis;       /**< DIS information (server). */
     ble_svcs_matter_info_t    svcs_info_matter;    /**< Matter information (server). */
 } ble_info_link0_t;
+
+typedef struct ble_info_link1_s
+{
+    ble_svcs_gaps_info_t      svcs_info_gaps;      /**< GAPS information (server). */
+    ble_svcs_gatts_info_t     svcs_info_gatts;     /**< GATTS information (server). */
+    ble_svcs_dis_info_t       svcs_info_dis;       /**< DIS information (server). */
+    ble_svcs_trsps_info_t     svcs_info_trsps;     /**< TRSPS information (server). */
+} ble_info_link1_t;
 
 typedef struct ble_app_link_info_s
 {

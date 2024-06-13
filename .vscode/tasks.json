@@ -62,16 +62,17 @@
             "id": "exampleproject",
             "description": "Which example do you want to create?",
             "options": [
-                "lighting-app",
-                "light-switch-app",
-                "lock-app",
-                "thermostat",
-                "window-app",
-                "smart-plug-app",
-                "temperature-measurement-app",
-                "occupancy-sensor-app",
+                "contact-sensor-app",
                 "humidity-sensor-app",
-                "contact-sensor-app"
+                "light-switch-app",
+                "lighting-app",
+                "lock-app",
+                "occupancy-sensor-app",
+                "smart-plug-app",
+                "smoke-alarm-app",
+                "temperature-measurement-app",
+                "thermostat",
+                "window-app"
             ],
             "default": ""
         },

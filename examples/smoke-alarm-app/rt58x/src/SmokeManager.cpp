@@ -62,7 +62,7 @@ CHIP_ERROR SmokeManager::Init()
 
     SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
 
-    sSmokeTimer = xTimerCreateStatic("sensorTmr", pdMS_TO_TICKS(10000), false, nullptr, SmokeTimerEventHandler,
+    sSmokeTimer = xTimerCreateStatic("sensorTmr", pdMS_TO_TICKS(10000), false, nullptr, SelfTestTimerEventHandler,
                                       &sStaticSmokeTimerStruct);
     if(sSmokeTimer == NULL)
     {
@@ -76,14 +76,14 @@ CHIP_ERROR SmokeManager::Init()
 void SmokeManager::StartSelfTesting()
 {
     ChipLogProgress(Zcl, "Start self-testing");
-    if(sSmokeTimer)
+    if(sSmokeTimer && SmokeMgr().mStartSelfTesting == false)
     {
         SmokeMgr().mStartSelfTesting = true;
         xTimerStart(sSmokeTimer,0);
     }
 }
 
-void SmokeManager::SmokeTimerEventHandler(TimerHandle_t xTimer)
+void SmokeManager::SelfTestTimerEventHandler(TimerHandle_t xTimer)
 {
     SmokeMgr().mStartSelfTesting = false;
 
@@ -100,7 +100,8 @@ void SmokeManager::ToggleSmokeState()
                        (mSmokeAlarmState == AlarmStateEnum::kWarning) ? AlarmStateEnum::kCritical :
                                                                         AlarmStateEnum::kNormal;
     PlatformMgr().LockChipStack();
-    Attributes::SmokeState::Set(1, mSmokeAlarmState);
+    SmokeCoAlarmServer::Instance().SetSmokeState(1, mSmokeAlarmState);
+    SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
     PlatformMgr().UnlockChipStack();
 }
 
@@ -110,6 +111,7 @@ void SmokeManager::ToggleCOState()
                     (mCOAlarmState == AlarmStateEnum::kWarning) ? AlarmStateEnum::kCritical :
                                                                   AlarmStateEnum::kNormal;
     PlatformMgr().LockChipStack();
-    Attributes::COState::Set(1, mCOAlarmState);
+    SmokeCoAlarmServer::Instance().SetCOState(1, mCOAlarmState);
+    SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
     PlatformMgr().UnlockChipStack();
 }

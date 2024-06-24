@@ -33,9 +33,9 @@ class SmokeManager
 {
 public:
     CHIP_ERROR Init();
-
     void ToggleSmokeState();
     void ToggleCOState();
+
     void StartSelfTesting();
 
     enum AlarmState: uint8_t
@@ -46,10 +46,10 @@ public:
     };
 private:
     bool mStartSelfTesting;
-    friend SmokeManager & SmokeMgr();
     chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum mSmokeAlarmState;
     chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum mCOAlarmState;
-    static void SmokeTimerEventHandler(TimerHandle_t xTimer);
+    friend SmokeManager & SmokeMgr();
+    static void SelfTestTimerEventHandler(TimerHandle_t xTimer);
 
     static SmokeManager sSmokeManager;
 };

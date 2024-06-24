@@ -93,6 +93,7 @@ private:
         kFunction_FactoryReset  ,
         kFunction_Switch_1      ,
         kFunction_Switch_2      ,
+        kFunction_Switch_3      ,
 
         kFunction_Invalid
     } Function;

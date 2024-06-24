@@ -70,7 +70,7 @@ extern uint32_t SystemCoreClock;
 #define configSUPPORT_DYNAMIC_ALLOCATION (1)
 
 // #ifndef configTOTAL_HEAP_SIZE
-#define configTOTAL_HEAP_SIZE ((size_t) (26 * 1024))
+#define configTOTAL_HEAP_SIZE ((size_t) (31 * 1024))
 // #endif // configTOTAL_HEAP_SIZE
 
 /* Optional functions - most linkers will remove unused functions anyway. */

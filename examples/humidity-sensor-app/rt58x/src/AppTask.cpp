@@ -83,7 +83,6 @@ using namespace ::chip::DeviceLayer;
 #define APP_TASK_STACK_SIZE (2 * 1024)
 #define APP_TASK_PRIORITY 2
 #define APP_EVENT_QUEUE_SIZE 10
-#define LIGHT_ENDPOINT_ID (1)
 
 
 

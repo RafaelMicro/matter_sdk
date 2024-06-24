@@ -40,7 +40,22 @@ ConfigurationManagerImpl & ConfigurationManagerImpl::GetDefaultInstance()
 CHIP_ERROR ConfigurationManagerImpl::Init()
 {
     CHIP_ERROR err;
+    uint32_t rebootCount;
 
+    if (RT58xConfig::ConfigValueExists(RT58xConfig::kConfigKey_RebootCount))
+    {
+        err = GetRebootCount(rebootCount);
+        SuccessOrExit(err);
+
+        err = StoreRebootCount(rebootCount + 1);
+        SuccessOrExit(err);
+    }
+    else
+    {
+        // The first boot after factory reset of the Node.
+        err = StoreRebootCount(1);
+        SuccessOrExit(err);
+    }
     // Initialize the generic implementation base class.
     err = Internal::GenericConfigurationManagerImpl<RT58xConfig>::Init();
     SuccessOrExit(err);

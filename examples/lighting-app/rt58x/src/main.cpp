@@ -54,6 +54,7 @@ int main(void)
 {
     CHIP_ERROR err;
 
+    write_reboot_count();
     init_rt58xPlatform();
     init_lighting_app_rt58xPlatform();
 

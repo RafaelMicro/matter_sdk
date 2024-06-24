@@ -71,7 +71,6 @@ using chip::Protocols::InteractionModel::Status;
 #define APP_TASK_STACK_SIZE (2 * 1024)
 #define APP_TASK_PRIORITY 2
 #define APP_EVENT_QUEUE_SIZE 10
-#define LIGHT_ENDPOINT_ID (1)
 
 #ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
 ICDSubscriptionCallback RT58xMatterConfig::mICDSubscriptionHandler;

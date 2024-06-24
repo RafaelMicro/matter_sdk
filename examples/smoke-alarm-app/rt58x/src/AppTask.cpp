@@ -33,6 +33,7 @@
 
 #include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/ids/Clusters.h>
+#include <app/clusters/smoke-co-alarm-server/smoke-co-alarm-server.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
@@ -84,7 +85,6 @@ using namespace ::chip::DeviceLayer;
 #define APP_TASK_STACK_SIZE (2 * 1024)
 #define APP_TASK_PRIORITY 2
 #define APP_EVENT_QUEUE_SIZE 10
-#define LIGHT_ENDPOINT_ID (1)
 
 
 
@@ -549,7 +549,13 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
             {
-                SmokeMgr().ToggleSmokeState();
+                chip::DeviceLayer::PlatformMgr().LockChipStack();
+                bool success = SmokeCoAlarmServer::Instance().RequestSelfTest(1);
+                chip::DeviceLayer::PlatformMgr().UnlockChipStack();
+                if (!success)
+                {
+                    ChipLogProgress(Zcl,"Manual self-test failed");
+                }
            
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
@@ -568,6 +574,26 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         else
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_2)
+            {
+                SmokeMgr().ToggleSmokeState();
+           
+                sAppTask.mFunction = kFunction_NoneSelected;
+                sAppTask.mFunctionSwitchActive = false;
+            }
+        }
+        break;
+      case (AppEvent::AppActionTypes::kActionTypes_Switch_3):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            if (!sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.mFunction = kFunction_Switch_3;
+                sAppTask.mFunctionSwitchActive = true;
+            }
+        }
+        else
+        {
+            if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_3)
             {
                 SmokeMgr().ToggleCOState();
            
@@ -618,20 +644,20 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
         break;
+    case (BSP_EVENT_BUTTONS_3):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_3;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_3)?0:1;
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;
     default:
         break;
     }
 }
-uint8_t AppTask::_data_checksum_calc(uint8_t *p, uint8_t l)
-{
-    uint8_t cs = 0;
-
-    for(int i=0; i<l; i++)
-        cs+=p[i];
-
-    return (~cs);
-}
-
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;

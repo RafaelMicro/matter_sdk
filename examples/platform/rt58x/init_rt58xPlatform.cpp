@@ -59,6 +59,8 @@ extern "C" {
 #define RANDOM_TIME_MAX        (10*100)
 #define RANDOM_TIME_MIN        (1*100)
 
+static bool do_factory_reset;
+
 static void init_default_pin_mux(void)
 {
     int i, j;
@@ -80,6 +82,72 @@ static void init_default_pin_mux(void)
 static void wdt_isr(void)
 {
     Wdt_Kick();
+}
+void write_reboot_count(void)
+{
+    Delay_Init();
+    int ckeck_byte_pos;
+    uint8_t check_byte_1st_block, check_byte_2nd_block, reset_count = 0;
+    for (ckeck_byte_pos = 0; ckeck_byte_pos < CHECK_RESET_BLOCK_SIZE; ckeck_byte_pos++)
+    {
+        while (flash_check_busy()) {;}
+        check_byte_1st_block = flash_read_byte(CHECK_RESET_START_ADDRESS + ckeck_byte_pos);
+        while (flash_check_busy()) {;}
+        check_byte_2nd_block = flash_read_byte(CHECK_RESET_START_ADDRESS + CHECK_RESET_BLOCK_SIZE + ckeck_byte_pos);
+        /*
+        bit 7:  valid bit, 1: valid,0: invalid
+        bit 6&5:check bit, 0 if bad byte
+        bit 4~0:power cycle count
+        */
+        if (((check_byte_1st_block & 0xE0) == 0xE0) && /*check bit 7,6,5*/
+                check_byte_1st_block == check_byte_2nd_block)
+        {
+            break;
+        }
+        if (ckeck_byte_pos == CHECK_RESET_BLOCK_SIZE - 1)
+        {
+            while (flash_check_busy()) {;}
+            flash_erase(FLASH_ERASE_SECTOR, CHECK_RESET_START_ADDRESS);
+            /*check bad byte*/
+            for (int i = 0; i < 2 * CHECK_RESET_BLOCK_SIZE; i++)
+            {
+                if (flash_read_byte(CHECK_RESET_START_ADDRESS + i) != 0xFF)
+                {
+                    while (flash_check_busy()) {;}
+                    flash_write_byte(CHECK_RESET_START_ADDRESS + i, 0x9F /* bad byte, set bit 6&5 to 0*/);
+                }
+            }
+            return;
+        }
+    }
+    while ((check_byte_1st_block & (1 << reset_count)) == 0 && reset_count < 5)
+    {
+        reset_count++;
+    }
+    reset_count++;
+    check_byte_1st_block &= ~( 1 << (reset_count - 1) );
+
+    if (reset_count >= 5)
+    {
+        do_factory_reset = true;
+    }
+    else
+    {
+        while (flash_check_busy()) {;}
+        flash_write_byte(CHECK_RESET_START_ADDRESS + ckeck_byte_pos, check_byte_1st_block);
+        while (flash_check_busy()) {;}
+        flash_write_byte(CHECK_RESET_START_ADDRESS + CHECK_RESET_BLOCK_SIZE + ckeck_byte_pos, check_byte_1st_block);
+    }
+    Delay_ms(500);
+    while (flash_check_busy());
+    flash_write_byte(CHECK_RESET_START_ADDRESS + ckeck_byte_pos, check_byte_1st_block &= ~(1 << 7));
+    while (flash_check_busy());
+    flash_write_byte(CHECK_RESET_START_ADDRESS + CHECK_RESET_BLOCK_SIZE + ckeck_byte_pos, check_byte_1st_block &= ~(1 << 7));
+}
+
+bool rt58x_factory_reset_check(void)
+{
+    return do_factory_reset;
 }
 
 static void init_wdt_init(void)
@@ -108,7 +176,6 @@ void init_rt58xPlatform(void)
     init_default_pin_mux();
 
     Delay_Init();
-
     //random = ((RANDOM_TIME_MAX - RANDOM_TIME_MIN) * (get_random_number() % 10000)) / ((RANDOM_TIME_MAX + 100) + RANDOM_TIME_MIN);
 
     //Delay_ms(random);
@@ -155,7 +222,6 @@ void init_rt58xPlatform(void)
 //         while (flash_check_busy()) {}
 //     }
 // }
-
 #ifdef __cplusplus
 }
 #endif

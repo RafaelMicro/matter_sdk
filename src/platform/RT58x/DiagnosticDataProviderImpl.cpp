@@ -70,6 +70,27 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapUsed(uint64_t & currentHeap
 }
 
 
+CHIP_ERROR DiagnosticDataProviderImpl::GetRebootCount(uint16_t & rebootCount)
+{
+    uint32_t count = 0;
+    CHIP_ERROR err = ConfigurationMgr().GetRebootCount(count);
+
+    if (err == CHIP_NO_ERROR)
+    {
+        VerifyOrReturnError(count <= UINT16_MAX, CHIP_ERROR_INVALID_INTEGER_VALUE);
+        rebootCount = static_cast<uint16_t>(count);
+    }
+
+    return err;
+}
+
+CHIP_ERROR DiagnosticDataProviderImpl::GetBootReason(BootReasonType & bootReason)
+{
+    uint32_t reason = 1;
+    CHIP_ERROR err  = CHIP_NO_ERROR;
+    bootReason = static_cast<BootReasonType>(reason);
+    return err;
+}
 DiagnosticDataProvider & GetDiagnosticDataProviderImpl()
 {
     return DiagnosticDataProviderImpl::GetDefaultInstance();

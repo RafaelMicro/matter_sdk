@@ -84,8 +84,6 @@ namespace {
 
 #define APP_TRSP_P_HOST_ID              0
 
-// Advertising device name
-#define DEVICE_NAME                     'R', 'A', 'F', '*', 'L', 'I', 'G', 'H', 'T'
 
 /* FreeRTOS sw timer */
 TimerHandle_t sbleAdvTimeoutTimer;
@@ -93,9 +91,6 @@ TimerHandle_t sbleConnTimeoutTimer;
 TimerHandle_t sbleLinkTimer;
 static bool isBleLink0Connected = false;
 static bool isBleLink1Connected = false;
-static bool isadvlink0enabled = false;
-static bool isadvlink1enabled = false;
-static bool needconfigparam = true;
 #define BLE_LINK0_INTERVAL_MS          500
 #define BLE_LINK1_INTERVAL_MS          500
 
@@ -383,7 +378,7 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
                        p_conn_param->peer_addr.addr[1],
                        p_conn_param->peer_addr.addr[0]);
 
-            if (BLEMgrImpl().mFlags.Has(Flags::kFastAdvertisingEnabled))
+            if (BLEMgrImpl().mFlags.Has(Flags::kFastAdvertisingEnabled) && p_conn_param->host_id == 0)
             {
                 ChipLogProgress(DeviceLayer, "Stop Slow Advertisement timer");
                 BLEMgrImpl().mFlags.Clear(Flags::kFastAdvertisingEnabled);
@@ -483,6 +478,7 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
             err("Disconnect, ID:%d, Reason:0x%02x\n", p_disconn_param->host_id, p_disconn_param->reason);
             if (p_disconn_param->host_id == 0 )
             {
+                ChipLogProgress(DeviceLayer, "Stop ble connection timeout timer");
                 BLEMgrImpl().CancelBleConnTimeoutTimer();
                 isBleLink0Connected = false;
             }
@@ -1591,7 +1587,6 @@ exit:
 
 void BLEManagerImpl::CancelBleConnTimeoutTimer(void)
 {
-    ChipLogProgress(DeviceLayer, "Stop ble connection timeout timer");
     if (xTimerIsTimerActive(sbleConnTimeoutTimer) && xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
     {
         ChipLogError(DeviceLayer, "Failed to stop Ble Conn timeout timer");

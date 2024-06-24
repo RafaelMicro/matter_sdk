@@ -11,7 +11,7 @@
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 __STACK_SIZE = DEFINED(__STACK_SIZE) ? __STACK_SIZE : 0x200;
-__HEAP_SIZE = DEFINED(__HEAP_SIZE) ? __HEAP_SIZE : 26K;
+__HEAP_SIZE = DEFINED(__HEAP_SIZE) ? __HEAP_SIZE : 31K;
 
 MEMORY
 {

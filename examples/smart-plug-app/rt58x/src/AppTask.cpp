@@ -476,19 +476,6 @@ void AppTask::InitServer(intptr_t arg)
 #if RT58x_OTA_ENABLED
     OTAConfig::Init();
 #endif
-
-
-    // reboot count usage demo
-    // uint32_t rebootCount = -1;
-    // ChipLogProgress(NotSpecified, "+++++++++++++++++++++");
-    // ConfigurationMgr().GetRebootCount(rebootCount);
-    // ChipLogProgress(NotSpecified, "Current rebootCount: %d", rebootCount);
-    // rebootCount += 1;
-    // ConfigurationMgr().StoreRebootCount(rebootCount);
-    // uint32_t modifiedCount = -1;
-    // ConfigurationMgr().GetRebootCount(modifiedCount);
-    // ChipLogProgress(NotSpecified, "Modified rebootCount: %d", modifiedCount);
-    // ChipLogProgress(NotSpecified, "+++++++++++++++++++++");
 }
 
 void AppTask::UpdateStatusLED()

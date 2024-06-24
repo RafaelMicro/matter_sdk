@@ -306,16 +306,6 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     flash_write_page((uint32_t)&t_bootloader_ota_info, FOTA_UPDATE_BANK_INFO_ADDRESS);
     taskEXIT_CRITICAL();
 
-    chip::DeviceLayer::ConfigurationMgr().GetRebootCount(reboot_cnt);
-
-    if (reboot_cnt > 6)
-    {
-        err("warning!!!\r\n");
-        err("reboot_cnt: %d\r\n", reboot_cnt);
-        reboot_cnt = 0;
-        chip::DeviceLayer::ConfigurationMgr().StoreRebootCount(reboot_cnt);
-    }
-
     // This reboots the device
     ChipLogProgress(SoftwareUpdate, "system restarting...");
     chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(300), HandleRestart, nullptr);

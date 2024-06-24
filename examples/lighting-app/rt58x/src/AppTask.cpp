@@ -683,17 +683,11 @@ CHIP_ERROR AppTask::Init()
 
 void AppTask::FactoryResetCheck()
 {
-    uint32_t i = 0, reboot_cnt;
-
-    ConfigurationMgr().GetRebootCount(reboot_cnt);
-
-    ChipLogProgress(NotSpecified, "Cur reboot cnt : %d", reboot_cnt);
-
-    if(reboot_cnt >= 6)
+    if(rt58x_factory_reset_check())
     {
-        ChipLogProgress(NotSpecified, "[Reboot] - Factory Reset (>6)" );
+        ChipLogProgress(NotSpecified, "Do Factory Reset" );
 
-        for(i=0;i<3;i++)
+        for(int i=0;i<3;i++)
         {
             rt58x_led_level_ctl(2, 120);
             rt58x_led_level_ctl(3, 120);
@@ -707,16 +701,6 @@ void AppTask::FactoryResetCheck()
         chip::Server::GetInstance().ScheduleFactoryReset();
  
     }
-    else
-    {
-        reboot_cnt++;
-        ConfigurationMgr().StoreRebootCount(reboot_cnt);
-    }
-
-
-    sAppTask.StartTimer(FACTORY_RESET_TRIGGER_TIMEOUT);
-    sAppTask.mFunction = kFunction_ClearRebootCnt;
-
 }
 
 CHIP_ERROR AppTask::StartAppTask()
@@ -831,14 +815,6 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
         chip::Server::GetInstance().ScheduleFactoryReset();
-    }
-
-    else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_ClearRebootCnt)
-    {
-        sAppTask.mFunction = kFunction_NoneSelected;
-        rebootCount = 0;
-        ConfigurationMgr().StoreRebootCount(rebootCount);
-        sAppTask.CancelTimer();
     }
 }
 

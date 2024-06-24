@@ -9,6 +9,7 @@
 #include <platform/RT58x/BLEManagerImpl.h>
 #include <app/server/Server.h>
 #include <app/clusters/on-off-server/on-off-server.h>
+#include <app-common/zap-generated/attributes/Accessors.h>
 #include <app/InteractionModelEngine.h>
 /**********************************************************
  * Device Config
@@ -108,4 +109,12 @@ typedef struct __attribute__((packed))
     uint32_t cluster_id;
     uint32_t attr_id;
 } attr_resp_t;
+typedef struct __attribute__((packed))
+{
+    uint8_t cmd;
+    uint8_t len;
+    uint16_t ep;
+    uint32_t cluster_id;
+    uint32_t attr_id;
+} report_attr_t;
 #endif //RAF_MULTI_CONTROL_H

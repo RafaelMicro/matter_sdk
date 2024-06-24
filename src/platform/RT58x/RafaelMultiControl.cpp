@@ -80,7 +80,7 @@ void RafMultiControlManager::SendCommandToBle(intptr_t arg)
 void RafMultiControlManager::ReportOnoff(uint16_t ep, bool onoff)
 {
     ChipDeviceEvent AppToBleEvent;
-    attr_resp_t report_attr_resp;
+    report_attr_t report_attr_resp;
     uint32_t cluster_id = 0x0006;
     uint32_t attr_id = 0x0000;
     uint8_t buf_len = 13;
@@ -104,7 +104,7 @@ void RafMultiControlManager::ReportOnoff(uint16_t ep, bool onoff)
 void RafMultiControlManager::ReportLevel(uint16_t ep, uint8_t level)
 {
     ChipDeviceEvent AppToBleEvent;
-    attr_resp_t report_attr_resp;
+    report_attr_t report_attr_resp;
     uint32_t cluster_id = 0x0008;
     uint32_t attr_id = 0x0000;
     uint8_t buf_len = 13;
@@ -339,7 +339,22 @@ uint8_t RafMultiControlManager::HandleWriteAttribute(const ChipDeviceEvent * aEv
                 memcpy(buf+buf_len-1, &onoff, sizeof(onoff));
             }
         }
-    }    
+        else if(write_attr_resp.cluster_id == 0x0008 && write_attr_resp.attr_id == 0x0000)
+        {
+            uint8_t level = value[10];
+            status = OnOffServer::Instance().setOnOffValue(write_attr_resp.ep, (level > 1),false);
+            status = Clusters::LevelControl::Attributes::CurrentLevel::Set(write_attr_resp.ep, (level > 1) ? level:1);
+            if (status == Status::Success)
+            {
+                write_attr_resp.cmd = WriteAttributeResp;
+                write_attr_resp.len = 12;
+                write_attr_resp.status = RAF_STATUS_SUCCESS;
+                buf_len = 2+write_attr_resp.len;
+                memcpy(buf, &write_attr_resp, buf_len-1);
+                memcpy(buf+buf_len-1, &level, sizeof(level));
+            }
+        }
+    }
     if (status != Status::Success)
     {
         write_attr_resp.cmd = WriteAttributeResp;

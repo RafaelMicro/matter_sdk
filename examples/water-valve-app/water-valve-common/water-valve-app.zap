@@ -51,7 +51,7 @@
         }
       ],
       "deviceVersions": [
-        2
+        1
       ],
       "deviceIdentifiers": [
         22
@@ -302,22 +302,6 @@
               "maxInterval": 65534,
               "reportableChange": 0
             }
-          ],
-          "events": [
-            {
-              "name": "AccessControlEntryChanged",
-              "code": 0,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "AccessControlExtensionChanged",
-              "code": 1,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            }
           ]
         },
         {
@@ -516,8 +500,8 @@
               "bounded": 0,
               "defaultValue": null,
               "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
+              "minInterval": 0,
+              "maxInterval": 65344,
               "reportableChange": 0
             },
             {
@@ -599,29 +583,6 @@
               "minInterval": 0,
               "maxInterval": 65344,
               "reportableChange": 0
-            }
-          ],
-          "events": [
-            {
-              "name": "StartUp",
-              "code": 0,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "ShutDown",
-              "code": 1,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "Leave",
-              "code": 2,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
             }
           ]
         },
@@ -806,29 +767,6 @@
               "minInterval": 0,
               "maxInterval": 65344,
               "reportableChange": 0
-            }
-          ],
-          "events": [
-            {
-              "name": "StateTransition",
-              "code": 0,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "VersionApplied",
-              "code": 1,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "DownloadError",
-              "code": 2,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
             }
           ]
         },
@@ -1054,7 +992,7 @@
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "6",
+              "defaultValue": "0",
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -1323,58 +1261,6 @@
           ]
         },
         {
-          "name": "Diagnostic Logs",
-          "code": 50,
-          "mfgCode": null,
-          "define": "DIAGNOSTIC_LOGS_CLUSTER",
-          "side": "server",
-          "enabled": 1,
-          "commands": [
-            {
-              "name": "RetrieveLogsRequest",
-              "code": 0,
-              "mfgCode": null,
-              "source": "client",
-              "isIncoming": 1,
-              "isEnabled": 1
-            }
-          ],
-          "attributes": [
-            {
-              "name": "FeatureMap",
-              "code": 65532,
-              "mfgCode": null,
-              "side": "server",
-              "type": "bitmap32",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "ClusterRevision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "1",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            }
-          ]
-        },
-        {
           "name": "General Diagnostics",
           "code": 51,
           "mfgCode": null,
@@ -1584,15 +1470,6 @@
               "maxInterval": 65344,
               "reportableChange": 0
             }
-          ],
-          "events": [
-            {
-              "name": "BootReason",
-              "code": 3,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            }
           ]
         },
         {
@@ -1602,6 +1479,16 @@
           "define": "SOFTWARE_DIAGNOSTICS_CLUSTER",
           "side": "server",
           "enabled": 1,
+          "commands": [
+            {
+              "name": "ResetWatermarks",
+              "code": 0,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            }
+          ],
           "attributes": [
             {
               "name": "ThreadMetrics",
@@ -1663,72 +1550,8 @@
               "bounded": 0,
               "defaultValue": null,
               "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "GeneratedCommandList",
-              "code": 65528,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "AcceptedCommandList",
-              "code": 65529,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "EventList",
-              "code": 65530,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "AttributeList",
-              "code": 65531,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
+              "minInterval": 0,
+              "maxInterval": 65344,
               "reportableChange": 0
             },
             {
@@ -1759,8 +1582,8 @@
               "bounded": 0,
               "defaultValue": "1",
               "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
+              "minInterval": 0,
+              "maxInterval": 65344,
               "reportableChange": 0
             }
           ]
@@ -1772,6 +1595,16 @@
           "define": "THREAD_NETWORK_DIAGNOSTICS_CLUSTER",
           "side": "server",
           "enabled": 1,
+          "commands": [
+            {
+              "name": "ResetCounts",
+              "code": 0,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            }
+          ],
           "attributes": [
             {
               "name": "Channel",
@@ -1859,22 +1692,6 @@
               "mfgCode": null,
               "side": "server",
               "type": "octet_string",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65344,
-              "reportableChange": 0
-            },
-            {
-              "name": "OverrunCount",
-              "code": 6,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int64u",
               "included": 1,
               "storageOption": "External",
               "singleton": 0,
@@ -2087,7 +1904,7 @@
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "2",
+              "defaultValue": "1",
               "reportable": 1,
               "minInterval": 0,
               "maxInterval": 65344,
@@ -2761,29 +2578,29 @@
     },
     {
       "id": 2,
-      "name": "MA-smokecoalarm",
+      "name": "MA-water-valve",
       "deviceTypeRef": {
-        "code": 118,
+        "code": 66,
         "profileId": 259,
-        "label": "MA-smokecoalarm",
-        "name": "MA-smokecoalarm"
+        "label": "MA-water-valve",
+        "name": "MA-water-valve"
       },
       "deviceTypes": [
         {
-          "code": 118,
+          "code": 66,
           "profileId": 259,
-          "label": "MA-smokecoalarm",
-          "name": "MA-smokecoalarm"
+          "label": "MA-water-valve",
+          "name": "MA-water-valve"
         }
       ],
       "deviceVersions": [
         1
       ],
       "deviceIdentifiers": [
-        118
+        66
       ],
-      "deviceTypeName": "MA-smokecoalarm",
-      "deviceTypeCode": 118,
+      "deviceTypeName": "MA-water-valve",
+      "deviceTypeCode": 66,
       "deviceTypeProfileId": 259,
       "clusters": [
         {
@@ -3105,186 +2922,25 @@
           ]
         },
         {
-          "name": "Power Source",
-          "code": 47,
+          "name": "Valve Configuration and Control",
+          "code": 129,
           "mfgCode": null,
-          "define": "POWER_SOURCE_CLUSTER",
+          "define": "VALVE_CONFIGURATION_AND_CONTROL_CLUSTER",
           "side": "server",
           "enabled": 1,
-          "attributes": [
-            {
-              "name": "Status",
-              "code": 0,
-              "mfgCode": null,
-              "side": "server",
-              "type": "PowerSourceStatusEnum",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "Order",
-              "code": 1,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int8u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "Description",
-              "code": 2,
-              "mfgCode": null,
-              "side": "server",
-              "type": "char_string",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "EndpointList",
-              "code": 31,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "GeneratedCommandList",
-              "code": 65528,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "AcceptedCommandList",
-              "code": 65529,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "EventList",
-              "code": 65530,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "AttributeList",
-              "code": 65531,
-              "mfgCode": null,
-              "side": "server",
-              "type": "array",
-              "included": 1,
-              "storageOption": "External",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": null,
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "FeatureMap",
-              "code": 65532,
-              "mfgCode": null,
-              "side": "server",
-              "type": "bitmap32",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "ClusterRevision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "server",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "1",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            }
-          ]
-        },
-        {
-          "name": "Smoke CO Alarm",
-          "code": 92,
-          "mfgCode": null,
-          "define": "SMOKE_CO_ALARM_CLUSTER",
-          "side": "server",
-          "enabled": 1,
+          "apiMaturity": "provisional",
           "commands": [
             {
-              "name": "SelfTestRequest",
+              "name": "Open",
               "code": 0,
+              "mfgCode": null,
+              "source": "client",
+              "isIncoming": 1,
+              "isEnabled": 1
+            },
+            {
+              "name": "Close",
+              "code": 1,
               "mfgCode": null,
               "source": "client",
               "isIncoming": 1,
@@ -3293,59 +2949,59 @@
           ],
           "attributes": [
             {
-              "name": "ExpressedState",
+              "name": "OpenDuration",
               "code": 0,
               "mfgCode": null,
               "side": "server",
-              "type": "ExpressedStateEnum",
+              "type": "elapsed_s",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "0",
+              "defaultValue": "",
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
               "reportableChange": 0
             },
             {
-              "name": "SmokeState",
+              "name": "DefaultOpenDuration",
               "code": 1,
               "mfgCode": null,
               "side": "server",
-              "type": "AlarmStateEnum",
+              "type": "elapsed_s",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "0",
+              "defaultValue": "",
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
               "reportableChange": 0
             },
             {
-              "name": "COState",
-              "code": 2,
-              "mfgCode": null,
-              "side": "server",
-              "type": "AlarmStateEnum",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "0",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "BatteryAlert",
+              "name": "RemainingDuration",
               "code": 3,
               "mfgCode": null,
               "side": "server",
-              "type": "AlarmStateEnum",
+              "type": "elapsed_s",
+              "included": 1,
+              "storageOption": "External",
+              "singleton": 0,
+              "bounded": 0,
+              "defaultValue": null,
+              "reportable": 1,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
+              "name": "CurrentState",
+              "code": 4,
+              "mfgCode": null,
+              "side": "server",
+              "type": "ValveStateEnum",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3357,11 +3013,11 @@
               "reportableChange": 0
             },
             {
-              "name": "TestInProgress",
+              "name": "TargetState",
               "code": 5,
               "mfgCode": null,
               "side": "server",
-              "type": "boolean",
+              "type": "ValveStateEnum",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3373,11 +3029,11 @@
               "reportableChange": 0
             },
             {
-              "name": "HardwareFaultAlert",
+              "name": "CurrentLevel",
               "code": 6,
               "mfgCode": null,
               "side": "server",
-              "type": "boolean",
+              "type": "percent",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3389,43 +3045,11 @@
               "reportableChange": 0
             },
             {
-              "name": "EndOfServiceAlert",
+              "name": "TargetLevel",
               "code": 7,
               "mfgCode": null,
               "side": "server",
-              "type": "EndOfServiceEnum",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "InterconnectSmokeAlarm",
-              "code": 8,
-              "mfgCode": null,
-              "side": "server",
-              "type": "AlarmStateEnum",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "",
-              "reportable": 1,
-              "minInterval": 1,
-              "maxInterval": 65534,
-              "reportableChange": 0
-            },
-            {
-              "name": "InterconnectCOAlarm",
-              "code": 9,
-              "mfgCode": null,
-              "side": "server",
-              "type": "AlarmStateEnum",
+              "type": "percent",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3510,7 +3134,7 @@
               "storageOption": "RAM",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "3",
+              "defaultValue": "2",
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -3535,43 +3159,15 @@
           ],
           "events": [
             {
-              "name": "SmokeAlarm",
+              "name": "ValveStateChanged",
               "code": 0,
               "mfgCode": null,
               "side": "server",
               "included": 1
             },
             {
-              "name": "COAlarm",
+              "name": "ValveFault",
               "code": 1,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "LowBattery",
-              "code": 2,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "HardwareFault",
-              "code": 3,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "EndOfService",
-              "code": 4,
-              "mfgCode": null,
-              "side": "server",
-              "included": 1
-            },
-            {
-              "name": "SelfTestComplete",
-              "code": 5,
               "mfgCode": null,
               "side": "server",
               "included": 1
@@ -3591,7 +3187,7 @@
       "parentEndpointIdentifier": null
     },
     {
-      "endpointTypeName": "MA-smokecoalarm",
+      "endpointTypeName": "MA-water-valve",
       "endpointTypeIndex": 1,
       "profileId": 259,
       "endpointId": 1,

@@ -96,9 +96,27 @@ void SmokeManager::SelfTestTimerEventHandler(TimerHandle_t xTimer)
 }
 void SmokeManager::ToggleSmokeState()
 {
-    mSmokeAlarmState = (mSmokeAlarmState == AlarmStateEnum::kNormal)  ? AlarmStateEnum::kWarning  :
-                       (mSmokeAlarmState == AlarmStateEnum::kWarning) ? AlarmStateEnum::kCritical :
-                                                                        AlarmStateEnum::kNormal;
+    switch(mSmokeAlarmState)
+    {
+        case AlarmStateEnum::kNormal:
+        {
+            mSmokeAlarmState = AlarmStateEnum::kWarning;
+            ChipLogProgress(NotSpecified,"Smoke State: Warning");
+        }
+        break;
+        case AlarmStateEnum::kWarning:
+        {
+            mSmokeAlarmState = AlarmStateEnum::kCritical;
+            ChipLogProgress(NotSpecified,"Smoke State: Critical");
+        }
+        break;
+        case AlarmStateEnum::kCritical:
+        {
+            mSmokeAlarmState = AlarmStateEnum::kNormal;
+            ChipLogProgress(NotSpecified,"Smoke State: Normal");
+        }
+        break;
+    }
     PlatformMgr().LockChipStack();
     SmokeCoAlarmServer::Instance().SetSmokeState(1, mSmokeAlarmState);
     SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
@@ -107,9 +125,27 @@ void SmokeManager::ToggleSmokeState()
 
 void SmokeManager::ToggleCOState()
 {
-    mCOAlarmState = (mCOAlarmState == AlarmStateEnum::kNormal)  ? AlarmStateEnum::kWarning  :
-                    (mCOAlarmState == AlarmStateEnum::kWarning) ? AlarmStateEnum::kCritical :
-                                                                  AlarmStateEnum::kNormal;
+    switch(mCOAlarmState)
+    {
+        case AlarmStateEnum::kNormal:
+        {
+            mCOAlarmState = AlarmStateEnum::kWarning;
+            ChipLogProgress(NotSpecified,"CO State: Warning");
+        }
+        break;
+        case AlarmStateEnum::kWarning:
+        {
+            mCOAlarmState = AlarmStateEnum::kCritical;
+            ChipLogProgress(NotSpecified,"CO State: Critical");
+        }
+        break;
+        case AlarmStateEnum::kCritical:
+        {
+            mCOAlarmState = AlarmStateEnum::kNormal;
+            ChipLogProgress(NotSpecified,"CO State: Normal");
+        }
+        break;
+    }
     PlatformMgr().LockChipStack();
     SmokeCoAlarmServer::Instance().SetCOState(1, mCOAlarmState);
     SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);

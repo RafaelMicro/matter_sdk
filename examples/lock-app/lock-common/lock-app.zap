@@ -35,7 +35,7 @@
   "endpointTypes": [
     {
       "id": 1,
-      "name": "Anonymous Endpoint Type",
+      "name": "MA-rootdevice",
       "deviceTypeRef": {
         "code": 22,
         "profileId": 259,
@@ -4279,7 +4279,7 @@
   ],
   "endpoints": [
     {
-      "endpointTypeName": "Anonymous Endpoint Type",
+      "endpointTypeName": "MA-rootdevice",
       "endpointTypeIndex": 0,
       "profileId": 259,
       "endpointId": 0,

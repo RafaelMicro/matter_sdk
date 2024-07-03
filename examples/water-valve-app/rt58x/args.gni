@@ -32,7 +32,7 @@ chip_progress_logging = true
 chip_detail_logging = false
 
 #enable matter+ble multi control
-raf_enable_multi_control = false 
+raf_enable_multi_control = false
 
 pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"
 pw_assert_BACKEND = "$dir_pw_assert_log:check_backend"

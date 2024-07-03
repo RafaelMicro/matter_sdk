@@ -21,7 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt58xPlatform.h"
-#include "init_smart-plug-app_rt58xPlatform.h"
+#include "init_water-valve-app_rt58xPlatform.h"
 #include <DeviceInfoProviderImpl.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <lib/support/CHIPPlatformMemory.h>
@@ -55,7 +55,7 @@ int main(void)
     CHIP_ERROR err;
 
     init_rt58xPlatform();
-    init_smart_plug_app_rt58xPlatform();
+    init_water_valve_app_rt58xPlatform();
 
     //mbedtls_platform_set_calloc_free(CHIPPlatformMemoryCalloc, CHIPPlatformMemoryFree);
 
@@ -72,7 +72,7 @@ int main(void)
 #endif
 
     info( "==================================================\r\n");
-    info( "Rafael-Smart-Plug-example(Matter 1.3) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    info( "Rafael-Water-Valve-example(Matter 1.3) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     info( "==================================================\r\n");
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)

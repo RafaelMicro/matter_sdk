@@ -1156,7 +1156,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
         status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
         if (status != BLE_ERR_OK)
         {
-            info_color(LOG_RED, "ble_cmd_default_mtu_size_set() status = %d\n", status);
+            ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
             err = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
@@ -1372,7 +1372,7 @@ bool BLEManagerImpl::CloseConnection(BLE_CONNECTION_OBJECT conId)
 
     if (status != BLE_ERR_OK)
     {
-        ChipLogError(DeviceLayer, "sl_bt_connection_close() failed: %d", status);
+        ChipLogError(DeviceLayer, "ble_cmd_conn_terminate() failed: %d", status);
     }
 
     return (status == BLE_ERR_OK);

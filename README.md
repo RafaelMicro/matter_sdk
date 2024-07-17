@@ -78,6 +78,7 @@ example on RT58x series of SoCs
     -   Application Usage Guide
         -   [Matter over Thread Demo Overview](./rafael_docs/matter_over_thread_overview.md)
         -   [Flash the Application Image](./rafael_docs/flash_application.md)
+        -   [RT58x Matter SDK Application Note](./rafael_docs/RT58x_Matter_SDK_Application_Note.md)
     -   [Factory Data](./rafael_docs/Rafael_Factory_Data.md)
     -   [Matter OTA](./rafael_docs/Rafael_Software_Update.md)
 -   Application development Guide

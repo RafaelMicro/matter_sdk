@@ -93,6 +93,8 @@ private:
     {
         kFunction_NoneSelected   = 0,
         kFunction_FactoryReset   = 1,
+        kFunction_Switch_1       = 2,
+        kFunction_Switch_2       = 3,
 
         kFunction_Invalid
     } Function;

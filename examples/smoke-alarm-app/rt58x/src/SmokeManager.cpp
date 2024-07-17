@@ -38,6 +38,8 @@ constexpr EndpointId kContactEndpoint = 1;
 
 TimerHandle_t sSmokeTimer;
 StaticTimer_t sStaticSmokeTimerStruct;
+TimerHandle_t sLedTimer;
+StaticTimer_t sStaticLedTimerStruct;
 
 
 static std::array<ExpressedStateEnum, SmokeCoAlarmServer::kPriorityOrderLength> sPriorityOrder = {
@@ -69,6 +71,13 @@ CHIP_ERROR SmokeManager::Init()
         ChipLogProgress(NotSpecified, "sSmokeTimer timer create failed");
         return CHIP_ERROR_NO_MEMORY;
     }
+    sLedTimer = xTimerCreateStatic("ledTmr", pdMS_TO_TICKS(100), true, nullptr, AlarmLedTimerHandler,
+                                      &sStaticLedTimerStruct);
+    if(sLedTimer == NULL)
+    {
+        ChipLogProgress(NotSpecified, "sSmokeTimer timer create failed");
+        return CHIP_ERROR_NO_MEMORY;
+    }
 
     return CHIP_NO_ERROR;
 }
@@ -94,26 +103,26 @@ void SmokeManager::SelfTestTimerEventHandler(TimerHandle_t xTimer)
     ChipLogProgress(Zcl, "End self-testing");
 
 }
-void SmokeManager::ToggleSmokeState()
+void SmokeManager::ToggleSmokeState(AlarmStateEnum  AlarmState)
 {
-    switch(mSmokeAlarmState)
+    switch(AlarmState)
     {
         case AlarmStateEnum::kNormal:
+        {
+            mSmokeAlarmState = AlarmStateEnum::kNormal;
+            ChipLogProgress(NotSpecified,"Smoke State: Normal");
+        }
+        break;
+        case AlarmStateEnum::kWarning:
         {
             mSmokeAlarmState = AlarmStateEnum::kWarning;
             ChipLogProgress(NotSpecified,"Smoke State: Warning");
         }
         break;
-        case AlarmStateEnum::kWarning:
+        case AlarmStateEnum::kCritical:
         {
             mSmokeAlarmState = AlarmStateEnum::kCritical;
             ChipLogProgress(NotSpecified,"Smoke State: Critical");
-        }
-        break;
-        case AlarmStateEnum::kCritical:
-        {
-            mSmokeAlarmState = AlarmStateEnum::kNormal;
-            ChipLogProgress(NotSpecified,"Smoke State: Normal");
         }
         break;
     }
@@ -122,32 +131,19 @@ void SmokeManager::ToggleSmokeState()
     SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
     PlatformMgr().UnlockChipStack();
 }
-
-void SmokeManager::ToggleCOState()
+void SmokeManager::AlarmLedTimerHandler(TimerHandle_t xTimer)
 {
-    switch(mCOAlarmState)
+    bsp_led_toggle(BSP_LED_1);
+}
+void SmokeManager::HandleSmokeState(uint8_t SmokeAlarmState)
+{
+    if(SmokeAlarmState == 0 && sLedTimer && xTimerIsTimerActive(sLedTimer))
     {
-        case AlarmStateEnum::kNormal:
-        {
-            mCOAlarmState = AlarmStateEnum::kWarning;
-            ChipLogProgress(NotSpecified,"CO State: Warning");
-        }
-        break;
-        case AlarmStateEnum::kWarning:
-        {
-            mCOAlarmState = AlarmStateEnum::kCritical;
-            ChipLogProgress(NotSpecified,"CO State: Critical");
-        }
-        break;
-        case AlarmStateEnum::kCritical:
-        {
-            mCOAlarmState = AlarmStateEnum::kNormal;
-            ChipLogProgress(NotSpecified,"CO State: Normal");
-        }
-        break;
+        xTimerStop(sLedTimer, 0);
+        bsp_led_Off(BSP_LED_1);
     }
-    PlatformMgr().LockChipStack();
-    SmokeCoAlarmServer::Instance().SetCOState(1, mCOAlarmState);
-    SmokeCoAlarmServer::Instance().SetExpressedStateByPriority(1, sPriorityOrder);
-    PlatformMgr().UnlockChipStack();
+    else if(sLedTimer && !xTimerIsTimerActive(sLedTimer))
+    {
+        xTimerStart(sLedTimer, 0);
+    }
 }

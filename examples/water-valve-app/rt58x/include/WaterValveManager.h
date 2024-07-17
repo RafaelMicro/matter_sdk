@@ -44,6 +44,9 @@ public:
     chip::app::DataModel::Nullable<chip::Percent> HandleOpenValve(chip::app::DataModel::Nullable<chip::Percent> level) override;
     CHIP_ERROR HandleCloseValve() override;
     void HandleRemainingDurationTick(uint32_t duration) override;
+    
+    void OpenValve(void);
+    void CloseValve(void);
 
 private:
     uint8_t mEndpoint;

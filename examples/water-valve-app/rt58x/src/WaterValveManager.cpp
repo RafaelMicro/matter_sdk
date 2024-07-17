@@ -28,7 +28,7 @@
 #include <app-common/zap-generated/cluster-enums.h>
 using namespace chip;
 using namespace chip::app;
-using namespace chip::app::Clusters::ValveConfigurationAndControl;
+using namespace chip::app::Clusters;
 using namespace chip::DeviceLayer;
 WaterValveManager WaterValveManager::sValve;
 
@@ -44,8 +44,12 @@ DataModel::Nullable<chip::Percent> WaterValveManager::HandleOpenValve(DataModel:
     ChipLogProgress(Zcl, "Valve open at level %d%%", level.Value());
 
     mCurrentLevelPercent = level.Value();
+    if(mCurrentLevelPercent > 0)
+    {
+        gpio_pin_clear(20);
+    }
     
-    UpdateCurrentState(mEndpoint, ValveStateEnum::kOpen);
+    ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kOpen);
     return level;
 }
 CHIP_ERROR WaterValveManager::HandleCloseValve()
@@ -53,11 +57,34 @@ CHIP_ERROR WaterValveManager::HandleCloseValve()
     ChipLogProgress(Zcl, "Valve closed");
 
     mCurrentLevelPercent = 0;
+    gpio_pin_set(20);
 
-    UpdateCurrentState(mEndpoint, ValveStateEnum::kClosed);
+    ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kClosed);
     return CHIP_NO_ERROR;
 }
 void WaterValveManager::HandleRemainingDurationTick(uint32_t duration)
 {
     ChipLogProgress(Zcl, "Valve will close in %ds", duration);
+}
+void WaterValveManager::OpenValve(void)
+{
+    ChipLogProgress(Zcl, "OpenValve");
+    DataModel::Nullable<Percent> openLevel;
+    DataModel::Nullable<uint32_t> duration;
+    openLevel.SetNonNull(100);
+    duration.SetNull();
+    PlatformMgr().LockChipStack();
+    ValveConfigurationAndControl::SetValveLevel(mEndpoint, openLevel, duration);
+    PlatformMgr().UnlockChipStack();
+}
+void WaterValveManager::CloseValve(void)
+{
+    ChipLogProgress(Zcl, "CloseValve");
+    DataModel::Nullable<Percent> openLevel;
+    DataModel::Nullable<uint32_t> duration;
+    openLevel.SetNonNull(0);
+    duration.SetNull();
+    PlatformMgr().LockChipStack();
+    ValveConfigurationAndControl::CloseValve(mEndpoint);
+    PlatformMgr().UnlockChipStack();
 }

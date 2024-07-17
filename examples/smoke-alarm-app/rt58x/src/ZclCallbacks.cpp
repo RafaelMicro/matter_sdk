@@ -43,11 +43,10 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         ChipLogProgress(Zcl, "Identify attribute ID: " ChipLogFormatMEI " Type: %u Value: %u, length %u",
                         ChipLogValueMEI(attributeId), type, *value, size);
     }
-    // else if (clusterId == SmokeCoAlarm::Id)
-    // {
-    //     ChipLogProgress(Zcl, "SmokeCoAlarm attribute ID: " ChipLogFormatMEI " Type: %u Value: %u, length %u",
-    //                     ChipLogValueMEI(attributeId), type, *value, size);
-    // }
+    else if (clusterId == SmokeCoAlarm::Id && attributeId == SmokeCoAlarm::Attributes::SmokeState::Id)
+    {
+        SmokeMgr().HandleSmokeState(*value);
+    }
 }
 
 void emberAfPluginSmokeCoAlarmSelfTestRequestCommand(EndpointId endpointId)

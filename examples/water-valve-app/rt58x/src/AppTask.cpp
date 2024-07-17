@@ -640,6 +640,44 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;
+    case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            if (!sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.mFunction = kFunction_Switch_1;
+                sAppTask.mFunctionSwitchActive = true;
+            }
+        }
+        else
+        {
+            if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
+            {
+                ValveMgr().OpenValve();
+                sAppTask.mFunction = kFunction_NoneSelected;
+                sAppTask.mFunctionSwitchActive = false;                
+            }
+        }
+        break;
+    case (AppEvent::AppActionTypes::kActionTypes_Switch_2):
+        if (aEvent->ButtonEvent.Action == true)
+        {
+            if (!sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.mFunction = kFunction_Switch_2;
+                sAppTask.mFunctionSwitchActive = true;
+            }
+        }
+        else
+        {
+            if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_2)
+            {
+                ValveMgr().CloseValve();
+                sAppTask.mFunction = kFunction_NoneSelected;
+                sAppTask.mFunctionSwitchActive = false;
+            }
+        }
+        break;
     default:
         break;
     }
@@ -647,7 +685,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
 
 void AppTask::ButtonEventHandler(bsp_event_t event)
 {
-    // ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event), bsp_button_state_get(event-5));
+    ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event), bsp_button_state_get(event-5));
     switch (event)
     {
     case (BSP_EVENT_BUTTONS_0):
@@ -656,6 +694,28 @@ void AppTask::ButtonEventHandler(bsp_event_t event)
             button_event.Type                  = AppEvent::kEventType_Button;
             button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_FactoryReset;
             button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_0)?0:1;
+            // Hand off to Functionality handler - depends on duration of press
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;
+    case (BSP_EVENT_BUTTONS_1):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_1;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_1)?0:1;
+            // Hand off to Functionality handler - depends on duration of press
+            button_event.Handler = FunctionHandler;
+            xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
+        }
+        break;
+    case (BSP_EVENT_BUTTONS_2):
+        {
+            AppEvent button_event              = {};
+            button_event.Type                  = AppEvent::kEventType_Button;
+            button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_2;
+            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_2)?0:1;
             // Hand off to Functionality handler - depends on duration of press
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);

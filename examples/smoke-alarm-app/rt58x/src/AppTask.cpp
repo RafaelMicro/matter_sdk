@@ -575,8 +575,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_2)
             {
-                SmokeMgr().ToggleSmokeState();
-           
+                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kWarning);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }
@@ -595,8 +594,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_3)
             {
-                SmokeMgr().ToggleCOState();
-           
+                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kNormal);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }

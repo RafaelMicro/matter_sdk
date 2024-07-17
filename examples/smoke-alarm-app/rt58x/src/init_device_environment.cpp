@@ -39,7 +39,7 @@ typedef struct {
 
 static flash_info_t flash_table[32];
 
-static void init_contact_sensor_pin_mux(void)
+static void init_smoke_alarm_pin_mux(void)
 {
     gpio_cfg_output(20);
     gpio_cfg_output(21);
@@ -101,7 +101,7 @@ void init_device_environment(void)
 {
     timer_config_mode_t cfg;
 
-    init_contact_sensor_pin_mux();
+    init_smoke_alarm_pin_mux();
 
     cfg.int_en = ENABLE;
     cfg.mode = TIMER_PERIODIC_MODE;

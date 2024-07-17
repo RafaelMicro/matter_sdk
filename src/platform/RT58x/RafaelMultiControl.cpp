@@ -266,12 +266,18 @@ uint8_t RafMultiControlManager::HandleCustomCommand(const ChipDeviceEvent * aEve
     uint8_t cmd_type = aEvent->TRSPData.data[0];
     uint8_t len = aEvent->TRSPData.data[1];
     uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t command[len+1];
     uint8_t buf_len = 0;
     if(len > 0)
     {
-        memcpy(buf, value, len+1);
-        buf[len] = '\0';
-        info_color(LOG_RED, "receive custom command %s\n", buf);
+        memcpy(command, value, len);
+        command[len] = '\0';
+        info_color(LOG_RED, "receive custom command %s\n", command);
+
+        buf[buf_len++] = CustomCommandResp;
+        buf[buf_len++] = len;
+        memcpy(buf+buf_len, value, len);
+        buf_len += len;
     }
     return buf_len;
 }

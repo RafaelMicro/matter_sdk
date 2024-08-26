@@ -48,7 +48,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     {
         PlugMgr().InitiateAction(*value ? SmartPlugManager::ON_ACTION : SmartPlugManager::OFF_ACTION, 0, size, value);
     }
-    else if (clusterId == Identify::Id)
+    else if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
     {
         GetAppTask().PostAppIdentify();
     }

@@ -37,18 +37,24 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     ClusterId clusterId     = path.mClusterId;
     AttributeId attributeId = path.mAttributeId;
     ChipLogProgress(NotSpecified,"Cluster 0x%x Ep %x Attr %x", clusterId, endpoint, attributeId);
-    VerifyOrReturn(path.mClusterId == DoorLock::Id && path.mAttributeId == DoorLock::Attributes::LockState::Id);
 
-    switch (*value)
+    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
     {
-    case to_underlying(DlLockState::kLocked):
-        BoltLockMgr().InitiateAction(0, BoltLockManager::LOCK_ACTION);
-        break;
-    case to_underlying(DlLockState::kUnlocked):
-        BoltLockMgr().InitiateAction(0, BoltLockManager::UNLOCK_ACTION);
-        break;
-    default:
-        break;
+        GetAppTask().PostAppIdentify();
+    }
+    else if(clusterId == DoorLock::Id)
+    {
+        switch (*value)
+        {
+        case to_underlying(DlLockState::kLocked):
+            BoltLockMgr().InitiateAction(0, BoltLockManager::LOCK_ACTION);
+            break;
+        case to_underlying(DlLockState::kUnlocked):
+            BoltLockMgr().InitiateAction(0, BoltLockManager::UNLOCK_ACTION);
+            break;
+        default:
+            break;
+        }
     }
 }
 

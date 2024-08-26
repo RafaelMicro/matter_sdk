@@ -69,6 +69,7 @@ public:
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
     static void IdentifyHandleOp(AppEvent * aEvent);
+    void PostAppIdentify();
 
 private:
     friend AppTask & GetAppTask(void);

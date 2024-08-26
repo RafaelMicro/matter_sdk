@@ -2187,8 +2187,8 @@ endpoint 1 {
     persist  attribute currentPositionLiftPercentage default = 0;
     persist  attribute currentPositionTiltPercentage default = 0;
     ram      attribute operationalStatus default = 0x00;
-    ram      attribute targetPositionLiftPercent100ths;
-    ram      attribute targetPositionTiltPercent100ths;
+    ram      attribute targetPositionLiftPercent100ths default = 0;
+    ram      attribute targetPositionTiltPercent100ths default = 0;
     ram      attribute endProductType default = 0x00;
     persist  attribute currentPositionLiftPercent100ths default = 0;
     persist  attribute currentPositionTiltPercent100ths default = 0;
@@ -2213,5 +2213,3 @@ endpoint 1 {
     handle command GoToTiltPercentage;
   }
 }
-
-

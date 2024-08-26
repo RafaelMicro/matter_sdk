@@ -230,6 +230,14 @@ void AppTask::IdentifyStopHandler(Identify *)
     sAppTask.PostEvent(&event);
 }
 
+void AppTask::PostAppIdentify()
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Identify;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);    
+}
+
 void AppTask::IdentifyHandleOp(AppEvent * aEvent)
 {
     static uint32_t identifyState = 0;

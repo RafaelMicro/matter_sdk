@@ -26,7 +26,7 @@
 
 using namespace chip::app::Clusters::WindowCovering;
 
-class WindowCovering
+class WindowControl
 {
 public:
     enum class MoveType : uint8_t
@@ -42,11 +42,11 @@ public:
         chip::AttributeId mAttributeId;
     };
 
-    WindowCovering();
-    WindowCovering(WindowManager::WindowCallback_fn aActionInitiated_CB, WindowManager::WindowCallback_fn aActionCompleted_CB);
-    static WindowCovering & Instance()
+    WindowControl();
+    WindowControl(WindowManager::WindowCallback_fn aActionInitiated_CB, WindowManager::WindowCallback_fn aActionCompleted_CB);
+    static WindowControl & Instance()
     {
-        static WindowCovering sInstance;
+        static WindowControl sInstance;
         return sInstance;
     }
 

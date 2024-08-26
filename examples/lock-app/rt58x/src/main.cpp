@@ -73,7 +73,7 @@ int main(void)
         goto exit;
     }
     
-    err = AppTask::GetAppTask().StartAppTask();
+    err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));

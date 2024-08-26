@@ -21,6 +21,7 @@
  */
 
 #include "AppConfig.h"
+#include "AppTask.h"
 
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
@@ -44,10 +45,9 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
 
         // WIP Apply attribute change to Light
     }
-    else if (clusterId == Identify::Id)
+    else if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
     {
-        ChipLogProgress(Zcl, "Identify attribute ID: " ChipLogFormatMEI " Type: %u Value: %u, length %u",
-                        ChipLogValueMEI(attributeId), type, *value, size);
+        GetAppTask().PostAppIdentify();
     }
 }
 

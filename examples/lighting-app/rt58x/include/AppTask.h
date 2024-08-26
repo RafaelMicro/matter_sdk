@@ -67,11 +67,11 @@ public:
 
     void PostLightActionRequest(int32_t aActor, LightingManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
-    void PostAppIdentify();
 
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
     static void IdentifyHandleOp(AppEvent * aEvent);
+    void PostAppIdentify();
 private:
     friend AppTask & GetAppTask(void);
 

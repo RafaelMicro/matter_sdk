@@ -107,7 +107,7 @@ rt58x_executable("window_app") {
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "src/AppTask.cpp",
-    "src/WindowCovering.cpp",
+    "src/WindowControl.cpp",
     "src/WindowManager.cpp",
     "src/ZclCallbacks.cpp",
     "src/init_window_rt58xPlatform.cpp",

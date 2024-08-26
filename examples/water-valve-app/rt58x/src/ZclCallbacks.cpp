@@ -45,4 +45,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     AttributeId attributeId = attributePath.mAttributeId;    
     // ChipLogProgress(Zcl, "Cluster 0x%04x attribute ID: " ChipLogFormatMEI " Type: %u Value: %u, length %u", clusterId,
     //                 ChipLogValueMEI(attributeId), type, *value, size);
+    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
+    {
+        GetAppTask().PostAppIdentify();
+    }
 }

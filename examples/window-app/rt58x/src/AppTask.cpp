@@ -20,7 +20,7 @@
 #include "AppTask.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
-#include "WindowCovering.h"
+#include "WindowControl.h"
 #include <OTAConfig.h>
 
 #include <app-common/zap-generated/ids/Attributes.h>
@@ -225,6 +225,14 @@ void AppTask::IdentifyStopHandler(Identify *)
     sAppTask.PostEvent(&event);
 }
 
+void AppTask::PostAppIdentify()
+{
+    AppEvent event;
+    event.Type               = AppEvent::kEventType_Identify_Identify;
+    event.Handler            = IdentifyHandleOp;
+    sAppTask.PostEvent(&event);    
+}
+
 void AppTask::IdentifyHandleOp(AppEvent * aEvent)
 {
     static uint32_t identifyState = 0;
@@ -327,15 +335,15 @@ void AppTask::ActionEventHandler(AppEvent * aEvent)
     case AppEvent::AppEventTypes::kEventType_MovingUpOrOpen:
         ChipLogProgress(NotSpecified, "Window covering move: up");
         chip::DeviceLayer::PlatformMgr().LockChipStack();
-        WindowCovering::Instance().SetSingleStepTarget(OperationalState::MovingUpOrOpen);
-        WindowCovering::Instance().PositionLEDUpdate(WindowCovering::Instance().GetMoveType());
+        WindowControl::Instance().SetSingleStepTarget(OperationalState::MovingUpOrOpen);
+        WindowControl::Instance().PositionLEDUpdate(WindowControl::Instance().GetMoveType());
         chip::DeviceLayer::PlatformMgr().UnlockChipStack();
         break;
     case AppEvent::AppEventTypes::kEventType_MovingDownOrClose:
         ChipLogProgress(NotSpecified, "Window covering move: down");
         chip::DeviceLayer::PlatformMgr().LockChipStack();
-        WindowCovering::Instance().SetSingleStepTarget(OperationalState::MovingDownOrClose);
-        WindowCovering::Instance().PositionLEDUpdate(WindowCovering::Instance().GetMoveType());
+        WindowControl::Instance().SetSingleStepTarget(OperationalState::MovingDownOrClose);
+        WindowControl::Instance().PositionLEDUpdate(WindowControl::Instance().GetMoveType());
         chip::DeviceLayer::PlatformMgr().UnlockChipStack();
         break;
     default:
@@ -385,9 +393,9 @@ void AppTask::InitServer(intptr_t arg)
     }
     
     // Setup Window
-    WindowCovering(ActionInitiated, ActionCompleted);
-    WindowCovering::Instance().PositionLEDUpdate(WindowCovering::MoveType::LIFT);
-    WindowCovering::Instance().PositionLEDUpdate(WindowCovering::MoveType::TILT);
+    WindowControl(ActionInitiated, ActionCompleted);
+    WindowControl::Instance().PositionLEDUpdate(WindowControl::MoveType::LIFT);
+    WindowControl::Instance().PositionLEDUpdate(WindowControl::MoveType::TILT);
 #if RT58x_OTA_ENABLED
     OTAConfig::Init();
 #endif
@@ -631,15 +639,15 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_1)
             {
-                if (WindowCovering::Instance().GetMoveType() == WindowCovering::MoveType::LIFT)
+                if (WindowControl::Instance().GetMoveType() == WindowControl::MoveType::LIFT)
                 {
                     ChipLogProgress(NotSpecified, "Window Action move: LIFT -> TILT");
-                    WindowCovering::Instance().SetMoveType(WindowCovering::MoveType::TILT);
+                    WindowControl::Instance().SetMoveType(WindowControl::MoveType::TILT);
                 }
                 else
                 {
                     ChipLogProgress(NotSpecified, "Window Action move: TILT -> LIFT");
-                    WindowCovering::Instance().SetMoveType(WindowCovering::MoveType::LIFT);
+                    WindowControl::Instance().SetMoveType(WindowControl::MoveType::LIFT);
                 }
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;

@@ -70,7 +70,7 @@
 
 #if RAFAEL_CERTS_ENABLED
 #define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME               "RafaelMicro"
-#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "WindowCovering"
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME              "WindowControl"
 #endif
 /**
  * CHIP_DEVICE_CONFIG_BLE_DEVICE_NAME_PREFIX

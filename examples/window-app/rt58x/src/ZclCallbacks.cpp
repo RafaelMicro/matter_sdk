@@ -21,7 +21,8 @@
  */
 
 #include "AppConfig.h"
-#include "WindowCovering.h"
+#include "AppTask.h"
+#include "WindowControl.h"
 #include "WindowManager.h"
 #include "init_rt58xPlatform.h"
 #include "init_window_rt58xPlatform.h"
@@ -44,22 +45,26 @@
 #include <lib/support/logging/CHIPLogging.h>
 
 using namespace ::chip;
-// using namespace ::chip::app::Clusters;
-using namespace ::chip::app::Clusters::WindowCovering;
+using namespace ::chip::app::Clusters;
 
 
-void MatterPostAttributeChangeCallback(const app::ConcreteAttributePath & attributePath, uint8_t mask, uint8_t type, uint16_t size,
+void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & attributePath, uint8_t type, uint16_t size,
                                        uint8_t * value)
 {
-    switch (attributePath.mClusterId)
+    EndpointId endpoint     = attributePath.mEndpointId;
+    ClusterId clusterId     = attributePath.mClusterId;
+    AttributeId attributeId = attributePath.mAttributeId;
+    switch (clusterId)
     {
-    case app::Clusters::Identify::Id:
-        ChipLogProgress(Zcl, "Identify cluster ID: " ChipLogFormatMEI " Type: %u Value: %u, length: %u",
-                        ChipLogValueMEI(attributePath.mAttributeId), type, *value, size);
+    case Identify::Id:
+        if (attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
+        {
+            GetAppTask().PostAppIdentify();
+        }
         break;
-    case app::Clusters::WindowCovering::Id:
+    case WindowCovering::Id:
         ChipLogProgress(Zcl, "Window covering cluster ID: " ChipLogFormatMEI " Type: %u Value: %u, length: %u",
-                        ChipLogValueMEI(attributePath.mAttributeId), type, *value, size);
+                        ChipLogValueMEI(attributeId), type, *value, size);
         break;
     default:
         break;
@@ -69,24 +74,24 @@ void MatterPostAttributeChangeCallback(const app::ConcreteAttributePath & attrib
 /* Forwards all attributes changes */
 void MatterWindowCoveringClusterServerAttributeChangedCallback(const app::ConcreteAttributePath & attributePath)
 {
-    if (attributePath.mEndpointId == WindowCovering::Endpoint())
+    if (attributePath.mEndpointId == WindowControl::Endpoint())
     {
         switch (attributePath.mAttributeId)
         {
         case Attributes::TargetPositionLiftPercent100ths::Id:
-            WindowCovering::Instance().StartMove(WindowCovering::MoveType::LIFT);
+            WindowControl::Instance().StartMove(WindowControl::MoveType::LIFT);
             break;
         case Attributes::TargetPositionTiltPercent100ths::Id:
-            WindowCovering::Instance().StartMove(WindowCovering::MoveType::TILT);
+            WindowControl::Instance().StartMove(WindowControl::MoveType::TILT);
             break;
         case Attributes::CurrentPositionLiftPercent100ths::Id:
-            WindowCovering::Instance().PositionLEDUpdate(WindowCovering::MoveType::LIFT);
+            WindowControl::Instance().PositionLEDUpdate(WindowControl::MoveType::LIFT);
             break;
         case Attributes::CurrentPositionTiltPercent100ths::Id:
-            WindowCovering::Instance().PositionLEDUpdate(WindowCovering::MoveType::TILT);
+            WindowControl::Instance().PositionLEDUpdate(WindowControl::MoveType::TILT);
             break;
         default:
-            WindowCovering::Instance().SchedulePostAttributeChange(attributePath.mEndpointId, attributePath.mAttributeId);
+            WindowControl::Instance().SchedulePostAttributeChange(attributePath.mEndpointId, attributePath.mAttributeId);
             break;
         };
     }

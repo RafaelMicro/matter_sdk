@@ -171,7 +171,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         break;
     }
 
-    if (clusterId == Identify::Id)
+    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
     {
         GetAppTask().PostAppIdentify();
     }

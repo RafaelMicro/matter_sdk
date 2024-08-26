@@ -17,7 +17,7 @@
  *    limitations under the License.
  */
 
-#include "WindowCovering.h"
+#include "WindowControl.h"
 #include "WindowManager.h"
 
 #include "AppConfig.h"

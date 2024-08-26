@@ -63,14 +63,15 @@ class AppTask
 public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
-    static AppTask & GetAppTask() { return sAppTask; }
     void PostEvent(const AppEvent * event);
     void ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction);
 
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
     static void IdentifyHandleOp(AppEvent * aEvent);
+    void PostAppIdentify();
 private:
+    friend AppTask & GetAppTask(void);
     static void UpdateClusterState(intptr_t arg);
     CHIP_ERROR Init();
     static void InitServer(intptr_t arg);
@@ -110,3 +111,7 @@ private:
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
 #endif
 };
+inline AppTask & GetAppTask(void)
+{
+    return AppTask::sAppTask;
+}

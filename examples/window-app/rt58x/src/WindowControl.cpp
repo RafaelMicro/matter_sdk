@@ -15,7 +15,7 @@
  *    limitations under the License.
  */
 
-#include "WindowCovering.h"
+#include "WindowControl.h"
 #include "WindowManager.h"
 
 #include "AppConfig.h"
@@ -31,19 +31,19 @@ using chip::Protocols::InteractionModel::Status;
 
 static constexpr uint32_t sMoveTimeoutMs{ 200 };
 
-WindowCovering::WindowCovering()
+WindowControl::WindowControl()
 {
     // Init Light state
 }
 
-WindowCovering::WindowCovering(WindowManager::WindowCallback_fn aActionInitiated_CB, WindowManager::WindowCallback_fn aActionCompleted_CB)
+WindowControl::WindowControl(WindowManager::WindowCallback_fn aActionInitiated_CB, WindowManager::WindowCallback_fn aActionCompleted_CB)
 {
     // Init Light state
     WindowMgr().Init();
     WindowMgr().SetCallbacks(aActionInitiated_CB, aActionCompleted_CB);
 }
 
-void WindowCovering::DriveCurrentLiftPosition(intptr_t)
+void WindowControl::DriveCurrentLiftPosition(intptr_t)
 {
     NPercent100ths current{};
     NPercent100ths target{};
@@ -74,7 +74,7 @@ void WindowCovering::DriveCurrentLiftPosition(intptr_t)
     }
 }
 
-chip::Percent100ths WindowCovering::CalculateSingleStep(MoveType aMoveType)
+chip::Percent100ths WindowControl::CalculateSingleStep(MoveType aMoveType)
 {
     Status status{};
     chip::Percent100ths percent100ths{};
@@ -129,12 +129,12 @@ chip::Percent100ths WindowCovering::CalculateSingleStep(MoveType aMoveType)
     return percent100ths;
 }
 
-bool WindowCovering::TargetCompleted(MoveType aMoveType, NPercent100ths aCurrent, NPercent100ths aTarget)
+bool WindowControl::TargetCompleted(MoveType aMoveType, NPercent100ths aCurrent, NPercent100ths aTarget)
 {
     return (OperationalState::Stall == ComputeOperationalState(aTarget, aCurrent));
 }
 
-void WindowCovering::StartTimer(MoveType aMoveType, uint32_t aTimeoutMs)
+void WindowControl::StartTimer(MoveType aMoveType, uint32_t aTimeoutMs)
 {
     MoveType * moveType = chip::Platform::New<MoveType>();
     VerifyOrReturn(moveType != nullptr);
@@ -144,24 +144,24 @@ void WindowCovering::StartTimer(MoveType aMoveType, uint32_t aTimeoutMs)
                                                        reinterpret_cast<void *>(moveType));
 }
 
-void WindowCovering::MoveTimerTimeoutCallback(chip::System::Layer * systemLayer, void * appState)
+void WindowControl::MoveTimerTimeoutCallback(chip::System::Layer * systemLayer, void * appState)
 {
     MoveType * moveType = reinterpret_cast<MoveType *>(appState);
     VerifyOrReturn(moveType != nullptr);
 
     if (*moveType == MoveType::LIFT)
     {
-        chip::DeviceLayer::PlatformMgr().ScheduleWork(WindowCovering::DriveCurrentLiftPosition);
+        chip::DeviceLayer::PlatformMgr().ScheduleWork(WindowControl::DriveCurrentLiftPosition);
     }
     else if (*moveType == MoveType::TILT)
     {
-        chip::DeviceLayer::PlatformMgr().ScheduleWork(WindowCovering::DriveCurrentTiltPosition);
+        chip::DeviceLayer::PlatformMgr().ScheduleWork(WindowControl::DriveCurrentTiltPosition);
     }
 
     chip::Platform::Delete(moveType);
 }
 
-void WindowCovering::DriveCurrentTiltPosition(intptr_t)
+void WindowControl::DriveCurrentTiltPosition(intptr_t)
 {
     NPercent100ths current{};
     NPercent100ths target{};
@@ -192,7 +192,7 @@ void WindowCovering::DriveCurrentTiltPosition(intptr_t)
     }
 }
 
-void WindowCovering::StartMove(MoveType aMoveType)
+void WindowControl::StartMove(MoveType aMoveType)
 {
     switch (aMoveType)
     {
@@ -215,13 +215,13 @@ void WindowCovering::StartMove(MoveType aMoveType)
     };
 }
 
-void WindowCovering::SetSingleStepTarget(OperationalState aDirection)
+void WindowControl::SetSingleStepTarget(OperationalState aDirection)
 {
     UpdateOperationalStatus(mCurrentUIMoveType, aDirection);
     SetTargetPosition(aDirection, CalculateSingleStep(mCurrentUIMoveType));
 }
 
-void WindowCovering::UpdateOperationalStatus(MoveType aMoveType, OperationalState aDirection)
+void WindowControl::UpdateOperationalStatus(MoveType aMoveType, OperationalState aDirection)
 {
     switch (aMoveType)
     {
@@ -238,7 +238,7 @@ void WindowCovering::UpdateOperationalStatus(MoveType aMoveType, OperationalStat
     }
 }
 
-void WindowCovering::SetTargetPosition(OperationalState aDirection, chip::Percent100ths aPosition)
+void WindowControl::SetTargetPosition(OperationalState aDirection, chip::Percent100ths aPosition)
 {
     Status status{};
     if (Instance().mCurrentUIMoveType == MoveType::LIFT)
@@ -256,7 +256,7 @@ void WindowCovering::SetTargetPosition(OperationalState aDirection, chip::Percen
     }
 }
 
-void WindowCovering::PositionLEDUpdate(MoveType aMoveType)
+void WindowControl::PositionLEDUpdate(MoveType aMoveType)
 {
     Status status{};
     NPercent100ths currentPosition{};
@@ -279,13 +279,13 @@ void WindowCovering::PositionLEDUpdate(MoveType aMoveType)
     }
 }
 
-void WindowCovering::SetBrightness(MoveType aMoveType, uint16_t aPosition)
+void WindowControl::SetBrightness(MoveType aMoveType, uint16_t aPosition)
 {
     uint8_t brightness = PositionToBrightness(aPosition, aMoveType);
     WindowMgr().InitiateAction(static_cast<WindowManager::MoveType_t>(aMoveType), WindowManager::LEVEL_ACTION, 0, &brightness);
 }
 
-uint8_t WindowCovering::PositionToBrightness(uint16_t aPosition, MoveType aMoveType)
+uint8_t WindowControl::PositionToBrightness(uint16_t aPosition, MoveType aMoveType)
 {
     AbsoluteLimits pwmLimits{};
 
@@ -303,7 +303,7 @@ uint8_t WindowCovering::PositionToBrightness(uint16_t aPosition, MoveType aMoveT
     return Percent100thsToValue(pwmLimits, aPosition);
 }
 
-void WindowCovering::SchedulePostAttributeChange(chip::EndpointId aEndpoint, chip::AttributeId aAttributeId)
+void WindowControl::SchedulePostAttributeChange(chip::EndpointId aEndpoint, chip::AttributeId aAttributeId)
 {
     AttributeUpdateData * data = chip::Platform::New<AttributeUpdateData>();
     VerifyOrReturn(data != nullptr);
@@ -314,7 +314,7 @@ void WindowCovering::SchedulePostAttributeChange(chip::EndpointId aEndpoint, chi
     chip::DeviceLayer::PlatformMgr().ScheduleWork(DoPostAttributeChange, reinterpret_cast<intptr_t>(data));
 }
 
-void WindowCovering::DoPostAttributeChange(intptr_t aArg)
+void WindowControl::DoPostAttributeChange(intptr_t aArg)
 {
     AttributeUpdateData * data = reinterpret_cast<AttributeUpdateData *>(aArg);
     VerifyOrReturn(data != nullptr);

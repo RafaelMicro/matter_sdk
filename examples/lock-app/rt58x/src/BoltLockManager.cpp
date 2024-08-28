@@ -96,8 +96,8 @@ bool BoltLockManager::GetUser(uint16_t userIndex, EmberAfPluginDoorLockUserInfo 
 {
     user = mUsers[userIndex - 1];
 
-    ChipLogProgress(Zcl, "Getting lock user %u: %s", static_cast<unsigned>(userIndex),
-                    user.userStatus == UserStatusEnum::kAvailable ? "available" : "occupied");
+    // ChipLogProgress(Zcl, "Getting lock user %u: %s", static_cast<unsigned>(userIndex),
+    //                 user.userStatus == UserStatusEnum::kAvailable ? "available" : "occupied");
 
     return true;
 }
@@ -139,8 +139,8 @@ bool BoltLockManager::GetCredential(uint16_t credentialIndex, CredentialTypeEnum
 
     credential = mCredentials[credentialIndex - 1];
 
-    ChipLogProgress(Zcl, "Getting lock credential %u: %s", static_cast<unsigned>(credentialIndex),
-                    credential.status == DlCredentialStatus::kAvailable ? "available" : "occupied");
+    // ChipLogProgress(Zcl, "Getting lock credential %u: %s", static_cast<unsigned>(credentialIndex),
+    //                 credential.status == DlCredentialStatus::kAvailable ? "available" : "occupied");
 
     return true;
 }
@@ -157,6 +157,7 @@ bool BoltLockManager::SetCredential(uint16_t credentialIndex, FabricIndex creato
     if (!secret.empty())
     {
         memcpy(credentialData.mSecret.Alloc(secret.size()).Get(), secret.data(), secret.size());
+        ChipLogProgress(Zcl, "SetCredential %.*s", static_cast<int>(secret.size()), secret.data());
     }
 
     credential.status             = credentialStatus;

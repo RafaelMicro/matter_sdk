@@ -29,6 +29,20 @@
          [8] Digest Type: 1 (0x1)
          [9] Digest: 7828284dfc715ecd89292b03b798cca37c87301cf84691292e52e12eab6990b9
 
+## Building OTA Provider on Raspberrypi
+
+- First, clone official Matter repostory with following command:
+
+      git clone --recurse-submodules git@github.com:project-chip/connectedhomeip.git
+      
+- Follow the [link](https://github.com/project-chip/connectedhomeip/blob/master/docs/guides/BUILDING.md#installing-prerequisites-on-raspberry-pi-4) to install the prerequisites of Raspberrypi.
+
+- Follow the [link](https://github.com/project-chip/connectedhomeip/blob/master/docs/guides/BUILDING.md#prepare-for-building) to prepare the evnironment.
+
+- After the environment is ready, build ota provider using following command(output directory is out/debug):
+
+      scripts/examples/gn_build_example.sh examples/ota-provider-app/linux out/debug chip_config_network_layer_ble=false
+
 ## Running the OTA Download scenario
 
 - In a Raspberry Pi open a terminal 1 and start the Matter OTA Provider app passing the to it the path to the Matter OTA file created in the previous step

@@ -1,0 +1,7 @@
+[
+    {
+        "name": "OT-NXP GCC arm-none-eabi",
+        "description": "OT-NXP's toolchain file for GCC arm-none-eabi",
+        "toolchainFile": "${workspaceFolder:ot-nxp}/cmake/toolchain/arm-none-eabi.cmake"
+    },
+]

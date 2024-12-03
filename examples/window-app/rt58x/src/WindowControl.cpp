@@ -21,7 +21,6 @@
 #include "AppConfig.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
-#include <app/util/af.h>
 #include <platform/CHIPDeviceLayer.h>
 
 using namespace ::chip::Credentials;

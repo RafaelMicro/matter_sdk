@@ -87,7 +87,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         }
         else if (attributeId == ColorControl::Attributes::ColorMode::Id)
         {
-            uint8_t ColorMode = *reinterpret_cast<uint8_t *>(value);
+            chip::app::Clusters::ColorControl::ColorModeEnum ColorMode = *reinterpret_cast<chip::app::Clusters::ColorControl::ColorModeEnum *>(value);
             LightMgr().SetColorMode(ColorMode);
             return;
         }

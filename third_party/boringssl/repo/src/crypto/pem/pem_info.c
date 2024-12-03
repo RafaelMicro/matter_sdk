@@ -1,4 +1,3 @@
-/* crypto/pem/pem_info.c */
 /* Copyright (C) 1995-1998 Eric Young (eay@cryptsoft.com)
  * All rights reserved.
  *
@@ -70,6 +69,37 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+
+static X509_PKEY *X509_PKEY_new(void) {
+  return OPENSSL_zalloc(sizeof(X509_PKEY));
+}
+
+static void X509_PKEY_free(X509_PKEY *x) {
+  if (x == NULL) {
+    return;
+  }
+
+  EVP_PKEY_free(x->dec_pkey);
+  OPENSSL_free(x);
+}
+
+static X509_INFO *X509_INFO_new(void) {
+  return OPENSSL_zalloc(sizeof(X509_INFO));
+}
+
+void X509_INFO_free(X509_INFO *x) {
+  if (x == NULL) {
+    return;
+  }
+
+  X509_free(x->x509);
+  X509_CRL_free(x->crl);
+  X509_PKEY_free(x->x_pkey);
+  OPENSSL_free(x->enc_data);
+  OPENSSL_free(x);
+}
+
+
 STACK_OF(X509_INFO) *PEM_X509_INFO_read(FILE *fp, STACK_OF(X509_INFO) *sk,
                                         pem_password_cb *cb, void *u) {
   BIO *b = BIO_new_fp(fp, BIO_NOCLOSE);
@@ -140,7 +170,6 @@ STACK_OF(X509_INFO) *PEM_X509_INFO_read_bio(BIO *bp, STACK_OF(X509_INFO) *sk,
   if (sk == NULL) {
     ret = sk_X509_INFO_new_null();
     if (ret == NULL) {
-      OPENSSL_PUT_ERROR(PEM, ERR_R_MALLOC_FAILURE);
       return NULL;
     }
   } else {
@@ -261,86 +290,5 @@ err:
   OPENSSL_free(name);
   OPENSSL_free(header);
   OPENSSL_free(data);
-  return ret;
-}
-
-// A TJH addition
-int PEM_X509_INFO_write_bio(BIO *bp, X509_INFO *xi, EVP_CIPHER *enc,
-                            unsigned char *kstr, int klen, pem_password_cb *cb,
-                            void *u) {
-  int i, ret = 0;
-  unsigned char *data = NULL;
-  const char *objstr = NULL;
-  char buf[PEM_BUFSIZE];
-  unsigned char *iv = NULL;
-  unsigned iv_len = 0;
-
-  if (enc != NULL) {
-    iv_len = EVP_CIPHER_iv_length(enc);
-    objstr = OBJ_nid2sn(EVP_CIPHER_nid(enc));
-    if (objstr == NULL) {
-      OPENSSL_PUT_ERROR(PEM, PEM_R_UNSUPPORTED_CIPHER);
-      goto err;
-    }
-  }
-
-  // now for the fun part ... if we have a private key then we have to be
-  // able to handle a not-yet-decrypted key being written out correctly ...
-  // if it is decrypted or it is non-encrypted then we use the base code
-  if (xi->x_pkey != NULL) {
-    if ((xi->enc_data != NULL) && (xi->enc_len > 0)) {
-      if (enc == NULL) {
-        OPENSSL_PUT_ERROR(PEM, PEM_R_CIPHER_IS_NULL);
-        goto err;
-      }
-
-      // copy from weirdo names into more normal things
-      iv = xi->enc_cipher.iv;
-      data = (unsigned char *)xi->enc_data;
-      i = xi->enc_len;
-
-      // we take the encryption data from the internal stuff rather
-      // than what the user has passed us ... as we have to match
-      // exactly for some strange reason
-      objstr = OBJ_nid2sn(EVP_CIPHER_nid(xi->enc_cipher.cipher));
-      if (objstr == NULL) {
-        OPENSSL_PUT_ERROR(PEM, PEM_R_UNSUPPORTED_CIPHER);
-        goto err;
-      }
-
-      // create the right magic header stuff
-      assert(strlen(objstr) + 23 + 2 * iv_len + 13 <= sizeof buf);
-      buf[0] = '\0';
-      PEM_proc_type(buf, PEM_TYPE_ENCRYPTED);
-      PEM_dek_info(buf, objstr, iv_len, (char *)iv);
-
-      // use the normal code to write things out
-      i = PEM_write_bio(bp, PEM_STRING_RSA, buf, data, i);
-      if (i <= 0) {
-        goto err;
-      }
-    } else {
-      // Add DSA/DH
-      // normal optionally encrypted stuff
-      if (PEM_write_bio_RSAPrivateKey(bp, xi->x_pkey->dec_pkey->pkey.rsa, enc,
-                                      kstr, klen, cb, u) <= 0) {
-        goto err;
-      }
-    }
-  }
-
-  // if we have a certificate then write it out now
-  if ((xi->x509 != NULL) && (PEM_write_bio_X509(bp, xi->x509) <= 0)) {
-    goto err;
-  }
-
-  // we are ignoring anything else that is loaded into the X509_INFO
-  // structure for the moment ... as I don't need it so I'm not coding it
-  // here and Eric can do it when this makes it into the base library --tjh
-
-  ret = 1;
-
-err:
-  OPENSSL_cleanse(buf, PEM_BUFSIZE);
   return ret;
 }

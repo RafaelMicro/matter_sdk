@@ -58,7 +58,7 @@ public:
     bool IsTurnedOn();
     uint8_t GetLevel();
     RgbColor_t GetRgb();
-    void SetColorMode(uint8_t ColorMode);
+    void SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode);
     bool InitiateAction(Action_t aAction, int32_t aActor, uint16_t size, uint8_t * value);
 
     using LightingCallback_fn = std::function<void(Action_t)>;
@@ -75,7 +75,9 @@ private:
     HsvColor_t mHSV;
     RgbColor_t mRGB;
     CtColor_t mCT;
-    uint8_t mColorMode;
+    //uint8_t mColorMode;
+    chip::app::Clusters::ColorControl::ColorModeEnum mColorMode =
+        chip::app::Clusters::ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
 
     LightingCallback_fn mActionInitiated_CB;
     LightingCallback_fn mActionCompleted_CB;

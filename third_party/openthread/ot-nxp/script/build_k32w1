@@ -1,0 +1,277 @@
+#!/bin/bash
+#
+#  Copyright (c) 2021-2023, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#MIME_PATTERN="application/x-executable"
+#DIR_LIST="cli","ncp"
+
+set -exo pipefail
+
+OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET-}
+BUILD_DIR="${OT_CMAKE_BUILD_DIR:-build_k32w1}"
+
+readonly OT_SRCDIR="$(pwd)"
+readonly OT_OPTIONS=(
+    "-DBUILD_TESTING=OFF"
+    "-DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/arm-none-eabi.cmake"
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+    "-DCMAKE_BUILD_TYPE=MinSizeRel"
+    "-DOT_NXP_EXPORT_TO_SREC=ON"
+    "-DOT_PLATFORM=external"
+    "-DOT_SLAAC=ON"
+    "-DOT_NXP_PLATFORM=k32w1"
+    "-DOT_NXP_PLATFORM_FAMILY=k32w1"
+)
+
+readonly OT_OPTIONS_RCP_ONLY_UART_FLOW_CONTROL=(
+    "-DOT_RCP_FLOW_CONTROL=ON"
+    "-DOT_APP_CLI=OFF"
+    "-DOT_FTD=OFF"
+    "-DOT_MTD=OFF"
+    "-DUART_FLOW_CONTROL=ON"
+    "-DUART_BAUD_RATE=1000000"
+    "-DUART_INSTANCE=0"
+    "-DOT_APP_LOWPOWER=OFF"
+)
+
+readonly OT_OPTIONS_CLI_FTD_ZC=(
+    "-DOT_NCP_SPI=OFF"
+    "-DOT_APP_CLI=OFF"
+    "-DOT_APP_RCP=OFF"
+    "-DOT_APP_NCP=OFF"
+    "-DOT_FTD=ON"
+    "-DOT_MTD=OFF"
+    "-DOT_ZB_SUPPORT=ON"
+    "-DOT_APP_FTD_ZC=ON"
+    "-DOT_PING_SENDER=ON"
+    "-DUART_INSTANCE=1"
+    "-DNO_THREAD_1_3_FLAGS=ON"
+)
+
+readonly OT_OPTIONS_RCP_ONLY_UART_DMA=(
+    "-DOT_RCP_UART_DMA=ON"
+    "-DOT_APP_CLI=OFF"
+    "-DOT_FTD=OFF"
+    "-DOT_MTD=OFF"
+    "-DUART_BAUD_RATE=1000000"
+    "-DOT_APP_LOWPOWER=OFF"
+)
+
+readonly OT_OPTIONS_RCP_UART_DMA_ZB_COPROCESSOR=(
+    "-DOT_NCP_SPI=OFF"
+    "-DOT_APP_CLI=OFF"
+    "-DOT_APP_RCP=OFF"
+    "-DOT_APP_NCP=OFF"
+    "-DOT_FTD=OFF"
+    "-DOT_MTD=OFF"
+    "-DOT_ZB_SUPPORT=ON"
+    "-DOT_APP_RCP_UART_DMA_ZB_COPROCESSOR=ON"
+    "-DOT_PING_SENDER=ON"
+    "-DNO_THREAD_1_3_FLAGS=ON"
+    "-DOT_RCP_UART_DMA=ON"
+    "-DUART_BAUD_RATE=1000000"
+    "-DUART_INSTANCE=1"
+    "-DOT_APP_LOWPOWER=OFF"
+)
+
+readonly OT_OPTIONS_NO_RCP=(
+    "-DOT_APP_NCP=OFF"
+    "-DOT_APP_RCP=OFF"
+    "-DOT_RCP=OFF"
+    "-DOT_MAC_CSL_RECEIVER_ENABLE=ON"
+    "-DOT_APP_LOWPOWER=ON"
+)
+
+build()
+{
+    local cmakeArgs=("${@}")
+    mkdir -p "${BUILD_DIR}"
+    cd "${BUILD_DIR}"
+    if [ ! "$1" = "folder_not_specified" ]; then
+        cmakeArgs=("${@:2}")
+        rcp_folder_name="$1"
+        mkdir -p "${rcp_folder_name}"
+        cd "${rcp_folder_name}"
+    fi
+
+    # shellcheck disable=SC2068
+    cmake -GNinja -DSDK_GH=$SDK_GH -DUSE_NBU=1 -DOT_COMPILE_WARNING_AS_ERROR=ON -DOT_MBEDTLS_CONFIG_FILE=\"mbedtls-config.h\" ${cmakeArgs[@]} "${OT_SRCDIR}"
+
+    if [[ -n ${OT_CMAKE_NINJA_TARGET[*]} ]]; then
+        ninja "${OT_CMAKE_NINJA_TARGET[@]}"
+    else
+        ninja
+    fi
+
+    cd "${OT_SRCDIR}"
+}
+
+build_ot_rcp_only_uart_flow_control()
+{
+    echo "Building OT RCP image UART with flow control..."
+    app_folder_name="rcp_only_uart_flow_control"
+    local options=("${OT_OPTIONS_RCP_ONLY_UART_FLOW_CONTROL[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("$@")
+    options+=(" -DSDK_RELEASE=$SDK_RELEASE")
+    build "${app_folder_name}" "${options[@]}"
+
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+}
+
+build_ot_cli_ftd_zc()
+{
+    echo "Building dual mode app OT CLI FTD + Zigbee Coordinator..."
+    app_folder_name="ot_cli_ftd_zc"
+    local options=("${app_folder_name}")
+    options+=("${OT_OPTIONS_CLI_FTD_ZC[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("$@")
+    options+=(" -DSDK_RELEASE=$SDK_RELEASE")
+    build "${options[@]}"
+
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+}
+
+build_ot_rcp_only_uart_dma()
+{
+    echo "Building OT RCP image UART with DMA..."
+    app_folder_name="rcp_only_uart_dma"
+    local options=("${OT_OPTIONS_RCP_ONLY_UART_DMA[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("$@")
+    options+=(" -DSDK_RELEASE=$SDK_RELEASE")
+    build "${app_folder_name}" "${options[@]}"
+
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+
+}
+
+build_ot_rcp_uart_dma_zb_coprocessor()
+{
+    echo "Building OT RCP image UART with DMA and ZB coprocessor"
+    app_folder_name="rcp_uart_dma_zb_coprocessor"
+    local options=("${OT_OPTIONS_RCP_UART_DMA_ZB_COPROCESSOR[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("$@")
+    options+=(" -DSDK_RELEASE=$SDK_RELEASE")
+    build "${app_folder_name}" "${options[@]}"
+
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+
+}
+
+build_ot_without_rcp_image()
+{
+    echo "Building OT without RCP image ..."
+    app_folder_name="folder_not_specified"
+    local options=("${app_folder_name}")
+    options+=("${OT_OPTIONS_NO_RCP[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("$@")
+
+    options+=(" -DSDK_RELEASE=$SDK_RELEASE")
+
+    build "${options[@]}"
+
+    if [ $? -eq 1 ]; then
+        exit 1
+    fi
+}
+
+create_directory_and_build()
+{
+    if [ "$1" == 'all' ]; then
+        build_ot_rcp_only_uart_flow_control "$@"
+        build_ot_rcp_only_uart_dma "$@"
+        build_ot_without_rcp_image "$@"
+        build_ot_cli_ftd_zc "$@"
+        # build_ot_rcp_uart_dma_zb_coprocessor "$@"
+
+    elif [ "$1" == 'ot_rcp_only_uart_flow_control' ]; then
+        build_ot_rcp_only_uart_flow_control "$@"
+    elif [ "$1" == 'ot_rcp_only_uart_dma' ]; then
+        build_ot_rcp_only_uart_dma "$@"
+    elif [ "$1" == 'ot_without_rcp_image' ]; then
+        build_ot_without_rcp_image "$@"
+    elif [ "$1" == 'ot_cli_ftd_zc' ]; then
+        build_ot_cli_ftd_zc "$@"
+    elif [ "$1" == 'ot_rcp_uart_dma_zb_coprocessor' ]; then
+        build_ot_rcp_uart_dma_zb_coprocessor "$@"
+    else
+        echo >&2 "Unsupported action: $1. Supported: all, ot_rcp_only_uart_flow_control, ot_rcp_only_uart_dma, ot_without_rcp_image, ot_cli_ftd_zc, ot_rcp_uart_dma_zb_coprocessor"
+        # 128 for Invalid arguments
+        exit 128
+    fi
+}
+
+main()
+{
+
+    # Check if NXP_K32W1_SDK_ROOT contains a valid SDK
+    #    if NXP_K32W1_SDK_ROOT is not defined
+    #         We are using a github SDK
+
+    SDK_GH=OFF
+
+    if [ -z "$NXP_K32W1_SDK_ROOT" ]; then
+        export NXP_K32W1_SDK_ROOT="${OT_SRCDIR}/third_party/github_sdk/sdk_2.15.0/core"
+    fi
+
+    if [ -d $NXP_K32W1_SDK_ROOT/.git ]; then
+        SDK_RELEASE=OFF
+
+        if [ -f $NXP_K32W1_SDK_ROOT/SW-Content-Register.txt ]; then
+            SDK_GH=ON
+        fi
+
+    elif [ -f $NXP_K32W1_SDK_ROOT/SW-Content-Register.txt ]; then
+        SDK_RELEASE=ON
+    else
+        echo "Could not find a valid SDK package!"
+        return
+    fi
+
+    echo "NXP_K32W1_SDK_ROOT set to " $NXP_K32W1_SDK_ROOT
+
+    if [ $# == 0 ]; then
+        create_directory_and_build all $SDK_RELEASE "$@"
+    else
+        create_directory_and_build "$1" $SDK_RELEASE "$@"
+    fi
+
+}
+
+main "$@"

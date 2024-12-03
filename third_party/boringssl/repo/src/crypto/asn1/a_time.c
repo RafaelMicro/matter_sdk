@@ -55,11 +55,13 @@
  * [including the GNU Public Licence.] */
 
 #include <openssl/asn1.h>
+#include <openssl/posix_time.h>
 
 #include <string.h>
 #include <time.h>
 
 #include <openssl/asn1t.h>
+#include <openssl/bytestring.h>
 #include <openssl/err.h>
 #include <openssl/mem.h>
 
@@ -73,29 +75,35 @@ IMPLEMENT_ASN1_MSTRING(ASN1_TIME, B_ASN1_TIME)
 
 IMPLEMENT_ASN1_FUNCTIONS_const(ASN1_TIME)
 
-ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t t) {
-  return ASN1_TIME_adj(s, t, 0, 0);
+ASN1_TIME *ASN1_TIME_set_posix(ASN1_TIME *s, int64_t posix_time) {
+  return ASN1_TIME_adj(s, posix_time, 0, 0);
 }
 
-ASN1_TIME *ASN1_TIME_adj(ASN1_TIME *s, time_t t, int offset_day,
-                         long offset_sec) {
-  struct tm *ts;
-  struct tm data;
+ASN1_TIME *ASN1_TIME_set(ASN1_TIME *s, time_t time) {
+  return ASN1_TIME_adj(s, time, 0, 0);
+}
 
-  ts = OPENSSL_gmtime(&t, &data);
-  if (ts == NULL) {
+static int fits_in_utc_time(const struct tm *tm) {
+  return 50 <= tm->tm_year && tm->tm_year < 150;
+}
+
+ASN1_TIME *ASN1_TIME_adj(ASN1_TIME *s, int64_t posix_time, int offset_day,
+                         long offset_sec) {
+  struct tm tm;
+
+  if (!OPENSSL_posix_to_tm(posix_time, &tm)) {
     OPENSSL_PUT_ERROR(ASN1, ASN1_R_ERROR_GETTING_TIME);
     return NULL;
   }
   if (offset_day || offset_sec) {
-    if (!OPENSSL_gmtime_adj(ts, offset_day, offset_sec)) {
+    if (!OPENSSL_gmtime_adj(&tm, offset_day, offset_sec)) {
       return NULL;
     }
   }
-  if ((ts->tm_year >= 50) && (ts->tm_year < 150)) {
-    return ASN1_UTCTIME_adj(s, t, offset_day, offset_sec);
+  if (fits_in_utc_time(&tm)) {
+    return ASN1_UTCTIME_adj(s, posix_time, offset_day, offset_sec);
   }
-  return ASN1_GENERALIZEDTIME_adj(s, t, offset_day, offset_sec);
+  return ASN1_GENERALIZEDTIME_adj(s, posix_time, offset_day, offset_sec);
 }
 
 int ASN1_TIME_check(const ASN1_TIME *t) {
@@ -163,42 +171,50 @@ err:
   return NULL;
 }
 
-
 int ASN1_TIME_set_string(ASN1_TIME *s, const char *str) {
-  ASN1_TIME t;
+  return ASN1_UTCTIME_set_string(s, str) ||
+         ASN1_GENERALIZEDTIME_set_string(s, str);
+}
 
-  t.length = strlen(str);
-  t.data = (unsigned char *)str;
-  t.flags = 0;
-
-  t.type = V_ASN1_UTCTIME;
-
-  if (!ASN1_TIME_check(&t)) {
-    t.type = V_ASN1_GENERALIZEDTIME;
-    if (!ASN1_TIME_check(&t)) {
-      return 0;
+int ASN1_TIME_set_string_X509(ASN1_TIME *s, const char *str) {
+  CBS cbs;
+  CBS_init(&cbs, (const uint8_t*)str, strlen(str));
+  int type;
+  struct tm tm;
+  if (CBS_parse_utc_time(&cbs, /*out_tm=*/NULL,
+                         /*allow_timezone_offset=*/0)) {
+    type = V_ASN1_UTCTIME;
+  } else if (CBS_parse_generalized_time(&cbs, &tm,
+                                        /*allow_timezone_offset=*/0)) {
+    type = V_ASN1_GENERALIZEDTIME;
+    if (fits_in_utc_time(&tm)) {
+      type = V_ASN1_UTCTIME;
+      CBS_skip(&cbs, 2);
     }
-  }
-
-  if (s && !ASN1_STRING_copy((ASN1_STRING *)s, (ASN1_STRING *)&t)) {
+  } else {
     return 0;
   }
 
+  if (s != NULL) {
+    if (!ASN1_STRING_set(s, CBS_data(&cbs), CBS_len(&cbs))) {
+      return 0;
+    }
+    s->type = type;
+  }
   return 1;
 }
 
-static int asn1_time_to_tm(struct tm *tm, const ASN1_TIME *t) {
+static int asn1_time_to_tm(struct tm *tm, const ASN1_TIME *t,
+                           int allow_timezone_offset) {
   if (t == NULL) {
-    time_t now_t;
-    time(&now_t);
-    if (OPENSSL_gmtime(&now_t, tm)) {
+    if (OPENSSL_posix_to_tm(time(NULL), tm)) {
       return 1;
     }
     return 0;
   }
 
   if (t->type == V_ASN1_UTCTIME) {
-    return asn1_utctime_to_tm(tm, t);
+    return asn1_utctime_to_tm(tm, t, allow_timezone_offset);
   } else if (t->type == V_ASN1_GENERALIZEDTIME) {
     return asn1_generalizedtime_to_tm(tm, t);
   }
@@ -209,11 +225,35 @@ static int asn1_time_to_tm(struct tm *tm, const ASN1_TIME *t) {
 int ASN1_TIME_diff(int *out_days, int *out_seconds, const ASN1_TIME *from,
                    const ASN1_TIME *to) {
   struct tm tm_from, tm_to;
-  if (!asn1_time_to_tm(&tm_from, from)) {
+  if (!asn1_time_to_tm(&tm_from, from, /*allow_timezone_offset=*/1)) {
     return 0;
   }
-  if (!asn1_time_to_tm(&tm_to, to)) {
+  if (!asn1_time_to_tm(&tm_to, to, /*allow_timezone_offset=*/1)) {
     return 0;
   }
   return OPENSSL_gmtime_diff(out_days, out_seconds, &tm_from, &tm_to);
+}
+
+// The functions below do *not* permissively allow the use of four digit
+// timezone offsets in UTC times, as is done elsewhere in the code. They are
+// both new API, and used internally to X509_cmp_time. This is to discourage the
+// use of nonstandard times in new code, and to ensure that this code behaves
+// correctly in X509_cmp_time which historically did its own time validations
+// slightly different than the many other copies of X.509 time validation
+// sprinkled through the codebase. The custom checks in X509_cmp_time meant that
+// it did not allow four digit timezone offsets in UTC times.
+int ASN1_TIME_to_time_t(const ASN1_TIME *t, time_t *out_time) {
+  struct tm tm;
+  if (!asn1_time_to_tm(&tm, t, /*allow_timezone_offset=*/0)) {
+    return 0;
+  }
+  return OPENSSL_timegm(&tm, out_time);
+}
+
+int ASN1_TIME_to_posix(const ASN1_TIME *t, int64_t *out_time) {
+  struct tm tm;
+  if (!asn1_time_to_tm(&tm, t, /*allow_timezone_offset=*/0)) {
+    return 0;
+  }
+  return OPENSSL_tm_to_posix(&tm, out_time);
 }

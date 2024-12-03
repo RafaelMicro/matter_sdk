@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "label": "Find J-Link probes",
+            "type": "shell",
+            "command": "python",
+            "args": [
+                "find_jlink_probes.py"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder:ot-nxp}/.vscode/configs"
+            },
+            "problemMatcher": []
+        }
+    ],
+}

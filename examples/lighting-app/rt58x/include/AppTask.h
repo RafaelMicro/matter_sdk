@@ -33,7 +33,7 @@
 // #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
-#include <ble/BLEEndPoint.h>
+#include <ble/Ble.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
 #include <platform/RT58x/BLEManagerImpl.h>
@@ -67,11 +67,11 @@ public:
 
     void PostLightActionRequest(int32_t aActor, LightingManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
+    void PostAppIdentify();
 
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
     static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
 private:
     friend AppTask & GetAppTask(void);
 

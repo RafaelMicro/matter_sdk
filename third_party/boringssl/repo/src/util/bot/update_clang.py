@@ -9,6 +9,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import platform
 import shutil
 import subprocess
 import stat
@@ -28,8 +29,8 @@ except ImportError:
 # CLANG_REVISION and CLANG_SUB_REVISION determine the build of clang
 # to use. These should be synced with tools/clang/scripts/update.py in
 # Chromium.
-CLANG_REVISION = 'llvmorg-15-init-10168-gc2a7904a'
-CLANG_SUB_REVISION = 2
+CLANG_REVISION = 'llvmorg-19-init-10646-g084e2b53'
+CLANG_SUB_REVISION = 57
 
 PACKAGE_VERSION = '%s-%s' % (CLANG_REVISION, CLANG_SUB_REVISION)
 
@@ -94,7 +95,7 @@ def DownloadAndUnpack(url, output_dir):
     DownloadUrl(url, f)
     f.seek(0)
     EnsureDirExists(output_dir)
-    tarfile.open(mode='r:gz', fileobj=f).extractall(path=output_dir)
+    tarfile.open(mode='r:*', fileobj=f).extractall(path=output_dir)
 
 
 def ReadStampFile(path=STAMP_FILE):
@@ -133,11 +134,16 @@ def CopyFile(src, dst):
 
 
 def UpdateClang():
-  cds_file = "clang-%s.tgz" %  PACKAGE_VERSION
+  cds_file = "clang-%s.tar.xz" %  PACKAGE_VERSION
   if sys.platform == 'win32' or sys.platform == 'cygwin':
     cds_full_url = CDS_URL + '/Win/' + cds_file
   elif sys.platform.startswith('linux'):
     cds_full_url = CDS_URL + '/Linux_x64/' + cds_file
+  elif sys.platform == 'darwin':
+    if platform.machine() == 'arm64':
+      cds_full_url = CDS_URL + '/Mac_arm64/' + cds_file
+    else:
+      cds_full_url = CDS_URL + '/Mac/' + cds_file
   else:
     return 0
 

@@ -1,0 +1,56 @@
+#!/bin/sh
+# Just run this script
+script_dir="$(dirname "$(realpath "$0")")"
+echo script_dir is $script_dir
+cd "$script_dir"
+echo Current dir is $(pwd)
+
+# New feature: List and choose .bin files if no argument is provided
+echo "Debug: Checking number of arguments: $#"
+if [ $# -eq 0 ]; then
+  echo "Debug: No arguments provided."
+  echo "No file path provided. Searching in the customer_app directory..."
+  script_dir="$(dirname "$(realpath "$0")")"
+  echo "Debug: Script directory is $script_dir"
+  customer_app_dir="${script_dir}/customer_app"
+  echo "Debug: customer_app directory is $customer_app_dir"
+  files=$(find "$customer_app_dir" -type f -name "*.bin" | awk -F/ '$(NF-1)=="build_out"')
+e  cho "Debug: Found files: $files"
+
+  
+  if [ -z "$files" ]; then
+    echo "No .bin files found."
+    exit 1
+  fi
+  
+  echo "Available .bin files:"
+  select filepath in $files; do
+    if [ -n "$filepath" ]; then
+      bin_name=$filepath  # Keep the full path
+      echo "Debug: User selected file is $bin_name"
+      break
+    else
+      echo "Invalid selection. Try again."
+    fi
+  done
+fi
+
+echo Try finding bin file path for $bin_name
+if [ ! -f "$bin_name" ]; then
+  bin_path=customer_app/$bin_name/build_out/$bin_name.bin
+else
+  bin_path=$bin_name
+fi
+echo bin file path is $bin_path
+
+if [ -f "$bin_path" ]; then
+  # 获取文件大小并打印
+  file_size=$(stat -c%s "$bin_path")
+  echo "The size of the file is: $file_size bytes"
+  chmod +x ./tools/flash_tool/bflb_iot_tool-ubuntu
+  ./tools/flash_tool/bflb_iot_tool-ubuntu --chipname=bl616 --baudrate=2000000 --pt=tools/flash_tool/chips/bl616/partition/partition_cfg_4M.toml --dts=tools/flash_tool/chips/bl616/device_tree/bl_factory_params_IoTKitA_auto.dts --boot2=tools/flash_tool/chips/bl616/builtin_imgs/boot2_isp_bl616_v6.5.6/boot2_isp_release.bin --firmware=$bin_path
+else
+  # 文件不存在，打印错误信息并退出
+  echo "Error: The file does not exist at the given path: $bin_path"
+  exit 1
+fi

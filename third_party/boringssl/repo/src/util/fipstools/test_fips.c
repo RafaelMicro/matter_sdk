@@ -21,10 +21,13 @@
 #include <openssl/aes.h>
 #include <openssl/bn.h>
 #include <openssl/crypto.h>
+#include <openssl/ctrdrbg.h>
 #include <openssl/des.h>
 #include <openssl/dh.h>
-#include <openssl/ecdsa.h>
 #include <openssl/ec_key.h>
+#include <openssl/ecdsa.h>
+#include <openssl/err.h>
+#include <openssl/hkdf.h>
 #include <openssl/hmac.h>
 #include <openssl/nid.h>
 #include <openssl/rsa.h>
@@ -52,7 +55,15 @@ int main(int argc, char **argv) {
     printf("No module version set\n");
     goto err;
   }
-  printf("Module version: %" PRIu32 "\n", module_version);
+  printf("Module: '%s', version: %" PRIu32 " hash:\n", FIPS_module_name(),
+         module_version);
+
+#if !defined(OPENSSL_ASAN)
+  hexdump(FIPS_module_hash(), SHA256_DIGEST_LENGTH);
+#else
+  printf("(not available when compiled for ASAN)");
+#endif
+  printf("\n");
 
   static const uint8_t kAESKey[16] = "BoringCrypto Key";
   static const uint8_t kPlaintext[64] =
@@ -214,6 +225,18 @@ int main(int argc, char **argv) {
 
   RSA_free(rsa_key);
 
+  /* Generating a key with a null output parameter. */
+  printf("About to generate RSA key with null output\n");
+  if (!RSA_generate_key_fips(NULL, 2048, NULL)) {
+    printf("RSA_generate_key_fips failed with null output parameter\n");
+    ERR_clear_error();
+  } else {
+    printf(
+        "RSA_generate_key_fips unexpectedly succeeded with null output "
+        "parameter\n");
+    goto err;
+  }
+
   EC_KEY *ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
   if (ec_key == NULL) {
     printf("invalid ECDSA key\n");
@@ -259,6 +282,30 @@ int main(int argc, char **argv) {
   ECDSA_SIG_free(sig);
   EC_KEY_free(ec_key);
 
+  /* Generating a key with a null output pointer. */
+  printf("About to generate P-256 key with NULL output\n");
+  if (!EC_KEY_generate_key_fips(NULL)) {
+    printf("EC_KEY_generate_key_fips failed with a NULL output pointer.\n");
+    ERR_clear_error();
+  } else {
+    printf(
+        "EC_KEY_generate_key_fips unexpectedly succeeded with a NULL output "
+        "pointer.\n");
+    goto err;
+  }
+
+  /* ECDSA with an invalid public key. */
+  ec_key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+  static const uint8_t kNotValidX926[] = {1,2,3,4,5,6};
+  if (!EC_KEY_oct2key(ec_key, kNotValidX926, sizeof(kNotValidX926),
+                      /*ctx=*/NULL)) {
+    printf("Error while parsing invalid ECDSA public key");
+  } else {
+    printf("Unexpected success while parsing invalid ECDSA public key");
+    goto err;
+  }
+  EC_KEY_free(ec_key);
+
   /* DBRG */
   CTR_DRBG_STATE drbg;
   printf("About to seed CTR-DRBG with ");
@@ -277,18 +324,56 @@ int main(int argc, char **argv) {
   hexdump(output, sizeof(output));
   CTR_DRBG_clear(&drbg);
 
-  /* TLS KDF */
-  printf("About to run TLS KDF\n");
-  uint8_t tls_output[32];
-  if (!CRYPTO_tls1_prf(EVP_sha256(), tls_output, sizeof(tls_output), kAESKey,
-                       sizeof(kAESKey), "foo", 3, kPlaintextSHA256,
-                       sizeof(kPlaintextSHA256), kPlaintextSHA256,
-                       sizeof(kPlaintextSHA256))) {
-    fprintf(stderr, "TLS KDF failed.\n");
+  /* HKDF */
+  printf("About to run HKDF\n");
+  uint8_t hkdf_output[32];
+  if (!HKDF(hkdf_output, sizeof(hkdf_output), EVP_sha256(), kAESKey,
+            sizeof(kAESKey), (const uint8_t *)"salt", 4, kPlaintextSHA256,
+            sizeof(kPlaintextSHA256))) {
+    fprintf(stderr, "HKDF failed.\n");
     goto err;
   }
   printf("  got ");
-  hexdump(tls_output, sizeof(tls_output));
+  hexdump(hkdf_output, sizeof(hkdf_output));
+
+  /* TLS v1.0 KDF */
+  printf("About to run TLS v1.0 KDF\n");
+  uint8_t tls10_output[32];
+  if (!CRYPTO_tls1_prf(EVP_md5_sha1(), tls10_output, sizeof(tls10_output),
+                       kAESKey, sizeof(kAESKey), "foo", 3, kPlaintextSHA256,
+                       sizeof(kPlaintextSHA256), kPlaintextSHA256,
+                       sizeof(kPlaintextSHA256))) {
+    fprintf(stderr, "TLS v1.0 KDF failed.\n");
+    goto err;
+  }
+  printf("  got ");
+  hexdump(tls10_output, sizeof(tls10_output));
+
+  /* TLS v1.2 KDF */
+  printf("About to run TLS v1.2 KDF\n");
+  uint8_t tls12_output[32];
+  if (!CRYPTO_tls1_prf(EVP_sha256(), tls12_output, sizeof(tls12_output),
+                       kAESKey, sizeof(kAESKey), "foo", 3, kPlaintextSHA256,
+                       sizeof(kPlaintextSHA256), kPlaintextSHA256,
+                       sizeof(kPlaintextSHA256))) {
+    fprintf(stderr, "TLS v1.2 KDF failed.\n");
+    goto err;
+  }
+  printf("  got ");
+  hexdump(tls12_output, sizeof(tls12_output));
+
+  /* TLS v1.3 KDF */
+  printf("About to run TLS v1.3 KDF\n");
+  uint8_t tls13_output[32];
+  if (!CRYPTO_tls13_hkdf_expand_label(
+          tls13_output, sizeof(tls13_output), EVP_sha256(), kAESKey,
+          sizeof(kAESKey), (const uint8_t *)"foo", 3, kPlaintextSHA256,
+          sizeof(kPlaintextSHA256))) {
+    fprintf(stderr, "TLS v1.3 KDF failed.\n");
+    goto err;
+  }
+  printf("  got ");
+  hexdump(tls13_output, sizeof(tls13_output));
 
   /* FFDH */
   printf("About to compute FFDH key-agreement:\n");
@@ -312,5 +397,6 @@ int main(int argc, char **argv) {
 
 err:
   printf("FAIL\n");
+  fflush(stdout);
   abort();
 }

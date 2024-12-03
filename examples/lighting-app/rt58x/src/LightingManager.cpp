@@ -90,7 +90,7 @@ CHIP_ERROR LightingManager::Init()
     status = ColorControl::Attributes::ColorMode::Get(1, &mColorMode);
     if (status == Status::Success)
     {
-        mColorMode = 0;
+        mColorMode = ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
     }
     status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
     if (status == Status::Success)
@@ -105,9 +105,9 @@ CHIP_ERROR LightingManager::Init()
 
     mXY    = kBlueXY;
     // mHSV   = kHSV;
-    if (mColorMode == 0x0)
+    if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
         mRGB = HsvToRgb(mHSV);
-    else if (mColorMode == 0x2)
+    else if (mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)
         mRGB = CctToRgb(mCT); 
     mState = currentLedState ? kState_On : kState_Off;
     UpdateLight();
@@ -273,11 +273,11 @@ void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
     mHSV.v = mLevel;
-    if(mColorMode == 0)
+    if(mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
     {
         mRGB   = HsvToRgb(mHSV);
     }
-    else if(mColorMode == 1)
+    else if(mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
     {
         mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
     }
@@ -317,7 +317,7 @@ void LightingManager::SetColorTemperature(CtColor_t ct)
     UpdateLight();
 }
 
-void LightingManager::SetColorMode(uint8_t ColorMode)
+void LightingManager::SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode)
 {
     mColorMode = ColorMode;
 }
@@ -342,7 +342,7 @@ void LightingManager::UpdateLight()
     if (mState == kState_On && mLevel > 1)
     {
         // err("R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-        if(mColorMode == 2)//using color temperature
+        if(mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)//using color temperature
         {
             rt58x_led_level_ctl(2, CorrectRGB(mRGB.b,mLevel));
             rt58x_led_level_ctl(3, CorrectRGB(mRGB.r,mLevel));

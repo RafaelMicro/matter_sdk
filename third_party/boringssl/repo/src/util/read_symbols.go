@@ -12,6 +12,8 @@
 // OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 // CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+//go:build ignore
+
 // read_symbols scans one or more .a files and, for each object contained in
 // the .a files, reads the list of symbols in that object file.
 package main
@@ -59,7 +61,7 @@ func defaultObjFileFormat(goos string) string {
 	}
 }
 
-func printAndExit(format string, args ...interface{}) {
+func printAndExit(format string, args ...any) {
 	s := fmt.Sprintf(format, args...)
 	fmt.Fprintln(os.Stderr, s)
 	os.Exit(1)
@@ -140,7 +142,7 @@ func main() {
 				break
 			}
 		}
-		if skip || isCXXSymbol(s) || strings.HasPrefix(s, "__real@") || strings.HasPrefix(s, "__x86.get_pc_thunk.") {
+		if skip || isCXXSymbol(s) || strings.HasPrefix(s, "__real@") || strings.HasPrefix(s, "__x86.get_pc_thunk.") || strings.HasPrefix(s, "DW.") {
 			continue
 		}
 		if _, err := fmt.Fprintln(out, s); err != nil {
@@ -176,6 +178,9 @@ func listSymbolsELF(contents []byte) ([]string, error) {
 		return nil, err
 	}
 	syms, err := f.Symbols()
+	if err == elf.ErrNoSymbols {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}

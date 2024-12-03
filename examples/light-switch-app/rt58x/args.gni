@@ -34,8 +34,8 @@ chip_detail_logging = false
 #enable matter+ble multi control
 raf_enable_multi_control = false
 
-pw_log_BACKEND = "${chip_root}/src/lib/support/pw_log_chip"
-pw_assert_BACKEND = "$dir_pw_assert_log:check_backend"
+pw_log_BACKEND = "${chip_root}/src/pw_backends/log"
+pw_assert_BACKEND = "${chip_root}/src/pw_backends/assert"
 chip_enable_openthread = true
 chip_openthread_ftd = true
 pw_rpc_CONFIG = "$dir_pw_rpc:disable_global_mutex"

@@ -108,9 +108,9 @@ static_library("RT58x") {
 
   public_deps += [ "${chip_root}/src/crypto" ]
 
-  public_configs =
-      [ "${chip_root}/src/lib/address_resolve:default_address_resolve_config",
-        ":rafael-multi-control" ]
+#  public_configs =
+#      [ "${chip_root}/src/lib/address_resolve:default_address_resolve_config",
+#        ":rafael-multi-control" ]
 }
 
 config("attestation-credentials-config") {

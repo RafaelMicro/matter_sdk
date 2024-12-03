@@ -31,7 +31,7 @@
 // #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
-#include <ble/BLEEndPoint.h>
+#include <ble/Ble.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
 

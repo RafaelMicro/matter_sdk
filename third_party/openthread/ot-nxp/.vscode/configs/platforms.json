@@ -1,0 +1,20 @@
+{
+    "Platforms": [
+        {
+            "name": "RW612",
+            "description": "RW612 with MCU-LINK",
+            "JLinkDevice": "RW612",
+            "JLinkInterface": "swd",
+            "JLinkSpeed": "6000",
+            "svdFile": "${workspaceFolder:ot-nxp}/.vscode/configs/svd/RW612.xml"
+        },
+        {
+            "name": "RW612_JTAG",
+            "description": "RW612 with external J-Link probe",
+            "JLinkDevice": "RW612",
+            "JLinkInterface": "jtag",
+            "JLinkSpeed": "50000",
+            "svdFile": "${workspaceFolder:ot-nxp}/.vscode/configs/svd/RW612.xml"
+        }
+    ]
+}

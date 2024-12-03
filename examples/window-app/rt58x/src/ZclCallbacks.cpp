@@ -40,7 +40,6 @@
 #include <app/ConcreteCommandPath.h>
 #include <app/clusters/window-covering-server/window-covering-server.h>
 #include <app/util/af-types.h>
-#include <app/util/af.h>
 #include <assert.h>
 #include <lib/support/logging/CHIPLogging.h>
 

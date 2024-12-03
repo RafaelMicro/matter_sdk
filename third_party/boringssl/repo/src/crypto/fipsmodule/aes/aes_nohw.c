@@ -152,10 +152,10 @@ static inline aes_word_t aes_nohw_shift_right(aes_word_t a, aes_word_t i) {
 }
 #endif  // OPENSSL_SSE2
 
-OPENSSL_STATIC_ASSERT(AES_NOHW_BATCH_SIZE * 128 == 8 * 8 * sizeof(aes_word_t),
-                      "batch size does not match word size");
-OPENSSL_STATIC_ASSERT(AES_NOHW_WORD_SIZE == sizeof(aes_word_t),
-                      "AES_NOHW_WORD_SIZE is incorrect");
+static_assert(AES_NOHW_BATCH_SIZE * 128 == 8 * 8 * sizeof(aes_word_t),
+              "batch size does not match word size");
+static_assert(AES_NOHW_WORD_SIZE == sizeof(aes_word_t),
+              "AES_NOHW_WORD_SIZE is incorrect");
 
 
 // Block representations.
@@ -1192,7 +1192,7 @@ void aes_nohw_ctr32_encrypt_blocks(const uint8_t *in, uint8_t *out,
   for (;;) {
     // Update counters.
     for (size_t i = 0; i < AES_NOHW_BATCH_SIZE; i++) {
-      CRYPTO_store_u32_be(ivs + 16 * i + 12, ctr + i);
+      CRYPTO_store_u32_be(ivs + 16 * i + 12, ctr + (uint32_t)i);
     }
 
     size_t todo = blocks >= AES_NOHW_BATCH_SIZE ? AES_NOHW_BATCH_SIZE : blocks;

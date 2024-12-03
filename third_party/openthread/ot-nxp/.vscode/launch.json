@@ -1,0 +1,117 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // This debug configuration interacts with CMake Tools extension
+            // It will retrieve the selected launch target path as the executable to flash and debug.
+            // This config relies on cortex-debug extension which enables debugging on embedded targets with J-Link.
+            // At launch, VS Code will take the user input to select the platform and the physical board to debug.
+            "name": "Debug CMake Target",
+            "type": "cortex-debug",
+            "request": "launch",
+            "executable": "${command:cmake.launchTargetPath}",
+            "cwd": "${workspaceFolder:ot-nxp}",
+            "runToEntryPoint": "main",
+            "servertype": "jlink",
+            "device" : "${input:JLinkDevice}",
+            "interface": "${input:JLinkInterface}",
+            "serialNumber": "${input:JLinkSerial}",
+            "rtos": "FreeRTOS",
+            "svdFile": "${input:SvdFile}",
+            "serverArgs": [
+                "-speed",
+                "${input:JLinkSpeed}"
+            ],
+        },
+        {
+            // This debug configuration interacts with CMake Tools extension
+            // It will retrieve the selected launch target path as the executable to flash and debug.
+            // This config relies on cortex-debug extension which enables debugging on embedded targets with J-Link.
+            // At launch, VS Code will take the user input to select the platform and the physical board to debug.
+            "name": "Attach CMake Target",
+            "type": "cortex-debug",
+            "request": "attach",
+            "executable": "${command:cmake.launchTargetPath}",
+            "cwd": "${workspaceFolder:ot-nxp}",
+            "servertype": "jlink",
+            "device" : "${input:JLinkDevice}",
+            "interface": "${input:JLinkInterface}",
+            "serialNumber": "${input:JLinkSerial}",
+            "rtos": "FreeRTOS",
+            "svdFile": "${input:SvdFile}",
+            "serverArgs": [
+                "-speed",
+                "${input:JLinkSpeed}"
+            ],
+        },
+    ],
+    "inputs": [
+        {
+            "id": "JLinkDevice",
+            "type": "command",
+            "command": "extension.commandvariable.pickStringRemember", // requires following extension: rioj7.command-variable
+            "args": {
+                "description": "Select a platform",
+                "key": "jlink-device",
+                "fileName": "${workspaceFolder:ot-nxp}/.vscode/configs/platforms.json",
+                "fileFormat": "json",
+                "jsonOption": {
+                    "label": "content.Platforms[__itemIdx__].name",
+                    "description": "content.Platforms[__itemIdx__].description",
+                    "value": {
+                        "jlink-device": "content.Platforms[__itemIdx__].JLinkDevice",
+                        "jlink-interface": "content.Platforms[__itemIdx__].JLinkInterface",
+                        "jlink-speed": "content.Platforms[__itemIdx__].JLinkSpeed",
+                        "svd": "content.Platforms[__itemIdx__].svdFile",
+                    }
+                }
+            },
+        },
+        {
+            "id": "JLinkInterface",
+            "type": "command",
+            "command": "extension.commandvariable.remember", // requires following extension: rioj7.command-variable
+            "args": { "key": "jlink-interface" }
+        },
+        {
+            "id": "JLinkSpeed",
+            "type": "command",
+            "command": "extension.commandvariable.remember", // requires following extension: rioj7.command-variable
+            "args": { "key": "jlink-speed" }
+        },
+        {
+            "id": "SvdFile",
+            "type": "command",
+            "command": "extension.commandvariable.remember", // requires following extension: rioj7.command-variable
+            "args": { "key": "svd" }
+        },
+        {
+            /* This command allows the user to select a JLink serial number based on a nickname
+             * It makes it easier to select a device when starting a debug session
+             * The file jlink_setup.cfg describes the J-Link devices/probes connected to the user computer
+             * By default, this file doesn't exist, it can be created and filled manually with the following pattern:
+             * nickname=serial_number
+             * see jlink_setup_example.cfg as an example
+             *
+             * The framework also provides a task "Find J-Link probes" which will automatically generate the file
+             * with all the J-Link probes connected.
+             */
+            "id": "JLinkSerial",
+            "type": "command",
+            "command": "extension.commandvariable.pickStringRemember", // requires following extension: augustocdias.tasks-shell-input
+            "args": {
+                "description": "Select the JLink serial to debug:",
+                "default": "Unknown",
+                "fileName": "${workspaceFolder:ot-nxp}/.vscode/configs/jlink_setup.cfg",
+                "pattern": {
+                    "regexp": "^([^#].*)=(.*\\d)",
+                    "label": "$1",
+                    "value": "$2"
+                },
+            },
+        },
+    ]
+}

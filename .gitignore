@@ -14,7 +14,7 @@ out/
 /src/darwin/Framework/build/
 
 # Pigweed Environment
-.environment/
+.environment*/
 build_overrides/pigweed_environment.gni
 
 # Temporary Directories

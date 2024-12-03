@@ -35,7 +35,13 @@ import (
 	"golang.org/x/crypto/xts"
 )
 
+var (
+	output       io.Writer
+	outputBuffer *bytes.Buffer
+)
+
 var handlers = map[string]func([][]byte) error{
+	"flush":                    flush,
 	"getConfig":                getConfig,
 	"KDF-counter":              kdfCounter,
 	"AES-XTS/encrypt":          xtsEncrypt,
@@ -47,13 +53,29 @@ var handlers = map[string]func([][]byte) error{
 	"AES-CBC-CS3/decrypt":      ctsDecrypt,
 }
 
+func flush(args [][]byte) error {
+	if outputBuffer == nil {
+		return nil
+	}
+
+	if _, err := os.Stdout.Write(outputBuffer.Bytes()); err != nil {
+		return err
+	}
+	outputBuffer = new(bytes.Buffer)
+	output = outputBuffer
+	return nil
+}
+
 func getConfig(args [][]byte) error {
 	if len(args) != 0 {
 		return fmt.Errorf("getConfig received %d args", len(args))
 	}
 
-	return reply([]byte(`[
+	if err := reply([]byte(`[
 	{
+		"algorithm": "acvptool",
+		"features": ["batch"]
+	}, {
 		"algorithm": "KDF",
 		"revision": "1.0",
 		"capabilities": [{
@@ -91,36 +113,20 @@ func getConfig(args [][]byte) error {
 		  "number"
 		]
 	}, {
-		"algorithm": "KAS-KDF",
-		"mode": "TwoStep",
-		"revision": "Sp800-56Cr2",
-		"capabilities": [{
-			"macSaltMethods": [
-				"random",
-				"default"
-			],
-			"fixedInfoPattern": "uPartyInfo||vPartyInfo",
-			"encoding": [
-				"concatenation"
-			],
-			"kdfMode": "feedback",
-			"macMode": [
-				"HMAC-SHA2-256"
-			],
-			"supportedLengths": [{
-				"min": 128,
-				"max": 512,
-				"increment": 64
-			}],
-			"fixedDataOrder": [
-				"after fixed data"
-			],
-			"counterLength": [
-				8
-			],
-			"requiresEmptyIv": true,
-			"supportsEmptyIv": true
-		}],
+		"algorithm": "KDA",
+		"mode": "HKDF",
+		"revision": "Sp800-56Cr1",
+		"fixedInfoPattern": "uPartyInfo||vPartyInfo",
+		"encoding": [
+			"concatenation"
+		],
+		"hmacAlg": [
+			"SHA2-256"
+		],
+		"macSaltMethods": [
+			"default",
+			"random"
+		],
 		"l": 256,
 		"z": [256, 384]
 	}, {
@@ -162,7 +168,11 @@ func getConfig(args [][]byte) error {
 		  256
 		]
 	}
-]`))
+]`)); err != nil {
+		return err
+	}
+
+	return flush(nil)
 }
 
 func kdfCounter(args [][]byte) error {
@@ -223,12 +233,12 @@ func reply(responses ...[]byte) error {
 	}
 
 	lengthsLength := (1 + len(responses)) * 4
-	if n, err := os.Stdout.Write(lengths[:lengthsLength]); n != lengthsLength || err != nil {
+	if n, err := output.Write(lengths[:lengthsLength]); n != lengthsLength || err != nil {
 		return fmt.Errorf("write failed: %s", err)
 	}
 
 	for _, response := range responses {
-		if n, err := os.Stdout.Write(response); n != len(response) || err != nil {
+		if n, err := output.Write(response); n != len(response) || err != nil {
 			return fmt.Errorf("write failed: %s", err)
 		}
 	}
@@ -476,6 +486,10 @@ func main() {
 }
 
 func do() error {
+	// In order to exercise pipelining, all output is buffered until a "flush".
+	outputBuffer = new(bytes.Buffer)
+	output = outputBuffer
+
 	var nums [4 * (1 + maxArgs)]byte
 	var argLengths [maxArgs]uint32
 	var args [maxArgs][]byte

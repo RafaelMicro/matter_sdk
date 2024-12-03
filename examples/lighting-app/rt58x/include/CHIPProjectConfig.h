@@ -134,6 +134,24 @@ uWFwqugDNGiEck/po7KHwwMwwqZgN10XuyBajPGuyzUEV/iree4lOrao5GuwnlQ65CJzbeUB49s31EH+
 #endif
 
 /**
+ * CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME
+ *
+ * Human readable vendor name for the organization responsible for producing the device.
+ */
+#ifndef CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME
+#define CHIP_DEVICE_CONFIG_DEVICE_VENDOR_NAME "RafaelMicro"
+#endif
+
+/**
+ * CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
+ *
+ * Human readable name of the device model.
+ */
+#ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "DimmableLight"
+#endif
+
+/**
  * CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
  *
  * Enable support for Chip-over-BLE (CHIPoBLE).

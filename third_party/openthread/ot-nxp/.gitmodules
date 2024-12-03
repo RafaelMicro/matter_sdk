@@ -1,0 +1,9 @@
+[submodule "openthread"]
+	path = openthread
+	url = ../openthread.git
+[submodule "openthread-br"]
+	path = openthread-br
+	url = ../openthread.git
+[submodule "openthread-k32w1"]
+	path = openthread-k32w1
+	url = ../openthread.git

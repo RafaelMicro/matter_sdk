@@ -49,19 +49,6 @@ extern const char kSpake2pR2ISessionInfo[];
 
 inline constexpr uint16_t kPBKDFParamRandomNumberSize = 32;
 
-using namespace Crypto;
-
-struct PASESessionSerialized;
-
-struct PASESessionSerializable
-{
-    uint16_t mKeLen;
-    uint8_t mKe[kMAX_Hash_Length];
-    uint8_t mPairingComplete;
-    uint16_t mLocalSessionId;
-    uint16_t mPeerSessionId;
-};
-
 class DLL_EXPORT PASESession : public Messaging::UnsolicitedMessageHandler,
                                public Messaging::ExchangeDelegate,
                                public PairingSession
@@ -97,7 +84,7 @@ public:
      *
      * @return CHIP_ERROR     The result of initialization
      */
-    CHIP_ERROR WaitForPairing(SessionManager & sessionManager, const Spake2pVerifier & verifier, uint32_t pbkdf2IterCount,
+    CHIP_ERROR WaitForPairing(SessionManager & sessionManager, const Crypto::Spake2pVerifier & verifier, uint32_t pbkdf2IterCount,
                               const ByteSpan & salt, Optional<ReliableMessageProtocolConfig> mrpLocalConfig,
                               SessionEstablishmentDelegate * delegate);
 
@@ -131,7 +118,7 @@ public:
      *
      * @return CHIP_ERROR      The result of PASE verifier generation
      */
-    static CHIP_ERROR GeneratePASEVerifier(Spake2pVerifier & verifier, uint32_t pbkdf2IterCount, const ByteSpan & salt,
+    static CHIP_ERROR GeneratePASEVerifier(Crypto::Spake2pVerifier & verifier, uint32_t pbkdf2IterCount, const ByteSpan & salt,
                                            bool useRandomPIN, uint32_t & setupPIN);
 
     /**
@@ -220,7 +207,7 @@ private:
     Crypto::Spake2p_P256_SHA256_HKDF_HMAC mSpake2p;
 #endif
 
-    Spake2pVerifier mPASEVerifier;
+    Crypto::Spake2pVerifier mPASEVerifier;
 
     uint32_t mSetupPINCode;
 
@@ -228,7 +215,7 @@ private:
 
     uint8_t mPBKDFLocalRandomData[kPBKDFParamRandomNumberSize];
 
-    Hash_SHA256_stream mCommissioningHash;
+    Crypto::Hash_SHA256_stream mCommissioningHash;
     uint32_t mIterationCount = 0;
     uint16_t mSaltLength     = 0;
     uint8_t * mSalt          = nullptr;
@@ -239,7 +226,7 @@ private:
     };
 
 protected:
-    uint8_t mKe[kMAX_Hash_Length];
+    uint8_t mKe[Crypto::kMAX_Hash_Length];
 
     size_t mKeLen = sizeof(mKe);
 

@@ -1,0 +1,139 @@
+/*
+ *  Copyright (c) 2022, The OpenThread Authors.
+ *  All rights reserved.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions are met:
+ *  1. Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in the
+ *     documentation and/or other materials provided with the distribution.
+ *  3. Neither the name of the copyright holder nor the
+ *     names of its contributors may be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ *  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ *  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ *  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ *  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ *  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ *  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ *  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ *  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef RAM_STORAGE_K32W_H_
+#define RAM_STORAGE_K32W_H_
+
+#include "fsl_os_abstraction.h"
+
+#include <stdint.h>
+
+typedef enum
+{
+    RS_ERROR_NONE,
+    RS_ERROR_NOT_FOUND,
+    RS_ERROR_NO_BUFS,
+    RS_ERROR_PDM_ENC
+} rsError;
+
+/* Header for a RAM buffer descriptor.
+ * length: actual RAM buffer length (currently occupied with settingsBlock + data pairs).
+ * maxLength: total allocated memory for RAM buffer (without header).
+ * extendedSearch: If false, the RAM buffer is limited to persistent storage
+ *                 backend region size.
+ *                 If true, the extended search feature is enabled. This means
+ *                 that a RAM buffer can span across multiple backend regions.
+ *                 Note: backend can be any persistent storage filesystem (e.g. PDM).
+ * backendRegionSize: If extendedSearch is false, it is used to limit the length of
+ *                    the buffer.
+ *                    If extendedSearch is true, it is ignored.
+ * mutexHandle: mutex that protects RAM buffer operations.
+ */
+typedef struct
+{
+    uint16_t length;
+    uint16_t maxLength;
+    bool_t   extendedSearch;
+    uint16_t backendRegionSize;
+#if PDM_SAVE_IDLE
+    osaMutexId_t mutexHandle;
+#endif
+} ramBufferHeader;
+
+/* RAM buffer descriptor.
+ * header: metadata describing the RAM buffer. Allocated only once.
+ * buffer: actual data in |settingsBlock + data|...|settingsBlock + data| form.
+ *         Can be reallocated dynamically, based on the application needs.
+ */
+typedef struct
+{
+    ramBufferHeader header;
+    uint8_t        *buffer;
+} ramBufferDescriptor;
+
+struct settingsBlock
+{
+    uint16_t key;
+    uint16_t length;
+} __attribute__((packed));
+
+#if defined(PDM_USE_DYNAMIC_MEMORY) && PDM_USE_DYNAMIC_MEMORY && defined(OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE) && \
+    OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE
+#define ENABLE_STORAGE_DYNAMIC_MEMORY 1
+#else
+#define ENABLE_STORAGE_DYNAMIC_MEMORY 0
+#endif
+
+/* increment size for dynamic memory re-allocation in case the
+ * initial RAM buffer size gets insufficient
+ */
+#define kRamBufferReallocSize 512
+#define kRamBufferMaxAllocSize 12288
+
+#define kRamDescSize sizeof(ramBufferDescriptor)
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* search RAM Buffer for aKey and return its value in aValue. aValueLength will contain the length of aValueLength */
+rsError ramStorageGet(const ramBufferDescriptor *pBuffer,
+                      uint16_t                   aKey,
+                      int                        aIndex,
+                      uint8_t                   *aValue,
+                      uint16_t                  *aValueLength);
+
+/* search RAM buffer for aKey and set its value to aValue (having aValueLength length)
+ * - aValue and aValueLength can be NULL - the function checks only for the existence of aKey
+ * - if only aValue is NULL and aKey exists in the RAM buffer - the function will return its value in aValueLength
+ */
+rsError ramStorageSet(ramBufferDescriptor *pBuffer, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength);
+
+/* adds a settingsBlock (aKey:aValue) to the end of the RAM Buffer:
+ * - doesn't check if aKey already exists in the RAM Buffer
+ * - aValueLength can be 0
+ */
+rsError ramStorageAdd(ramBufferDescriptor *pBuffer, uint16_t aKey, const uint8_t *aValue, uint16_t aValueLength);
+
+/* search RAM Buffer for aKey (with aIndex) and delete it:
+ * - if aIndex is -1 then all the  occurences of aKey are deleted
+ */
+rsError ramStorageDelete(ramBufferDescriptor *pBuffer, uint16_t aKey, int aIndex);
+
+/* adds a dummy entry to the end of a corresponding PDM region in RAM buffer,
+ * if the key length does not fit in the current region. This allows the key
+ * to be actually added in the next PDM region, avoiding having a key span
+ * across two PDM regions.
+ */
+rsError ramStorageEnsureBlockConsistency(ramBufferDescriptor *pBuffer, uint16_t aValueLength);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* RAM_STORAGE_K32W_H_ */

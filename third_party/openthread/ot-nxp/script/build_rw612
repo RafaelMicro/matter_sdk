@@ -1,0 +1,151 @@
+#!/bin/bash
+#
+#  Copyright (c) 2020-2023, The OpenThread Authors.
+#  All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the
+#     names of its contributors may be used to endorse or promote products
+#     derived from this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+
+set -exo pipefail
+
+OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET:-}
+
+readonly OT_SRCDIR="$(pwd)"
+readonly OT_BR_RTOS_CONFIG_PATH='boards/rdrw612bga/freertos/br'
+readonly OT_OPTIONS=(
+    "-DCMAKE_TOOLCHAIN_FILE=cmake/toolchain/arm-none-eabi.cmake"
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS=1"
+    "-DCMAKE_BUILD_TYPE=MinSizeRel"
+    "-DOT_NXP_PLATFORM=rw612"
+)
+
+readonly OT_OPTIONS_BR_WIFI=(
+    "-DOT_APP_BR_FREERTOS=ON"
+    "-DOT_NXP_LWIP_WIFI=ON"
+    "-DOT_NXP_LWIP_ETH=OFF"
+    # FREERTOS CLI is disabled in this target build as it will be available in the BR app
+    "-DOT_APP_CLI_FREERTOS=OFF"
+    # FREERTOS config file is different for BR project.
+    "-DFREERTOS_CONFIG_FILE_DIRECTORY='${OT_SRCDIR}/${OT_BR_RTOS_CONFIG_PATH}'"
+)
+
+readonly OT_OPTIONS_BR_ETH=(
+    "-DOT_APP_BR_FREERTOS=ON"
+    "-DOT_NXP_LWIP_WIFI=OFF"
+    "-DOT_NXP_LWIP_ETH=ON"
+    # FREERTOS CLI is disabled in this target build as it will be available in the BR app
+    "-DOT_APP_CLI_FREERTOS=OFF"
+    # FREERTOS config file is different for BR project.
+    "-DFREERTOS_CONFIG_FILE_DIRECTORY='${OT_SRCDIR}/${OT_BR_RTOS_CONFIG_PATH}'"
+    # Enable this define when using an A2 board with ETH rework
+    "-DA2_ETH_REWORK=OFF"
+)
+
+build()
+{
+    local builddir="${OT_CMAKE_BUILD_DIR:-build_rw612}"
+
+    mkdir -p "${builddir}"
+    cd "${builddir}"
+    mkdir -p "$1"
+    cd "$1"
+
+    # shellcheck disable=SC2068
+    cmake -GNinja "$@" "${OT_SRCDIR}"
+
+    if [[ -n ${OT_CMAKE_NINJA_TARGET[*]} ]]; then
+        ninja "${OT_CMAKE_NINJA_TARGET[@]}"
+    else
+        ninja
+    fi
+
+    cd "${OT_SRCDIR}"
+}
+
+create_directory_and_build()
+{
+    if [ "$1" == 'all' ]; then
+        build_ot_cli "$@"
+        build_otbr_wifi "$@"
+        build_otbr_eth "$@"
+    elif [ "$1" == 'ot_br_wifi' ]; then
+        build_otbr_wifi "$@"
+    elif [ "$1" == 'ot_br_eth' ]; then
+        build_otbr_eth "$@"
+    elif [ "$1" == 'ot_cli' ]; then
+        build_ot_cli "$@"
+    else
+        echo >&2 "Unsupported action: $1. Supported: all, ot_br_wifi, ot_br_eth, ot_cli"
+        # 128 for Invalid arguments
+        exit 128
+    fi
+
+}
+
+build_ot_cli()
+{
+    local options=("${OT_OPTIONS[@]}")
+    options+=("-DNXP_SDK_ROOT=$NXP_RW612_SDK_ROOT")
+    options+=("${@:2}")
+    build rw612_ot_cli "${options[@]}"
+}
+
+build_otbr_wifi()
+{
+    local options=("${OT_OPTIONS_BR_WIFI[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("-DNXP_SDK_ROOT=$NXP_RW612_SDK_ROOT")
+    options+=("${@:2}")
+    build rw612_ot_br_wifi "${options[@]}"
+}
+
+build_otbr_eth()
+{
+    local options=("${OT_OPTIONS_BR_ETH[@]}")
+    options+=("${OT_OPTIONS[@]}")
+    options+=("-DNXP_SDK_ROOT=$NXP_RW612_SDK_ROOT")
+    options+=("${@:2}")
+    build rw612_ot_br_eth "${options[@]}"
+}
+
+main()
+{
+
+    # check if environmental variable NXP_RW612_SDK_ROOT is set
+    #     if not, then use "../../../" as a possible path
+    if [ -z "$NXP_RW612_SDK_ROOT" ]; then
+        export NXP_RW612_SDK_ROOT="${OT_SRCDIR}/third_party/github_sdk/sdk_2.15.0/"
+    fi
+
+    echo "NXP_RW612_SDK_ROOT set to " $NXP_RW612_SDK_ROOT
+
+    if [ $# == 0 ]; then
+        create_directory_and_build all
+    else
+        create_directory_and_build "$@"
+    fi
+
+}
+
+main "$@"

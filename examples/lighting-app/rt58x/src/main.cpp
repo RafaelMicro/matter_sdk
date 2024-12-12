@@ -21,7 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt58xPlatform.h"
-#include "init_lighting_rt58xPlatform.h"
+#include "init_device_environment.h"
 #include <DeviceInfoProviderImpl.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <lib/support/CHIPPlatformMemory.h>

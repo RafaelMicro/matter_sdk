@@ -110,7 +110,7 @@ rt58x_executable("window_app") {
     "src/WindowControl.cpp",
     "src/WindowManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_window_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
   if (chip_build_libshell) {

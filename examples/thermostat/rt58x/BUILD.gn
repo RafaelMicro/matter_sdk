@@ -105,7 +105,7 @@ rt58x_executable("thermostat") {
     "src/SensorManager.cpp",
     "src/TemperatureManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_thermostat_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
   if (chip_build_libshell) {

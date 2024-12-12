@@ -24,7 +24,7 @@
 #include "AppTask.h"
 #include "WaterValveManager.h"
 #include "init_rt58xPlatform.h"
-#include "init_water-valve-app_rt58xPlatform.h"
+#include "init_device_environment.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>

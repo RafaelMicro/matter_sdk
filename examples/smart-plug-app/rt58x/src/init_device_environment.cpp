@@ -28,6 +28,7 @@ extern "C" {
 #include "init_device_environment.h"
 #include "cm3_mcu.h"
 
+
 static void init_pin_mux(void)
 {
     gpio_cfg_output(20);
@@ -35,6 +36,11 @@ static void init_pin_mux(void)
     gpio_pin_set(20);
     gpio_pin_set(21);
     return;
+}
+
+void smart_plug_trigger(uint32_t state)
+{
+    gpio_pin_write(21, !state);
 }
 
 void init_device_environment(void)

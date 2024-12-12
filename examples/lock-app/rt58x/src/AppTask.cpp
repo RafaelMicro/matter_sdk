@@ -52,7 +52,7 @@
 #include "util_log.h"
 #include "cm3_mcu.h"
 #include "init_rt58xPlatform.h"
-#include "init_lock_app_rt58xPlatform.h"
+#include "init_device_environment.h"
 #include "bsp.h"
 #include "bsp_button.h"
 #include "bsp_led.h"
@@ -118,11 +118,11 @@ void IdentifyToggleOnOff(bool onoff)
     //turn on/off led indicator
     if(onoff)
     {
-        gpio_pin_clear(20);
+        gpio_pin_clear(21);
     }
     else
     {
-        gpio_pin_set(20);
+        gpio_pin_set(21);
     }
 }
 void OnTriggerIdentifyEffect(Identify * identify)
@@ -302,13 +302,13 @@ void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
     // Turn off the lock LED if in an UNLOCKED state.
     if (aAction == BoltLockManager::LOCK_ACTION)
     {
-        bsp_led_Off(BSP_LED_1);
+        gpio_pin_set(BSP_LED_1);
         ChipLogProgress(NotSpecified, "Lock Action has been completed");
         ChipLogProgress(NotSpecified, "Door Lock State: Locked");
     }
     else if (aAction == BoltLockManager::UNLOCK_ACTION)
     {
-        bsp_led_on(BSP_LED_1);
+        gpio_pin_clear(BSP_LED_1);
         ChipLogProgress(NotSpecified, "Unlock Action has been completed");
         ChipLogProgress(NotSpecified, "Door Lock State: Unlocked");
     }
@@ -389,16 +389,14 @@ void AppTask::InitServer(intptr_t arg)
 
 void AppTask::UpdateStatusLED()
 {
-#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)    
     if (sCommissioned)
     {
-        init_rt58x_led_flash(20, 0, 0);
+        gpio_pin_set(20);
     }
     else
     {
-        init_rt58x_led_flash(20, 500, 500);
+        gpio_pin_clear(20);
     }
-#endif
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)

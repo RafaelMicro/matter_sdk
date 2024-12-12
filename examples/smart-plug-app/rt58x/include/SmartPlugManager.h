@@ -30,7 +30,7 @@
 #include <app/clusters/on-off-server/on-off-server.h>
 
 #include "init_rt58xPlatform.h"
-#include "init_smart-plug-app_rt58xPlatform.h"  
+#include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
 class SmartPlugManager

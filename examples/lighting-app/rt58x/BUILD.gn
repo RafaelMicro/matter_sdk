@@ -83,7 +83,7 @@ rt58x_executable("lighting_app") {
     "src/AppTask.cpp",
     "src/LightingManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_lighting_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
 

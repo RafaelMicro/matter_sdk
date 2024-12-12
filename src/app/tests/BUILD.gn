@@ -169,7 +169,6 @@ source_set("app-test-stubs") {
     "test-interaction-model-api.h",
   ]
 
-
   public_deps = [
     "${chip_root}/src/app/util/mock:mock_codegen_data_model",
     "${chip_root}/src/app/util/mock:mock_ember",

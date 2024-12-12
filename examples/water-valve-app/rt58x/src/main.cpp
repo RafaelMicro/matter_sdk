@@ -21,7 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt58xPlatform.h"
-#include "init_water-valve-app_rt58xPlatform.h"
+#include "init_device_environment.h"
 #include <DeviceInfoProviderImpl.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <lib/support/CHIPPlatformMemory.h>
@@ -55,7 +55,7 @@ int main(void)
     CHIP_ERROR err;
 
     init_rt58xPlatform();
-    init_water_valve_app_rt58xPlatform();
+    init_device_environment();
 
     //mbedtls_platform_set_calloc_free(CHIPPlatformMemoryCalloc, CHIPPlatformMemoryFree);
 

@@ -32,7 +32,7 @@
 #include <app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-server.h>
 
 #include "init_rt58xPlatform.h"
-#include "init_water-valve-app_rt58xPlatform.h"  
+#include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
 class WaterValveManager : public chip::app::Clusters::ValveConfigurationAndControl::Delegate

@@ -117,7 +117,7 @@ rt58x_executable("light_switch_app") {
     "src/BindingHandler.cpp",
     "src/LightSwitchMgr.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_light_switch_app_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
   if (chip_build_libshell) {

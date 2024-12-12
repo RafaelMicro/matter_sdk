@@ -129,11 +129,11 @@ void IdentifyToggleOnOff(bool onoff)
     //turn on/off led indicator
     if(onoff)
     {
-        gpio_pin_clear(20);
+        gpio_pin_clear(21);
     }
     else
     {
-        gpio_pin_set(20);
+        gpio_pin_set(21);
     }
 }
 void OnTriggerIdentifyEffect(Identify * identify)
@@ -322,16 +322,14 @@ void AppTask::InitServer(intptr_t arg)
 
 void AppTask::UpdateStatusLED()
 {
-#if(CHIP_CONFIG_ENABLE_ICD_SERVER == 0)
     if (sCommissioned)
     {
-        init_rt58x_led_flash(20, 0, 0);
+        gpio_pin_set(20);
     }
     else
     {
-        init_rt58x_led_flash(20, 500, 500);
+        gpio_pin_clear(20);
     }
-#endif    
 }
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)

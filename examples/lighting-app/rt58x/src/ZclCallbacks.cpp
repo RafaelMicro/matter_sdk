@@ -24,7 +24,7 @@
 #include "AppTask.h"
 #include "LightingManager.h"
 #include "init_rt58xPlatform.h"
-#include "init_lighting_rt58xPlatform.h"
+#include "init_device_environment.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>

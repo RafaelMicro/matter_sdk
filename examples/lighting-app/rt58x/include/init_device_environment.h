@@ -1,7 +1,6 @@
 /*
  *
  *    Copyright (c) 2020 Project CHIP Authors
- *    Copyright (c) 2019 Google LLC.
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,31 +15,17 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
+/*******************************************************************************/
+#pragma once
 
-#include "AppConfig.h"
+#include "util_log.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <assert.h>
-#include <string.h>
 
-#include "init_device_environment.h"
-#include "cm3_mcu.h"
-
-static void init_pin_mux(void)
-{
-    gpio_cfg_output(20);
-    gpio_cfg_output(21);
-    gpio_pin_set(20);
-    gpio_pin_set(21);
-    return;
-}
-
-void init_device_environment(void)
-{
-    init_pin_mux(); 
-}
+void init_lighting_app_rt58xPlatform(void);
+void rt58x_led_level_ctl(uint32_t id, uint8_t current_lv);
 
 #ifdef __cplusplus
 }

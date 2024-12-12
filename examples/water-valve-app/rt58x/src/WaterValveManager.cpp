@@ -46,7 +46,7 @@ DataModel::Nullable<chip::Percent> WaterValveManager::HandleOpenValve(DataModel:
     mCurrentLevelPercent = level.Value();
     if(mCurrentLevelPercent > 0)
     {
-        gpio_pin_clear(20);
+        gpio_pin_clear(21);
     }
     
     ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kOpen);
@@ -57,7 +57,7 @@ CHIP_ERROR WaterValveManager::HandleCloseValve()
     ChipLogProgress(Zcl, "Valve closed");
 
     mCurrentLevelPercent = 0;
-    gpio_pin_set(20);
+    gpio_pin_set(21);
 
     ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kClosed);
     return CHIP_NO_ERROR;

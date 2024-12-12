@@ -21,7 +21,7 @@
 
 #include "AppConfig.h"
 #include "init_rt58xPlatform.h"
-#include "init_lock_app_rt58xPlatform.h"
+#include "init_device_environment.h"
 #include <DeviceInfoProviderImpl.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
@@ -49,7 +49,7 @@ int main(void)
     CHIP_ERROR err;
 
     init_rt58xPlatform();
-    init_lock_app_rt58xPlatform();
+    init_device_environment();
 
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)

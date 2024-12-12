@@ -84,7 +84,7 @@ rt58x_executable("smart-plug_app") {
     "src/AppTask.cpp",
     "src/SmartPlugManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_smart-plug-app_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
   if (chip_build_libshell) {

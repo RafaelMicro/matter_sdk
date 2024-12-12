@@ -28,7 +28,7 @@
 #include "timers.h" // provides FreeRTOS timer support
 
 #include "init_rt58xPlatform.h"
-#include "init_window_rt58xPlatform.h"  
+#include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
 class WindowManager
@@ -90,7 +90,7 @@ private:
     void SetTILILevel(uint8_t aLevel) { tili_level = aLevel; }
     void SetState(State_t aOn){ mState = (aOn == kState_On)? kState_On: kState_Off; }
 
-    void UpdateLight();
+    void UpdateWindow();
     static void TimerEventHandler(TimerHandle_t xTimer);
     static WindowManager sWindow;
 };

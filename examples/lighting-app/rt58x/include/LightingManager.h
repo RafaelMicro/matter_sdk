@@ -31,7 +31,7 @@
 
 
 #include "init_rt58xPlatform.h"
-#include "init_lighting_rt58xPlatform.h"  
+#include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
 class LightingManager

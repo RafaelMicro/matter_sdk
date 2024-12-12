@@ -116,7 +116,7 @@ rt58x_executable("lock_app") {
     "src/AppTask.cpp",
     "src/BoltLockManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_lock_app_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
 

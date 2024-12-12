@@ -84,7 +84,7 @@ rt58x_executable("water-valve_app") {
     "src/AppTask.cpp",
     "src/WaterValveManager.cpp",
     "src/ZclCallbacks.cpp",
-    "src/init_water-valve-app_rt58xPlatform.cpp",
+    "src/init_device_environment.cpp",
     "src/main.cpp",
   ]
   if (chip_build_libshell) {

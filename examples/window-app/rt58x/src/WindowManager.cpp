@@ -55,11 +55,9 @@ bool WindowManager::InitiateAction(MoveType_t aMoveType, Action_t aAction, int32
     {
     case LIFT_TYPE:
         (aAction == LEVEL_ACTION)? SetLIFILevel(*value): SetState(new_state);
-        UpdateLight();
         break;
     case TILT_TYPE:
         (aAction == LEVEL_ACTION)? SetTILILevel(*value): SetState(new_state);
-        UpdateLight();
         break;
     default:
         break;
@@ -73,10 +71,7 @@ bool WindowManager::InitiateAction(MoveType_t aMoveType, Action_t aAction, int32
     return action_initiated;
 }
 
-void WindowManager::UpdateLight()
+void WindowManager::UpdateWindow()
 {
-    ChipLogProgress(NotSpecified, "UpdateWindow LED Level: LIFT: %d TILT: %d", lifi_level, tili_level);
-
-    rt58x_led_level_ctl(2, lifi_level);
-    rt58x_led_level_ctl(3, tili_level);
+    ChipLogProgress(NotSpecified, "UpdateWindow Level: LIFT: %d TILT: %d", lifi_level, tili_level);
 }

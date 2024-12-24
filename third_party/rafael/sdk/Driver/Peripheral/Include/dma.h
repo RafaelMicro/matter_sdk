@@ -142,7 +142,7 @@ typedef struct
  *
  *
  */
-extern void dma_register_isr(
+void dma_register_isr(
     uint32_t  dma_channel_id,
     dma_proc_cb_t  app_dma_callback
 );
@@ -158,7 +158,7 @@ extern void dma_register_isr(
  * @retval   STATUS_SUCCESS        This request setting success.
  *
  */
-extern uint32_t dma_config(
+uint32_t dma_config(
     uint32_t  dma_channel_id,
     const dma_config_t *mode
 );
@@ -174,7 +174,7 @@ extern uint32_t dma_config(
  *
  *
  */
-extern uint32_t dma_enable(uint32_t  dma_channel_id);
+uint32_t dma_enable(uint32_t  dma_channel_id);
 
 
 /**
@@ -189,7 +189,7 @@ extern uint32_t dma_enable(uint32_t  dma_channel_id);
  *
  *
  */
-extern uint32_t dma_get_status(uint32_t  dma_channel_id, uint32_t *status);
+uint32_t dma_get_status(uint32_t  dma_channel_id, uint32_t *status);
 
 /**
  * @brief Get DMA repeat transfer status.
@@ -203,7 +203,7 @@ extern uint32_t dma_get_status(uint32_t  dma_channel_id, uint32_t *status);
  * @retval   STATUS_SUCCESS
  *
  */
-extern uint32_t dma_get_repeatstatus(uint32_t  dma_channel_id, uint32_t *repeat_status);
+uint32_t dma_get_repeatstatus(uint32_t  dma_channel_id, uint32_t *repeat_status);
 
 /**
  * @brief DMA finish function. Use this function to clear DMA enable bit and clear flags.
@@ -218,7 +218,7 @@ extern uint32_t dma_get_repeatstatus(uint32_t  dma_channel_id, uint32_t *repeat_
  * @retval   STATUS_SUCCESS
  *
  */
-extern uint32_t dma_finish(uint32_t  dma_channel_id);
+uint32_t dma_finish(uint32_t  dma_channel_id);
 
 
 /**
@@ -231,7 +231,7 @@ extern uint32_t dma_finish(uint32_t  dma_channel_id);
  *
  */
 
-extern uint32_t dma_set_link_list(
+uint32_t dma_set_link_list(
     uint32_t dma_channel_id,
     dma_linklist_entry_t *dma_lli,
     uint32_t dma_int_enable);
@@ -245,7 +245,7 @@ extern uint32_t dma_set_link_list(
  * @param  control_mode            dma transfer mode
  *
  */
-extern uint32_t create_dma_link_list(
+uint32_t create_dma_link_list(
     dma_linklist_request_t  *dma_linklist_request,
     uint32_t                entry_number,
     dma_linklist_entry_t    *dma_link_list,
@@ -258,7 +258,7 @@ extern uint32_t create_dma_link_list(
 *
 *
 */
-extern uint32_t dma_init(void);
+uint32_t dma_init(void);
 
 
 /*@}*/ /* end of group DMA_Driver */

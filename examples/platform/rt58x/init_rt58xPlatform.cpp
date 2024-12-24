@@ -186,7 +186,6 @@ void init_rt58xPlatform(void)
     
     dma_init();
     uartConsoleInit();
-    crypto_lib_init();
 
    #if (LPWR_FLASH_PROTECT_ENABLE==1 && CHIP_CONFIG_ENABLE_ICD_SERVER != 1)
    flash_vbat_protect_init();

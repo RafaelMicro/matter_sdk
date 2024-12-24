@@ -67,6 +67,7 @@ bool RfMcu_EvtQueueIsReadySpi(void);
 uint16_t RfMcu_EvtQueueReadSpi(uint8_t *evt, RF_MCU_RX_CMDQ_ERROR *rx_evt_error);
 bool RfMcu_TxQueueIsOccupiedSpi(uint8_t queue_id);
 bool RfMcu_TxQueueFullCheckSpi(void);
+uint8_t RfMcu_TxQueueGetSpi(void);
 RF_MCU_TXQ_ERROR RfMcu_TxQueueSendSpi(uint8_t queue_id, const uint8_t *tx_data, uint32_t data_length);
 bool RfMcu_CmdQueueFullCheckSpi(void);
 RF_MCU_TX_CMDQ_ERROR RfMcu_CmdQueueSendSpi(const uint8_t *cmd, uint32_t cmd_length);

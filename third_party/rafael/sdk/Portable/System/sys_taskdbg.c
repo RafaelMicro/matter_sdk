@@ -16,8 +16,7 @@ void vApplicationMallocFailedHook(size_t xWantedSize)
     provide information on how the remaining heap might be fragmented). */
     taskDISABLE_INTERRUPTS();
     //malloc_info_printf();
-    err("MallocFailed (%d)\r\n", xWantedSize);
-    NVIC_DisableIRQ((IRQn_Type)Wdt_IRQn);
+    err("MallocFailed (%d)\n", xWantedSize);
     for (;;);
 }
 /*-----------------------------------------------------------*/
@@ -52,8 +51,14 @@ void vApplicationTickHook(void)
 }
 void vAssertCalled(const char *const pcFileName, unsigned long ulLine)
 {
-    char *current_task_name = (char *)sys_current_thread_name();
+    char *current_task_name = (char *)sys_current_thread_name(), a = 1;
     err("assert: [%s] %s:%ld\n", current_task_name, pcFileName, ulLine);
-    while (1) {}
+    while (a) {}
 }
 /*-----------------------------------------------------------*/
+
+
+
+
+
+

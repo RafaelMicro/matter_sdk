@@ -98,7 +98,7 @@ typedef struct
 * @param[in] wdt_handler
 * @return None
 */
-extern void Wdt_Int_Callback_Register(wdt_isr_handler_t wdt_handler);
+void Wdt_Int_Callback_Register(wdt_isr_handler_t wdt_handler);
 
 /**
  * @brief Watch dog Start
@@ -114,7 +114,7 @@ extern void Wdt_Int_Callback_Register(wdt_isr_handler_t wdt_handler);
  * @param[in] wdt_handler register watch dog interrupt service routine callback
  * @return
  */
-extern uint32_t Wdt_Start(
+uint32_t Wdt_Start(
     wdt_config_mode_t wdt_mode,
     wdt_config_tick_t wdt_cfg_ticks,
     wdt_isr_handler_t wdt_handler);
@@ -124,7 +124,7 @@ extern uint32_t Wdt_Start(
  * @retval STATUS_INVALID_REQUEST watchdog control lock mode is true, then can't clear the watchdog enable flag
  * @retval STATUS_SUCCESS clear the watchdog enable flag is successful
  */
-extern uint32_t Wdt_Stop(void);
+uint32_t Wdt_Stop(void);
 
 /**
  * @brief Get watchdog reset event value
@@ -144,7 +144,7 @@ __STATIC_INLINE void Wdt_Reset_Event_Clear(void)
     WDT->RST_OCCUR.bit.RESET_OCCUR = 1;     /*Write clear.*/
 }
 
-extern uint32_t Wdt_Stop(void);
+uint32_t Wdt_Stop(void);
 
 /**
  * @brief Reload the watchdog Kick value

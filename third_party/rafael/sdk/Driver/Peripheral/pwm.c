@@ -185,6 +185,64 @@ uint32_t Pwm_Start(pwm_seq_para_head_t *pwm_para_config)
 }
 
 
+uint32_t Pwm_Stop(pwm_seq_para_head_t *pwm_para_config)
+{
+    pwm_t *pwm;
+
+    switch (pwm_para_config->pwm_id)
+    {
+    case PWM_ID_0:
+        pwm = PWM0;
+        NVIC_DisableIRQ(Pwm0_IRQn);
+        break;
+    case PWM_ID_1:
+        pwm = PWM1;
+        NVIC_DisableIRQ(Pwm1_IRQn);
+        break;
+    case PWM_ID_2:
+        pwm = PWM2;
+        NVIC_DisableIRQ(Pwm2_IRQn);
+        break;
+    case PWM_ID_3:
+        pwm = PWM3;
+        NVIC_DisableIRQ(Pwm3_IRQn);
+        break;
+    case PWM_ID_4:
+        pwm = PWM4;
+        NVIC_DisableIRQ(Pwm4_IRQn);
+        break;
+    default:
+        return STATUS_INVALID_PARAM;
+    }
+
+
+    if (pwm_para_config->pwm_seq_num == PWM_SEQ_NUM_2)
+    {
+        pwm->PWM_RDMA0_CTL1 |= PWM_RDMA_RESET;      //reset xdma
+        pwm->PWM_RDMA1_CTL1 |= PWM_RDMA_RESET;      //reset xdma
+    }
+    else if (pwm_para_config->pwm_seq_num == PWM_SEQ_NUM_1 )
+    {
+        if (pwm_para_config->pwm_seq_order == PWM_SEQ_ORDER_R)
+        {
+            pwm->PWM_RDMA0_CTL1 |= PWM_RDMA_RESET;       //reset xdma
+        }
+        else if (pwm_para_config->pwm_seq_order == PWM_SEQ_ORDER_T)
+        {
+            pwm->PWM_RDMA1_CTL1 |= PWM_RDMA_RESET;        //reset xdma
+        }
+    }
+    else
+    {
+        return STATUS_INVALID_PARAM;
+    }
+
+    pwm->PWM_CTL0 &= ~ (PWM_ENABLE_PWM | PWM_ENABLE_CLK);
+
+    return STATUS_SUCCESS;
+}
+
+
 /**
  * @brief Function for handling the PWM0 interrupt.
  * @details Checks for PWM interrupt status, and executes PWM handlers for the corresponding status.

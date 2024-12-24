@@ -19,6 +19,7 @@ typedef struct
     uint32_t reg_value;       /**< The value of register to be written*/
 } reg_bit_write_t;
 
+
 /*----------------------------------------------------------------------------
   Define clocks
  *----------------------------------------------------------------------------*/
@@ -181,6 +182,12 @@ void SystemPmuSetMode(pmu_mode_cfg_t pmu_mode)
         PMU->PMU_EN_CTRL.bit.EN_DCDC_NM = 1;
         PMU->PMU_EN_CTRL.bit.EN_DCDC_NM = 0;
     }
+    else //default dcdc mode
+    {
+        PMU->PMU_EN_CTRL.bit.EN_LLDO_NM = 1;
+        PMU->PMU_EN_CTRL.bit.EN_DCDC_NM = 1;
+        PMU->PMU_EN_CTRL.bit.EN_LLDO_NM = 0;
+    }
 }
 
 #if (SET_PMU_MODE == PMU_LDO_MODE)
@@ -295,13 +302,19 @@ void SystemPmuUpdateDcdc(void)              /* Update PMU settings in DCDC mode 
     PMU->PMU_RCO32K.bit.RN_32K = 2047;
 #elif (CHIP_VERSION == RT58X_MPB)
     PMU->PMU_RCO32K.bit.RN_32K = 0;
+#else
+    PMU->PMU_RCO32K.bit.RN_32K = 0;     /*default MPB Setting*/
 #endif
+
     PMU->PMU_RCO32K.bit.C_32K = 0;
 #if (CHIP_VERSION == RT58X_MPA)
     PMU->PMU_RCO32K.bit.PW_32K = 2;
 #elif (CHIP_VERSION == RT58X_MPB)
     PMU->PMU_RCO32K.bit.PW_32K = 0;
+#else
+    PMU->PMU_RCO32K.bit.PW_32K = 0;     /*default MPB Setting*/
 #endif
+
 
     pmu_dcdc_ctrl0_buf = PMU->PMU_DCDC_CTRL0;
     pmu_dcdc_ctrl0_buf.bit.DCDC_PPOWER_HEAVY = 0;
@@ -310,12 +323,17 @@ void SystemPmuUpdateDcdc(void)              /* Update PMU settings in DCDC mode 
     pmu_dcdc_ctrl0_buf.bit.DCDC_NPOWER_HEAVY = 7;
 #elif (CHIP_VERSION == RT58X_MPB)
     pmu_dcdc_ctrl0_buf.bit.DCDC_NPOWER_HEAVY = 0;
+#else
+    pmu_dcdc_ctrl0_buf.bit.DCDC_NPOWER_HEAVY = 0;   /*default MPB Setting*/
 #endif
+
     pmu_dcdc_ctrl0_buf.bit.DCDC_EN_ZCD_HEAVY = 0;
 #if (CHIP_VERSION == RT58X_MPA)
     pmu_dcdc_ctrl0_buf.bit.DCDC_PDRIVE_HEAVY = 5;
 #elif (CHIP_VERSION == RT58X_MPB)
     pmu_dcdc_ctrl0_buf.bit.DCDC_PDRIVE_HEAVY = 6;
+#else
+    pmu_dcdc_ctrl0_buf.bit.DCDC_PDRIVE_HEAVY = 6;   /*default MPB Setting*/
 #endif
     pmu_dcdc_ctrl0_buf.bit.DCDC_MG_HEAVY = 1;
     pmu_dcdc_ctrl0_buf.bit.DCDC_NDRIVE_HEAVY = 5;
@@ -323,23 +341,34 @@ void SystemPmuUpdateDcdc(void)              /* Update PMU settings in DCDC mode 
     pmu_dcdc_ctrl0_buf.bit.DCDC_PW_HEAVY = 0;
     pmu_dcdc_ctrl0_buf.bit.DCDC_C_SC_HEAVY = 0;
     pmu_dcdc_ctrl0_buf.bit.DCDC_C_HG_HEAVY = 1;
+
 #if (CHIP_VERSION == RT58X_MPA)
     pmu_dcdc_ctrl0_buf.bit.DCDC_PWMF_HEAVY = 8;
 #elif (CHIP_VERSION == RT58X_MPB)
     pmu_dcdc_ctrl0_buf.bit.DCDC_PWMF_HEAVY = 7;
+#else
+    pmu_dcdc_ctrl0_buf.bit.DCDC_PWMF_HEAVY = 7;     /*default MPB Setting*/
 #endif
+
     pmu_dcdc_ctrl0_buf.bit.DCDC_OS_PN_HEAVY = 1;
+
 #if (CHIP_VERSION == RT58X_MPA)
     pmu_dcdc_ctrl0_buf.bit.DCDC_OS_HEAVY = 3;
 #elif (CHIP_VERSION == RT58X_MPB)
     pmu_dcdc_ctrl0_buf.bit.DCDC_OS_HEAVY = 1;
+#else
+    pmu_dcdc_ctrl0_buf.bit.DCDC_OS_HEAVY = 1;       /*default MPB Setting*/
 #endif
+
     pmu_dcdc_ctrl0_buf.bit.DCDC_HG_HEAVY = 3;
 #if (CHIP_VERSION == RT58X_MPA)
     pmu_dcdc_ctrl0_buf.bit.DCDC_DLY_HEAVY = 2;
 #elif (CHIP_VERSION == RT58X_MPB)
     pmu_dcdc_ctrl0_buf.bit.DCDC_DLY_HEAVY = 0;
+#else
+    pmu_dcdc_ctrl0_buf.bit.DCDC_DLY_HEAVY = 0;      /*default MPB Setting*/
 #endif
+
     PMU->PMU_DCDC_CTRL0 = pmu_dcdc_ctrl0_buf;
 
     pmu_dcdc_ctrl1_buf = PMU->PMU_DCDC_CTRL1;
@@ -475,6 +504,8 @@ void SystemInit(void)
     SystemPmuUpdateLdo();
 #elif (SET_PMU_MODE == PMU_DCDC_MODE)
     SystemPmuUpdateDcdc();
+#else
+    SystemPmuUpdateDcdc();
 #endif
 #endif
 
@@ -522,3 +553,5 @@ void SystemInit(void)
 
     return;
 }
+
+

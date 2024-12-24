@@ -158,23 +158,23 @@ typedef enum
 } low_power_wakeup_cfg_t;
 
 
-extern void Lpm_Low_Power_Mask(uint32_t mask);
-extern void Lpm_Low_Power_Unmask(uint32_t unmask);
-extern uint32_t Lpm_Get_Low_Power_Mask_Status(void);
+void Lpm_Low_Power_Mask(uint32_t mask);
+void Lpm_Low_Power_Unmask(uint32_t unmask);
+uint32_t Lpm_Get_Low_Power_Mask_Status(void);
 
-extern void Lpm_Comm_Subsystem_Wakeup_Mask(uint32_t mask);
-extern void Lpm_Comm_Subsystem_Wakeup_Unmask(uint32_t unmask);
-extern uint32_t Lpm_Get_Comm_Subsystem_Wakeup_Mask_Status(void);
+void Lpm_Comm_Subsystem_Wakeup_Mask(uint32_t mask);
+void Lpm_Comm_Subsystem_Wakeup_Unmask(uint32_t unmask);
+uint32_t Lpm_Get_Comm_Subsystem_Wakeup_Mask_Status(void);
 
-extern void Lpm_Set_Low_Power_Level(low_power_level_cfg_t low_power_level_cfg);
-extern void Lpm_Enable_Low_Power_Wakeup(low_power_wakeup_cfg_t low_power_wakeup_cfg);
-extern void Lpm_Disable_Low_Power_Wakeup(low_power_wakeup_cfg_t low_power_wakeup_cfg);
-extern void Lpm_Set_GPIO_Deepsleep_Wakeup_Invert(uint32_t value);
-extern void Lpm_Set_Comparator_Deepsleep_Wakeup_Invert(uint32_t value);
-extern void Lpm_Set_Sram_Normal_Shutdown(uint32_t value);
-extern void Lpm_Set_Sram_Sleep_Deepsleep_Shutdown(uint32_t value);
-extern void Lpm_Enter_Low_Power_Mode(void);
-extern void Lpm_Comm_Subsystem_Disable_LDO_Mode(void);
+void Lpm_Set_Low_Power_Level(low_power_level_cfg_t low_power_level_cfg);
+void Lpm_Enable_Low_Power_Wakeup(low_power_wakeup_cfg_t low_power_wakeup_cfg);
+void Lpm_Disable_Low_Power_Wakeup(low_power_wakeup_cfg_t low_power_wakeup_cfg);
+void Lpm_Set_GPIO_Deepsleep_Wakeup_Invert(uint32_t value);
+void Lpm_Set_Comparator_Deepsleep_Wakeup_Invert(uint32_t value);
+void Lpm_Set_Sram_Normal_Shutdown(uint32_t value);
+void Lpm_Set_Sram_Sleep_Deepsleep_Shutdown(uint32_t value);
+void Lpm_Enter_Low_Power_Mode(void);
+void Lpm_Comm_Subsystem_Disable_LDO_Mode(void);
 
 void Lpm_Comm_Subsystem_Check_System_Ready(void);
 void Lpm_Comm_Subsystem_Disable_Wait_32k_Done(void);

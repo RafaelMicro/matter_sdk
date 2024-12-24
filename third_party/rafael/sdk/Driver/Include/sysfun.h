@@ -63,13 +63,13 @@ chip_model_t GetOtpVersion(void);
 * @details The function waits until the flash operation is complete and then resets the system.
 *
 */
-extern void Sys_Software_Reset(void);
+void Sys_Software_Reset(void);
 /**
 * @brief   critical_section_init
 * @details This function clear critical_section_counter;
 *
 */
-extern void critical_section_init(void);
+void critical_section_init(void);
 /**
 * @brief   enter critical sections
 * @details This function is nest function, that is, system call this function several times.
@@ -77,7 +77,7 @@ extern void critical_section_init(void);
 *           So as short as possible for using this function.
 *
 */
-extern void enter_critical_section(void);
+void enter_critical_section(void);
 
 /**
  * @brief   leave critical sections
@@ -88,7 +88,7 @@ extern void enter_critical_section(void);
  *           One enter_critical_section must have one corresponding leave_critical_section!
  *
  */
-extern void leave_critical_section(void);
+void leave_critical_section(void);
 
 /**
  * @brief   check hardware chip version and software defined version compared value.
@@ -102,7 +102,7 @@ extern void leave_critical_section(void);
  * @retval    1 --- hardware and system defined mis-matched.
  */
 
-extern uint32_t version_check(void);
+uint32_t version_check(void);
 /**
  * @brief   check system pmu mode
  * @details
@@ -111,7 +111,7 @@ extern uint32_t version_check(void);
  * @retval    0 --- LDO MODE
  * @retval    1 --- DCDC Mode
  */
-extern pmu_mode_cfg_t GetPmuMode(void);
+pmu_mode_cfg_t GetPmuMode(void);
 
 typedef enum
 {

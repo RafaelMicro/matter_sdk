@@ -21,7 +21,11 @@ __initial_sp
 ;   <o>  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
 ; </h>
 
+				IF :DEF:BOOTLOADER
+Heap_Size       EQU     0x00015000
+				ELSE
 Heap_Size       EQU     0x00000800
+				ENDIF
 
                 AREA    HEAP, NOINIT, READWRITE, ALIGN=3
 __heap_base

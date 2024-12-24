@@ -11,6 +11,11 @@
 
 #ifndef __UTIL_LIST_H__
 #define __UTIL_LIST_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //=============================================================================
 //                Include (Better to prevent)
 //=============================================================================
@@ -85,4 +90,7 @@ static inline int list_empty(link_list_t *list)
     return list->next == list;
 }
 
+#ifdef __cplusplus
+};
+#endif
 #endif /* __UTIL_LIST_H__ */

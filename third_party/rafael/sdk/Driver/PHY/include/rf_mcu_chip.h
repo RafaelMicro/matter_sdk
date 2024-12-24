@@ -65,7 +65,7 @@ extern "C"
 #define RF_MCU_FW_TARGET_MULTI_PROTOCOL     (0x02)
 #define RF_MCU_FW_TARGET_UNDEFINE           (0xFF)
 #if ((RF_MCU_CHIP_MODEL == RF_MCU_CHIP_569M0) && (RF_MCU_CHIP_TYPE == RF_MCU_TYPE_ASIC) && (RF_MCU_CHIP_BASE == BASE_ROM_TYPE))
-#define RF_MCU_FW_TARGET                    (RF_MCU_FW_TARGET_MAC)
+#define RF_MCU_FW_TARGET                    (RF_MCU_FW_TARGET_BLE)
 #else
 #define RF_MCU_FW_TARGET                    (RF_MCU_FW_TARGET_UNDEFINE)
 #endif
@@ -93,14 +93,18 @@ extern "C"
 #if (RF_MCU_FW_TARGET == RF_MCU_FW_TARGET_MAC)
 #define RF_MCU_PATCH_SUPPORTED              (0x01)
 #else
-#define RF_MCU_PATCH_SUPPORTED              (0x00)
+#define RF_MCU_PATCH_SUPPORTED              (0x01)
 #endif
 #else
 #define RF_MCU_PATCH_SUPPORTED              (0x00)
 #endif
 
 /* Const Load Enable */
+#if (RF_MCU_CHIP_MODEL == RF_MCU_CHIP_569M0)
 #define RF_MCU_CONST_LOAD_SUPPORTED         (0x00)
+#else
+#define RF_MCU_CONST_LOAD_SUPPORTED         (0x01)
+#endif
 #if (RF_MCU_CONST_LOAD_SUPPORTED == 1)
 #undef RF_MCU_PATCH_SUPPORTED
 #define RF_MCU_PATCH_SUPPORTED              (0x00)

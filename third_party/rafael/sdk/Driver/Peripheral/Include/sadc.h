@@ -538,13 +538,60 @@ void Sadc_Compensation_Init(uint32_t xPeriodicTimeInSec);
  */
 void Sadc_Compensation_Deinit(void);
 
-
-
-void Sadc_Config_Enable_Vbat(sadc_config_resolution_t res, sadc_config_oversample_t os, sadc_isr_handler_t sadc_int_callback);
-uint32_t Sadc_Channel_Read_Vbat(sadc_input_ch_t ch);
-uint32_t Sadc_Init_vBAT(sadc_config_t *p_config, sadc_isr_handler_t sadc_int_callback);
-void Sadc_Compensation_vbat_Init(uint32_t xPeriodicTimeInSec);
+#if (SADC_POLLING_READ==1)
+/**
+ * @brief SADC Polling Adc value
+ * @param None
+ * @return None
+ *
+ */
+uint32_t Sadc_Channel_Polling_Read(sadc_input_ch_t ch);
+/**
+ * @brief SADC Polling Get Adc value
+ * @param None
+ * @return None
+ *
+ */
+sadc_cb_t Sadc_Get_Result(void);
 #endif
+/**
+ * @brief SADC Config Enable Read Vat
+ * @param None
+ * @return None
+ *
+ */
+void Sadc_Config_Enable_Vbat(sadc_config_resolution_t res, sadc_config_oversample_t os, sadc_isr_handler_t sadc_int_callback);
+/**
+ * @brief Sadc_Channel_Read_Vbat
+ * @param None
+ * @return None
+ *
+ */
+uint32_t Sadc_Channel_Read_Vbat(sadc_input_ch_t ch);
+/**
+ * @brief Sadc_Init_vBAT
+ * @param
+ * @return
+ *
+ */
+uint32_t Sadc_Init_vBAT(sadc_config_t *p_config, sadc_isr_handler_t sadc_int_callback);
+/**
+ * @brief Sadc_Compensation_vbat_Init
+ * @param
+ * @return
+ *
+ */
+void Sadc_Compensation_vbat_Init(uint32_t xPeriodicTimeInSec);
+/**
+ * @brief Sadc_Compensation_vbat_Init
+ * @param
+ * @return
+ *
+ */
+int sadc_voltage_result(sadc_value_t sadc_value);
+#endif
+
+int sadc_voltage_result(sadc_value_t sadc_value);
 
 #endif /* end of _SADC_H_ */
 

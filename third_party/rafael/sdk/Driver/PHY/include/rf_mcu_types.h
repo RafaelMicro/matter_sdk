@@ -66,6 +66,7 @@ extern "C"
 #define RF_MCU_PATCH_MAX_SIZE               (0x1000)
 #define RF_MCU_M0_PROGRAM_START_ADDR        (0x1000)
 #define RF_MCU_M0_CONST_START_ADDR          (0x7000)
+#define RF_MCU_MP_CONST_START_ADDR          (0x4040)
 
 #define RF_MCU_PM_SEL_REG_ADDR              (0x0448)
 
@@ -101,6 +102,8 @@ typedef enum rf_mcu_init_status_e
 {
     RF_MCU_INIT_NO_ERROR           = 0,
     RF_MCU_FIRMWARE_LOADING_FAIL,
+    RF_MCU_CONST_LOADING_FAIL,
+    RF_MCU_PATCH_LOADING_FAIL,
     RF_MCU_CPU_AWAKE_FAIL,
 } RF_MCU_INIT_STATUS;
 

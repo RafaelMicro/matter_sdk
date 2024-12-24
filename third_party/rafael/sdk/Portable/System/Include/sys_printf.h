@@ -42,7 +42,7 @@ extern "C" {
 #define DEBUG_ERR                   0x04000000
 #define DEBUG_LOG                   0x08000000
 
-#define FORCE_PRINT                 (DEBUG_INFO | DEBUG_ERR | DEBUG_LOG)
+#define FORCE_PRINT                 (DEBUG_INFO | DEBUG_ERR | DEBUG_LOG| DEBUG_PROVISION)
 //=============================================================================
 //                Public ENUM
 //=============================================================================

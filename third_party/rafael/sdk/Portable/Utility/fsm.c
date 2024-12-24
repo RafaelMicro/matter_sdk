@@ -98,6 +98,8 @@ static bool fsm_event_post_try(fsm_t *p_fsm,
         // check this transition is for the given event
         if (p_transition->event_id == event_id)
         {
+            //printf("cs %d, e %d, a %d\n", current_state, event_id, p_transition->action_id);
+
             // try to perform the transition (will be performed, if guard check is true)
             if (fsm_transition_perform_try(p_fsm, p_transition, p_data))
             {
@@ -194,7 +196,7 @@ void fsm_event_post(fsm_t *p_fsm, fsm_event_id_t event_id, void *p_data)
 #endif
 
     p_fsm->recursion_protection++;
-
+    //printf("fp, c %d, e %d\n", p_fsm->current_state, event_id);
     if (!fsm_event_post_try(p_fsm, event_id, p_data, 0))
     {
         if (p_fsm->any_state_transitions_index != FSM_INVALID_INDEX)

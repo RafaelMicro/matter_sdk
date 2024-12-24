@@ -29,7 +29,7 @@
  *    GLOBAL VARIABLES
  *************************************************************************************************/
 static comp_isr_handler_t   comp_reg_handler = NULL;
-
+static uint32_t comp_int_callback_enable;
 
 /**************************************************************************************************
  *    LOCAL FUNCTIONS
@@ -58,9 +58,19 @@ void Comp_Handler(void)
             ASSERT();
         }
 
-        if (comp_reg_handler != NULL)
+        if (comp_int_callback_enable == 0)      //avoid noise
         {
-            comp_reg_handler();
+            if (COMP_OUT_GET() == 1)
+            {
+                comp_int_callback_enable = 1;
+            }
+        }
+        else
+        {
+            if (comp_reg_handler != NULL)
+            {
+                comp_reg_handler();
+            }
         }
     }
     return;
@@ -116,9 +126,10 @@ uint32_t Comp_Init(comp_config_t *p_config, comp_isr_handler_t comp_int_callback
 
     if (comp_int_callback != NULL)
     {
+        comp_int_callback_enable = 0;
         Comp_Register_Int_Callback(comp_int_callback);
+        Comp_Int_Enable();
     }
-    Comp_Int_Enable();
 
     return STATUS_SUCCESS;
 }

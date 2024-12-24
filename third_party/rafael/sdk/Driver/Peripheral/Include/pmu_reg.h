@@ -496,9 +496,9 @@ typedef struct
     __IO  pmu_xtal_t  PMU_XTAL;               //offset: 0x24
     __IO  pmu_mem_ctrl_t  PMU_MEM_CTRL;       //offset: 0x28
     __IO  uint32_t  PMU_RESERVED2C;           //offset: 0x2C
-    __IO  uint32_t  PMU_BOD;                  //offset: 0x30
+    __IO  uint32_t  PMU_RESERVED30;           //offset: 0x30
     __IO  pmu_rco32k_t  PMU_RCO32K;           //offset: 0x34
-    __IO  uint32_t  PMU_DEBUG_CTRL;           //offset: 0x38
+    __IO  uint32_t  PMU_RESERVED38;           //offset: 0x38
     __IO  pmu_clk_ctrl_t  PMU_CLK_CTRL;       //offset: 0x3C
     __IO  uint32_t  PMU_GPIO_DRV;             //offset: 0x40
     __IO  uint32_t  PMU_RESERVED44;           //offset: 0x44

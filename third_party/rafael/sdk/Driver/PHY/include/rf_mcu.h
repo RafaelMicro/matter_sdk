@@ -38,6 +38,7 @@ extern uint16_t RfMcu_EvtQueueRead(uint8_t *evt, RF_MCU_RX_CMDQ_ERROR *rx_evt_er
 extern bool RfMcu_CmdQueueFullCheck(void);
 extern RF_MCU_TX_CMDQ_ERROR RfMcu_CmdQueueSend(const uint8_t *cmd, uint32_t cmd_length);
 extern bool RfMcu_TxQueueFullCheck(void);
+extern uint8_t RfMcu_TxQueueGet(void);
 extern RF_MCU_TXQ_ERROR RfMcu_TxQueueSend(uint8_t *tx_data, uint32_t data_length);
 
 

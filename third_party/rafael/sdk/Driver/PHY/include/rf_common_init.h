@@ -13,7 +13,7 @@
 
 #ifndef _RF_COMMON_INIT_H__
 #define _RF_COMMON_INIT_H__
-#include "rf_mcu_types.h"
+
 /**************************************************************************************************
  *    CONSTANTS AND DEFINES
  *************************************************************************************************/
@@ -105,3 +105,5 @@ bool rf_common_init_by_fw(RF_FW_LOAD_SELECT fw_select, COMM_SUBSYSTEM_ISR_t isr_
 
 
 #endif  //_RF_COMMON_INIT_H__
+
+

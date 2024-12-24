@@ -214,6 +214,7 @@ bool RfMcu_EvtQueueIsReadyAhb(void);
 uint16_t RfMcu_EvtQueueReadAhb(uint8_t *evt, RF_MCU_RX_CMDQ_ERROR *rx_evt_error);
 bool RfMcu_TxQueueIsOccupiedAhb(uint8_t queue_id);
 bool RfMcu_TxQueueFullCheckAhb(void);
+uint8_t RfMcu_TxQueueGetAhb(void);
 RF_MCU_TXQ_ERROR RfMcu_TxQueueSendAhb(uint8_t queue_id, const uint8_t *tx_data, uint32_t data_length);
 bool RfMcu_CmdQueueFullCheckAhb(void);
 RF_MCU_TX_CMDQ_ERROR RfMcu_CmdQueueSendAhb(const uint8_t *cmd, uint32_t cmd_length);

@@ -58,23 +58,9 @@ extern void crypto_parm_copy_p1(uint32_t *p_dest_addr, uint32_t *p_src_addr, uin
 extern void crypto_copy(uint32_t *p_dest_addr, uint32_t *p_src_addr, uint32_t size);
 
 
-/**
- * @brief     This function performs crypto function initial
- *
- * @param     none
- *
- * @return
- *             none
- *
- * @details
- *             This function initial crypto library.
- *
- */
-extern void crypto_lib_init(void);
-
 
 #ifdef __cplusplus
-}
+};
 #endif
 
 #endif

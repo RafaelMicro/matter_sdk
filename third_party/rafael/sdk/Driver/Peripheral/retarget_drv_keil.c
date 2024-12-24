@@ -281,7 +281,7 @@ uint32_t check_uart0_rx_buffer_data_num(void)
     return ((recvbuf.wr_idx - recvbuf.rd_idx) & recvbuf.bufsize_mask);
 }
 
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__CLANG_ARM) || (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
 
 /**
   Put a character to the stdout

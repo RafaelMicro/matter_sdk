@@ -88,7 +88,7 @@ int bsp_button_init(bsp_event_callback_t callback)
         gpio_debounce_enable(m_button_cfg[i].pin_no);
         gpio_int_enable(m_button_cfg[i].pin_no);
     }
-    NVIC_SetPriority(Gpio_IRQn, 6);
+    NVIC_SetPriority(Gpio_IRQn, 7);
 
     m_callback = callback;
 

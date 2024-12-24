@@ -198,7 +198,7 @@ typedef struct
  *
  *
  */
-extern uint32_t rtc_get_time(rtc_time_t *tm);
+uint32_t rtc_get_time(rtc_time_t *tm);
 
 /**
  * @brief rtc_set_time. Set the time in the RTC.
@@ -213,7 +213,7 @@ extern uint32_t rtc_get_time(rtc_time_t *tm);
  *             block maxium 1ms for take the value effect.
  *
  */
-extern uint32_t rtc_set_time(rtc_time_t *tm);
+uint32_t rtc_set_time(rtc_time_t *tm);
 
 /**
  * @brief rtc_get_alarm. Use to get rtc alarm time.
@@ -226,7 +226,7 @@ extern uint32_t rtc_set_time(rtc_time_t *tm);
  *
  *
  */
-extern uint32_t rtc_get_alarm(rtc_time_t *tm);
+uint32_t rtc_get_alarm(rtc_time_t *tm);
 
 /**
  * @brief rtc_set_alarm. Use to set rtc alarm time.
@@ -245,7 +245,7 @@ extern uint32_t rtc_get_alarm(rtc_time_t *tm);
  *            Calling this function will also enable RTC interrupt of cortex-m3.
  *
  */
-extern uint32_t rtc_set_alarm(
+uint32_t rtc_set_alarm(
     rtc_time_t *tm,
     uint32_t rtc_int_mode,
     rtc_alarm_proc_cb rtc_usr_isr
@@ -259,7 +259,7 @@ extern uint32_t rtc_set_alarm(
  * @retval    STATUS_SUCCESS
  *
  */
-extern uint32_t rtc_disable_alarm(void);
+uint32_t rtc_disable_alarm(void);
 
 
 /**
@@ -272,7 +272,7 @@ extern uint32_t rtc_disable_alarm(void);
  *
  */
 
-extern void rtc_set_clk(uint32_t clk);
+void rtc_set_clk(uint32_t clk);
 
 
 /**
@@ -280,7 +280,7 @@ extern void rtc_set_clk(uint32_t clk);
  *
  */
 
-extern void rtc_reset(void);
+void rtc_reset(void);
 
 /*@}*/ /* end of peripheral_group RTC_Driver */
 

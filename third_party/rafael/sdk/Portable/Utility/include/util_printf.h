@@ -55,13 +55,13 @@ typedef int (*cb_puts)(char *str, int len);
  * @param pBuf          Pointer to a buffer where the resulting C-string is stored.
  *                      The buffer should be large enough to contain the resulting string.
  * @param maxlen        The max len of the buffer.
- * @param fmt           C string that contains a format string that follows the same specifications as format in //printf(
+ * @param fmt           C string that contains a format string that follows the same specifications as format in printf
  * @param args          A value identifying a variable argument list initialized with va_start().
  */
 void utility_vsprintf(char *pBuf, int maxlen, const char *fmt, va_list args);
 
 /**
- *  @brief  Composes a string with the same text that would be printed if format was used on //printf(, but instead of being printed,
+ *  @brief  Composes a string with the same text that would be printed if format was used on printf, but instead of being printed,
  *          the content is stored as a C string in the buffer pointed by pbuf
  *
  *  @param [in] pbuf            Pointer to a buffer where the resulting C-string is stored.
@@ -69,7 +69,7 @@ void utility_vsprintf(char *pBuf, int maxlen, const char *fmt, va_list args);
  *  @param [in] buf_size        Maximum number of bytes to be used in the buffer.
  *                              The generated string has a length of at most buf_size - 1,
  *                              leaving space for the additional terminating null character.
- *  @param [in] fmt             C string that contains a format string that follows the same specifications as format in //printf(
+ *  @param [in] fmt             C string that contains a format string that follows the same specifications as format in printf
  *  @param [in] ...             Depending on the format string
  *  @return
  *

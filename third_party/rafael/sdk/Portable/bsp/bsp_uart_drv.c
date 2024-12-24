@@ -51,7 +51,7 @@ int bsp_uart_drv_init(uint32_t target_id, bsp_uart_config_t *pConfig, uart_isr_c
     const uart_handle_t  *uart_dev;
     UART_T               *uart;
     uint32_t             cval;
-
+    uint32_t             temp   __attribute__((unused));
     do
     {
         uart_dev = &m_uart_handle[target_id];
@@ -101,6 +101,8 @@ int bsp_uart_drv_init(uint32_t target_id, bsp_uart_config_t *pConfig, uart_isr_c
         }
 
         uart->LCR = cval;
+
+        temp = uart->RBR;     /*read temp to clear Timeout IIR noise... only happen when clear RX FIFO and data income..*/
 
         uart->MCR = 0;         /*Initial default modem control register.*/
         uart->FCR = (FCR_FIFO_EN | FCR_TRIGGER_8);

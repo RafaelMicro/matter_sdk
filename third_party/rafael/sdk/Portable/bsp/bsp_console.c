@@ -22,25 +22,28 @@
 //                  Constant Definition
 //=============================================================================
 #ifndef DEBUG_CONSOLE_UART_ID
-#define UART_ACT_DBG_PORT_ID 0
+#define UART_ACT_DBG_PORT_ID            0
 #else
-#define UART_ACT_DBG_PORT_ID DEBUG_CONSOLE_UART_ID
+#define UART_ACT_DBG_PORT_ID            DEBUG_CONSOLE_UART_ID
 #endif
 
 #ifndef DEBUG_CONSOLE_UART_BAUDRATE
-#define UART_ACT_BAUD_RATE UART_BAUDRATE_115200
+#define UART_ACT_BAUD_RATE              UART_BAUDRATE_115200
 #else
-#define UART_ACT_BAUD_RATE DEBUG_CONSOLE_UART_BAUDRATE
+#define UART_ACT_BAUD_RATE              DEBUG_CONSOLE_UART_BAUDRATE
 #endif
 
 #ifndef UART0_USER_HANDLE_RECV_RX
-#define UART0_RX_PIO_MODE 0
+#define UART0_RX_PIO_MODE               0
 #else
-#define UART0_RX_PIO_MODE UART0_USER_HANDLE_RECV_RX
+#define UART0_RX_PIO_MODE               UART0_USER_HANDLE_RECV_RX
 #endif
 
-#define UART_CACHE_SIZE 256
-#define UART_CACHE_MASK (UART_CACHE_SIZE - 1)
+
+#ifndef UART_CACHE_SIZE
+#define UART_CACHE_SIZE                 256
+#define UART_CACHE_MASK                 (UART_CACHE_SIZE - 1)
+#endif
 //=============================================================================
 //                  Macro Definition
 //=============================================================================
@@ -59,10 +62,7 @@ typedef struct uart_io
 //=============================================================================
 //                  Global Data Definition
 //==============================================================================
-static uart_io_t g_uart_rx_io = {
-    .wr_idx = 0,
-    .rd_idx = 0,
-};
+static uart_io_t g_uart_rx_io = { .wr_idx = 0, .rd_idx = 0, };
 
 #if (UART0_RX_PIO_MODE == 0 && !MODULE_ENABLE(USE_BSP_UART_DRV))
 static uint8_t gu8_uart_rx_cache[4];
@@ -72,7 +72,7 @@ static uint8_t gu8_uart_rx_cache[4];
 static bsp_event_callback_t m_callback = NULL;
 #endif
 
-static char bsp_c_g_msg[64] __attribute__((aligned(4))) = {0};
+static char bsp_c_g_msg[64] __attribute__ ((aligned (4))) = {0};
 //=============================================================================
 //                  Private Function Definition
 //=============================================================================
@@ -82,24 +82,24 @@ void uart_isr_event_handle(void)
     // receive data
     do
     {
-        uint32_t wr_pos = g_uart_rx_io.wr_idx;
-        uint32_t rd_pos = g_uart_rx_io.rd_idx;
-        uint32_t pos = 0;
-        uint8_t value[4] = {0};
-        uint32_t rx_len = sizeof(value);
+        uint32_t    wr_pos = g_uart_rx_io.wr_idx;
+        uint32_t    rd_pos = g_uart_rx_io.rd_idx;
+        uint32_t    pos = 0;
+        uint8_t     value[4] = {0};
+        uint32_t    rx_len = sizeof(value);
 
         bsp_uart_drv_recv(UART_ACT_DBG_PORT_ID, value, &rx_len);
 
-        if (rx_len)
+        if ( rx_len )
         {
             pos = (wr_pos + 1) % UART_CACHE_SIZE;
-            if (pos == rd_pos)
+            if ( pos == rd_pos )
             {
                 break;
             }
 
             g_uart_rx_io.uart_cache[wr_pos] = value[0];
-            g_uart_rx_io.wr_idx = pos;
+            g_uart_rx_io.wr_idx                = pos;
         }
     } while (0);
     return;
@@ -107,12 +107,12 @@ void uart_isr_event_handle(void)
 #else
 static void uart_isr_event_handle(uint32_t event, void *p_context)
 {
-    uint32_t pos;
+    uint32_t  pos;
 #if (UART0_RX_PIO_MODE == 1)
     if (event & UART_EVENT_RX_RECV)
     {
         pos = (g_uart_rx_io.wr_idx + 1) % UART_CACHE_SIZE;
-        if (pos != g_uart_rx_io.rd_idx)
+        if ( pos != g_uart_rx_io.rd_idx )
         {
             g_uart_rx_io.uart_cache[g_uart_rx_io.wr_idx] = uart_rx_getbytes(DEBUG_CONSOLE_UART_ID);
             g_uart_rx_io.wr_idx = pos;
@@ -126,7 +126,7 @@ static void uart_isr_event_handle(uint32_t event, void *p_context)
     if (event & UART_EVENT_RX_DONE)
     {
         pos = (g_uart_rx_io.wr_idx + 1) % UART_CACHE_SIZE;
-        if (pos != g_uart_rx_io.rd_idx)
+        if ( pos != g_uart_rx_io.rd_idx )
         {
             g_uart_rx_io.uart_cache[g_uart_rx_io.wr_idx] = gu8_uart_rx_cache[0];
             g_uart_rx_io.wr_idx = pos;
@@ -157,23 +157,23 @@ static void uart_isr_event_handle(uint32_t event, void *p_context)
 //=============================================================================
 int bsp_console_init(bsp_event_callback_t callback)
 {
-    int rval = 0;
+    int     rval = 0;
 
 #if (MODULE_ENABLE(USE_BSP_UART_DRV))
-    bsp_uart_config_t debug_console_drv_config;
+    bsp_uart_config_t   debug_console_drv_config;
     uart_retarget_desc_t t_retarget_desc;
     do
     {
         /*uart0 pinmux*/
-        pin_set_mode(16, MODE_UART); /*GPIO16 as UART0 RX*/
-        pin_set_mode(17, MODE_UART); /*GPIO17 as UART0 TX*/
+        pin_set_mode(16, MODE_UART);     /*GPIO16 as UART0 RX*/
+        pin_set_mode(17, MODE_UART);     /*GPIO17 as UART0 TX*/
 
         /*init debug console uart0, 8bits 1 stopbit, none parity, no flow control.*/
         debug_console_drv_config.baud_rate = UART_ACT_BAUD_RATE;
         debug_console_drv_config.word_length = UART_DATA_BITS_8;
-        debug_console_drv_config.hwfc = UART_HWFC_DISABLED;
-        debug_console_drv_config.parity = UART_PARITY_NONE;
-        debug_console_drv_config.stop_bits = UART_STOPBIT_ONE;
+        debug_console_drv_config.hwfc     = UART_HWFC_DISABLED;
+        debug_console_drv_config.parity   = UART_PARITY_NONE;
+        debug_console_drv_config.stop_bits  = UART_STOPBIT_ONE;
         debug_console_drv_config.irq_priority = 0x06;
 
         rval = bsp_uart_drv_init(UART_ACT_DBG_PORT_ID, &debug_console_drv_config, uart_isr_event_handle);
@@ -182,7 +182,7 @@ int bsp_console_init(bsp_event_callback_t callback)
         {
             break;
         }
-        // m_callback = callback;
+        //m_callback = callback;
 
         t_retarget_desc.uart_id = UART_ACT_DBG_PORT_ID;
 
@@ -198,15 +198,15 @@ int bsp_console_init(bsp_event_callback_t callback)
     {
 
         /*uart0 pinmux*/
-        pin_set_mode(16, MODE_UART); /*GPIO16 as UART0 RX*/
-        pin_set_mode(17, MODE_UART); /*GPIO17 as UART0 TX*/
+        pin_set_mode(16, MODE_UART);     /*GPIO16 as UART0 RX*/
+        pin_set_mode(17, MODE_UART);     /*GPIO17 as UART0 TX*/
 
         /*init debug console uart0, 8bits 1 stopbit, none parity, no flow control.*/
         debug_console_drv_config.baudrate = (uart_baudrate_t)UART_ACT_BAUD_RATE;
         debug_console_drv_config.databits = UART_DATA_BITS_8;
-        debug_console_drv_config.hwfc = UART_HWFC_DISABLED;
-        debug_console_drv_config.parity = UART_PARITY_NONE;
-        debug_console_drv_config.stopbit = UART_STOPBIT_ONE;
+        debug_console_drv_config.hwfc     = UART_HWFC_DISABLED;
+        debug_console_drv_config.parity   = UART_PARITY_NONE;
+        debug_console_drv_config.stopbit  = UART_STOPBIT_ONE;
         debug_console_drv_config.interrupt_priority = 0x06;
 
         rval = uart_init(UART_ACT_DBG_PORT_ID, &debug_console_drv_config, uart_isr_event_handle);
@@ -231,7 +231,7 @@ int bsp_console_init(bsp_event_callback_t callback)
 
 int bsp_console_stdio_flush(void)
 {
-    int rval = 0;
+    int     rval = 0;
 
     NVIC_DisableIRQ(Uart0_IRQn);
 
@@ -255,33 +255,33 @@ int bsp_console_stdout_char(int ch)
 
 int bsp_console_stdout_string(char *str, int length)
 {
-    int rval = 0;
+    int     rval = 0;
     uart_retarget_stdout_string(str, length);
     return (rval == 0) ? length : 0;
 }
 
 int bsp_console_stdin_str(char *pBuf, int length)
 {
-    int byte_cnt = 0;
-    uint32_t rd_pos = g_uart_rx_io.rd_idx;
-    uint32_t wr_pos = g_uart_rx_io.wr_idx;
+    int         byte_cnt = 0;
+    uint32_t    rd_pos = g_uart_rx_io.rd_idx;
+    uint32_t    wr_pos = g_uart_rx_io.wr_idx;
 
     g_uart_rx_io.is_flushing = 0;
 
     do
     {
-        while (1)
+        while ( 1 )
         {
-            if (g_uart_rx_io.is_flushing)
+            if ( g_uart_rx_io.is_flushing )
             {
                 wr_pos = rd_pos = byte_cnt = 0;
                 break;
             }
-            if (rd_pos == wr_pos)
+            if ( rd_pos == wr_pos )
             {
                 break;
             }
-            if (length == byte_cnt)
+            if ( length == byte_cnt )
             {
                 break;
             }
@@ -298,20 +298,20 @@ int bsp_console_stdin_str(char *pBuf, int length)
 static void
 _uint2strhex(char *pStr, unsigned int number, const char nibbles_to_print)
 {
-#define MAX_NIBBLES (8)
-    int nibble = 0;
-    char nibbles = nibbles_to_print;
+#define MAX_NIBBLES     (8)
+    int     nibble = 0;
+    char    nibbles = nibbles_to_print;
 
-    if ((unsigned)nibbles > MAX_NIBBLES)
+    if ( (unsigned)nibbles > MAX_NIBBLES )
     {
         nibbles = MAX_NIBBLES;
     }
 
-    while (nibbles > 0)
+    while ( nibbles > 0 )
     {
         nibbles--;
         nibble = (int)(number >> (nibbles * 4)) & 0x0F;
-        if (nibble <= 9)
+        if ( nibble <= 9 )
         {
             pStr[strlen(pStr)] = (char)('0' + nibble);
         }
@@ -325,13 +325,11 @@ _uint2strhex(char *pStr, unsigned int number, const char nibbles_to_print)
 static int
 _exp_dump_out(char *pMsg, int len)
 {
-    UART_T *pCSR = (UART_T *)UART0;
+    UART_T  *pCSR = (UART_T *)UART0;
 
-    while (len)
+    while ( len )
     {
-        while ((pCSR->LSR & 0x20) == 0)
-        {
-        }
+        while ( (pCSR->LSR & 0x20) == 0 ) {}
 
         pCSR->THR = *pMsg++;
         len--;
@@ -341,13 +339,13 @@ _exp_dump_out(char *pMsg, int len)
 static void
 _exp_log_out(const char *format, ...)
 {
-    char *pch = (char *)format;
+    char    *pch = (char *)format;
     va_list va;
     va_start(va, format);
 
     do
     {
-        if (!pch)
+        if ( !pch )
         {
             break;
         }
@@ -355,13 +353,13 @@ _exp_log_out(const char *format, ...)
         while (*pch)
         {
             /* format identification character */
-            if (*pch == '%')
+            if ( *pch == '%' )
             {
                 pch++;
 
-                if (pch)
+                if ( pch )
                 {
-                    switch (*pch)
+                    switch ( *pch )
                     {
                     case 'x':
                     {
@@ -404,7 +402,7 @@ _exp_log_out(const char *format, ...)
 static int
 _exp_dump_init(void)
 {
-    UART_T *pCSR = (UART_T *)UART0;
+    UART_T  *pCSR = (UART_T *)UART0;
 
     pCSR->LCR |= (0x1 << 7);
     pCSR->DLL = UART_BAUDRATE_Baud115200 & 0xFF;
@@ -414,7 +412,7 @@ _exp_dump_init(void)
     return 0;
 }
 
-void my_fault_handler_c(uint32_t *sp)
+void my_fault_handler_c(uint32_t *sp, uint32_t lr_value)
 {
     _exp_dump_init();
     _exp_log_out(" [HardFaultHandler]\r\n");
@@ -424,26 +422,33 @@ void my_fault_handler_c(uint32_t *sp)
     _exp_log_out("R12= %x, LR= %x, PC= %x, PSR= %x\r\n",
                  sp[4], sp[5], sp[6], sp[7]);
 
-    while (1)
-        ;
+    _exp_log_out("LR Value= %x\r\n", lr_value);
+
+    while (1);
 }
 #if defined(__CC_ARM) || defined(__CLANG_ARM)
-__asm void HardFault_Handler(void)
+__asm void HardFault_Handler (void)
 {
-    tst lr, #4 ite eq
+    tst lr, #4
+    ite eq
 
-                mrseq r0,
-        msp
-            mrsne r0,
-        psp
+    mrseq r0, msp
+    mrsne r0, psp
 
-            b
-            __cpp(my_fault_handler_c)
+    b __cpp(my_fault_handler_c)
+}
+#elif (defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050))
+void HardFault_Handler (void)
+{
+    __ASM volatile(
+        " movs r0, #4\n"
+        " mov r1, LR\n"
+        " tst r0, r1\n"
+        " mrs r0, psp\n"
+        " mrs r0, msp\n"
+        " mov r1, LR\n"
+        " b my_fault_handler_c\n"
+    );
 }
 #endif
 
-void HardFault_Handler(void)
-{
-    __asm volatile(
-        "stmdb sp!, {lr}\n");
-}

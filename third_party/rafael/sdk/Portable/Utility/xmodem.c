@@ -239,7 +239,7 @@ void xmodem_recv_init(void)
     for (i = 0; i < 0x74; i++)
     {
         while (flash_check_busy());
-        flash_erase(FLASH_ERASE_PAGE, TARGET_IMAGE_INFO_SAVE_ADDR + (0x1000 * i));
+        flash_erase(FLASH_ERASE_SECTOR, TARGET_IMAGE_INFO_SAVE_ADDR + (0x1000 * i));
     }
 
     //NVIC_SetPriority(Uart0_IRQn, 0);

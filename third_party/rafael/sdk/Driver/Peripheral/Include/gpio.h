@@ -100,7 +100,7 @@ typedef void (* gpio_isr_handler_t)(uint32_t pin, void *isr_param);
  * @retval     none
  */
 
-extern void gpio_cfg(
+void gpio_cfg(
     uint32_t         pin_number,
     gpio_pin_dir_t   dir,
     gpio_pin_int_mode_t int_mode);
@@ -114,7 +114,7 @@ extern void gpio_cfg(
  *
  * @retval      none
  */
-extern void gpio_register_isr(
+void gpio_register_isr(
     uint32_t            pin,
     gpio_isr_handler_t  app_gpio_callback,
     void                *param);
@@ -247,7 +247,6 @@ __STATIC_INLINE uint32_t gpio_pin_get(uint32_t pin_number)
 
     return ((GPIO->STATE & (1 << pin_number)) ? 1 : 0);
 }
-
 
 /**
  * @brief  Enable gpio pin interrupt

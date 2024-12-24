@@ -256,7 +256,7 @@ typedef struct
  *  to transfer.
  */
 
-extern uint32_t qspi_init(uint32_t qspi_id, const qspi_transfer_mode_t *spi_mode);
+uint32_t qspi_init(uint32_t qspi_id, const qspi_transfer_mode_t *spi_mode);
 
 
 #if (MODULE_ENABLE(SUPPORT_QSPI0_MULTI_CS))
@@ -285,7 +285,7 @@ extern uint32_t qspi_init(uint32_t qspi_id, const qspi_transfer_mode_t *spi_mode
  *
  */
 
-extern uint32_t qspi0_set_device_polarity(uint32_t slave_id, uint32_t slave_polarity);
+uint32_t qspi0_set_device_polarity(uint32_t slave_id, uint32_t slave_polarity);
 
 
 #endif
@@ -314,7 +314,7 @@ extern uint32_t qspi0_set_device_polarity(uint32_t slave_id, uint32_t slave_pola
  * is BLOCK function. It returns after the request finish.
  *
  */
-extern uint32_t qspi_transfer(uint32_t qspi_id, const qspi_block_request_t *req);
+uint32_t qspi_transfer(uint32_t qspi_id, const qspi_block_request_t *req);
 
 
 /*
@@ -336,7 +336,7 @@ extern uint32_t qspi_transfer(uint32_t qspi_id, const qspi_block_request_t *req)
  *     multiple spi devices, with different operation speed, connected with QSPI0.
  */
 
-extern uint32_t qspi_change_clk(uint32_t qspi_id, uint16_t   SPI_CLK);
+uint32_t qspi_change_clk(uint32_t qspi_id, uint16_t   SPI_CLK);
 
 
 /**
@@ -365,7 +365,7 @@ extern uint32_t qspi_change_clk(uint32_t qspi_id, uint16_t   SPI_CLK);
  *      is start in progressing.... when the request finishs, the notify callback function "finish_proc_cb" will be called
  *
  */
-extern uint32_t qspi_write_dma(
+uint32_t qspi_write_dma(
     uint32_t qspi_id,
     const qspi_block_request_t *req,
     qspi_proc_cb_t finish_proc_cb
@@ -398,7 +398,7 @@ extern uint32_t qspi_write_dma(
  *
  */
 
-extern uint32_t qspi_read_dma(
+uint32_t qspi_read_dma(
     uint32_t qspi_id,
     const qspi_block_request_t *req,
     qspi_proc_cb_t finish_proc_cb
@@ -445,7 +445,7 @@ extern uint32_t qspi_read_dma(
  *
  */
 
-extern uint32_t spi_transfer(
+uint32_t spi_transfer(
     uint32_t qspi_id,
     const spi_block_request_t *req,
     qspi_proc_cb_t finish_proc_cb
@@ -489,7 +489,7 @@ extern uint32_t spi_transfer(
  *
  */
 
-extern uint32_t spi_transfer_pio(
+uint32_t spi_transfer_pio(
     uint32_t qspi_id,
     const spi_block_request_t *req
 );
@@ -513,7 +513,7 @@ extern uint32_t spi_transfer_pio(
  *
  */
 
-extern uint16_t get_qspi_state(uint32_t qspi_id);
+uint16_t get_qspi_state(uint32_t qspi_id);
 
 /**
  * @brief abort slave received DMA command.
@@ -533,7 +533,7 @@ extern uint16_t get_qspi_state(uint32_t qspi_id);
  *
  */
 
-extern uint32_t spi_transfer_slave_abort(uint32_t qspi_id);
+uint32_t spi_transfer_slave_abort(uint32_t qspi_id);
 
 /**
  * @brief clear FIFO buffer command.
@@ -544,7 +544,7 @@ extern uint32_t spi_transfer_slave_abort(uint32_t qspi_id);
  *     This function will clear the qspi FIFO buffer command...
  *
  */
-extern void qspi_FIFO_clear(uint32_t qspi_id);
+void qspi_FIFO_clear(uint32_t qspi_id);
 
 
 #ifdef __cplusplus

@@ -25,13 +25,16 @@
 //                  Global Data Definition
 //==============================================================================
 //static bsp_event_callback_t m_callback;
-static bsp_led_cfg_t m_led_cfg[2] =
+static bsp_led_cfg_t m_led_cfg[BSP_LED_COUNT] =
 {
 #ifdef BSP_LED_0
     {BSP_LED_0},
 #endif
 #ifdef BSP_LED_1
     {BSP_LED_1},
+#endif
+#ifdef BSP_LED_2
+    {BSP_LED_2},
 #endif
 
 };

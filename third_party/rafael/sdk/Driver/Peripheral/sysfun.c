@@ -151,30 +151,41 @@ chip_model_t GetOtpVersion()
     return chip_model;
 }
 /*
- *  system software reset
+ *  Reset the system software by using the watchdog timer to reset the chip.
  *
  */
 void Sys_Software_Reset(void)
 {
-    Wdt_Stop();
+    wdt_ctrl_t controller;
+    controller.reg = 0;
 
-    sys_set_retention_reg(6, 7);
-    sys_set_retention_reg(7, 0);
-    wdt_config_mode_t wdt_mode;
-    wdt_config_tick_t wdt_cfg_ticks;
+    /*wait flash operation finish*/
+    while (flash_check_busy()) {;}
 
-    wdt_mode.int_enable = 0;
-    wdt_mode.reset_enable = 1;
-    wdt_mode.lock_enable = 0;
-    wdt_mode.prescale = WDT_PRESCALE_32;
+    /*get watch dog control register*/
+    controller.reg = WDT->CONTROL.reg;
 
-    wdt_cfg_ticks.wdt_ticks = 10 * 1000;
-    wdt_cfg_ticks.int_ticks = 0;
-    wdt_cfg_ticks.wdt_min_ticks = 0;
+    /*Check the lock bit.
+     If the lock bit is set to 1, it indicates that the WDT control register cannot be modified.
+     Only waiting for the WDT to occur is possible.
+    */
+    if (controller.bit.LOCKOUT == 1)
+    {
+        while (1) {;}     //wait watch dog reset
+    }
 
-    Wdt_Start(wdt_mode, wdt_cfg_ticks, NULL);
-    while(1);
+    /*confit wdt register*/
+    controller.bit.WDT_EN = 1;
+    controller.bit.RESET_EN = 1;    /*Lock*/
+    controller.bit.LOCKOUT = 1;
+    controller.bit.PRESCALE = WDT_PRESCALE_32;
+    WDT->WINDOW_MIN = 0;
+    WDT->LOAD = 1;
+    WDT->CONTROL.reg = controller.reg;
+    while (1) {;}
 }
+
+
 /*
  *  system PMU Mode
  *
@@ -182,7 +193,7 @@ void Sys_Software_Reset(void)
 pmu_mode_cfg_t GetPmuMode(void)
 {
     pmu_mode_cfg_t Mode;
-
+    Mode = PMU_MODE_DCDC;
     if ( (PMU->PMU_EN_CTRL.bit.EN_LLDO_NM == 0) && (PMU->PMU_EN_CTRL.bit.EN_DCDC_NM == 1))
     {
         Mode = PMU_MODE_DCDC;
@@ -194,3 +205,4 @@ pmu_mode_cfg_t GetPmuMode(void)
 
     return Mode;
 }
+

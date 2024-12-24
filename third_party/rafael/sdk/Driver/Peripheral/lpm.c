@@ -281,6 +281,8 @@ void Lpm_Enter_Low_Power_Mode(void)
         }
         else if (low_power_level == LOW_POWER_LEVEL_SLEEP2)
         {
+#if MODULE_ENABLE(USE_SLEEP_CURRENT_VERIFY)
+
             COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_HOSTMODE;   /* enable host mode */
             COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_RESET;      /* communication system host control reset */
             Lpm_Comm_Subsystem_Check_System_Ready();
@@ -299,9 +301,13 @@ void Lpm_Enter_Low_Power_Mode(void)
 
                 /* Need to reload the communication subsystem code here */
             }
+
+#endif
         }
         else if (low_power_level == LOW_POWER_LEVEL_SLEEP1)
         {
+#if MODULE_ENABLE(USE_SLEEP_CURRENT_VERIFY)
+
             COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_HOSTMODE;   /* enable host mode */
             COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_SLEEP;      /* communication system enter sleep mode */
 
@@ -314,6 +320,8 @@ void Lpm_Enter_Low_Power_Mode(void)
                 COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_HOSTMODE;   /* enable host mode */
                 COMM_SUBSYSTEM_AHB->COMM_SUBSYSTEM_HOST |= COMMUMICATION_SUBSYSTEM_WAKEUP;     /* communication system wakeup from sleep mode */
             }
+
+#endif
         }
         else if (low_power_level == LOW_POWER_LEVEL_SLEEP0)
         {

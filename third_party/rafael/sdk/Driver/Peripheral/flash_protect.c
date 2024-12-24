@@ -42,6 +42,8 @@ void Vbat_Comp_Int_Callback_Handler(void)
     {
         flash_protect = TRUE;
     }
+
+    COMP_INT_CLEAR();
 }
 
 uint32_t Vbat_Comp_Config(comp_config_t *p_config)

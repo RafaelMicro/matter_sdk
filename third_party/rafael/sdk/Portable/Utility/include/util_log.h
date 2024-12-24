@@ -67,7 +67,7 @@ typedef int (*cb_log_rec_t)(util_log_type_t type, char *pStr, long length);
 //                  Macro Definition
 //=============================================================================
 #if 1
-#ifdef COLOR_OFF
+#if COLOR_OFF
 #define msg(type, str, ...)                 util_log(type, str, ##__VA_ARGS__)
 #define info(str, ...)                      util_log(UTIL_LOG_INFO, str, ##__VA_ARGS__)
 #define log_color(type, color, str, ...)    util_log(type,str, ##__VA_ARGS__)

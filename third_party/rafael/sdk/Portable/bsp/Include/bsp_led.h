@@ -27,9 +27,10 @@ extern "C" {
 #endif
 #include "bsp.h"
 
-#define BSP_LED_COUNT   2
+#define BSP_LED_COUNT   3
 #define BSP_LED_0       20
 #define BSP_LED_1       21
+#define BSP_LED_2       22
 #define BSP_LED_ACTIVE_STATE    0
 
 typedef struct

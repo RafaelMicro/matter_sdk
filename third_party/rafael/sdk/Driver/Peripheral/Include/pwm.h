@@ -221,6 +221,15 @@ uint32_t Pwm_Init(pwm_seq_para_head_t *pwm_para_config);
  */
 uint32_t Pwm_Start(pwm_seq_para_head_t *pwm_para_config);
 
+/**
+ * @brief Function to stop pwm function
+ * @param[in]
+ *            \arg pwm_id               PWM ID designation
+ * @retval STATUS_SUCCESS config pwm irq,clock,rdma registers is vaild
+ * @retval STATUS_INVALID_PARAM config pwm irq,clock,rdma registers is invaild
+ */
+uint32_t Pwm_Stop(pwm_seq_para_head_t *pwm_para_config);
+
 #ifdef __cplusplus
 }
 #endif

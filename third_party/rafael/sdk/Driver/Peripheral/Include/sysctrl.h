@@ -162,7 +162,7 @@ extern delay_ms_t Delay_ms;
  *   function usage setting.
  */
 
-extern uint32_t pin_get_mode(uint32_t pin_number);
+uint32_t pin_get_mode(uint32_t pin_number);
 /**
  * @brief set pin function mode
  *
@@ -176,7 +176,7 @@ extern uint32_t pin_get_mode(uint32_t pin_number);
  *         each pin has different function pin setting, please read RT58x datasheet to know each pin
  *   function usage setting.
  */
-extern void pin_set_mode(uint32_t pin_number, uint32_t mode);
+void pin_set_mode(uint32_t pin_number, uint32_t mode);
 /**
  * @brief enable peripherial interface clock
  *
@@ -193,7 +193,7 @@ extern void pin_set_mode(uint32_t pin_number, uint32_t mode);
  * @return
  *         NONE
  */
-extern void enable_perclk(uint32_t clock_id);
+void enable_perclk(uint32_t clock_id);
 /**
  * @brief disable peripherial interface clock
  *
@@ -210,7 +210,7 @@ extern void enable_perclk(uint32_t clock_id);
  * @return
  *         NONE
  */
-extern void disable_perclk(uint32_t clock);
+void disable_perclk(uint32_t clock);
 /**
  * @brief Set pin pull option.
  *
@@ -229,7 +229,7 @@ extern void disable_perclk(uint32_t clock);
  *      If user set the pin  set to gpio output mode, then the pin will auto to be set as no pull option.
  *
  */
-extern void pin_set_pullopt(uint32_t pin_number, uint32_t mode);
+void pin_set_pullopt(uint32_t pin_number, uint32_t mode);
 /**
  * @brief Set pin driving option
  *
@@ -246,7 +246,7 @@ extern void pin_set_pullopt(uint32_t pin_number, uint32_t mode);
  *      Pin default driving option is 20mA, User can use this function to change the pin driving setting.
  *
  */
-extern void pin_set_drvopt(uint32_t pin_number, uint32_t mode);
+void pin_set_drvopt(uint32_t pin_number, uint32_t mode);
 /**
  * @brief Set pin to opendrain option
  *
@@ -258,7 +258,7 @@ extern void pin_set_drvopt(uint32_t pin_number, uint32_t mode);
  * @details
  *        Set the pin to opendrain mode.
  */
-extern void enable_pin_opendrain(uint32_t pin_number);
+void enable_pin_opendrain(uint32_t pin_number);
 /**
  * @brief Disable pin to opendrain option
  *
@@ -270,7 +270,7 @@ extern void enable_pin_opendrain(uint32_t pin_number);
  * @details
  *        Reset the pin to non-opendrain mode.
  */
-extern void disable_pin_opendrain(uint32_t pin_number);
+void disable_pin_opendrain(uint32_t pin_number);
 /**
  * @brief check pll unlock
  *
@@ -283,7 +283,7 @@ extern void disable_pin_opendrain(uint32_t pin_number);
  *
  *
  */
-extern sys_clk_sel_t Pll_Unlock_Check(void);
+sys_clk_sel_t Pll_Unlock_Check(void);
 /**
  * @brief Pll Status Check
  *
@@ -293,7 +293,7 @@ extern sys_clk_sel_t Pll_Unlock_Check(void);
  * @retval    STATUS_SUCCESS lock success.
  * @details
  */
-extern uint32_t Pll_Status_Check(void);
+uint32_t Pll_Status_Check(void);
 /**
  * @brief Adjust RT58x HCLK clock
  *
@@ -308,7 +308,7 @@ extern uint32_t Pll_Status_Check(void);
  *        Calling this function will change RT58x HCLK, it will also change flash timing setting.
  *
  */
-extern uint32_t Change_Ahb_System_Clk(sys_clk_sel_t sys_clk_mode);
+uint32_t Change_Ahb_System_Clk(sys_clk_sel_t sys_clk_mode);
 
 /**
  * @brief Get RT58x HCLK clock
@@ -319,7 +319,7 @@ extern uint32_t Change_Ahb_System_Clk(sys_clk_sel_t sys_clk_mode);
  * @retval    SYS_CLK_64MHZ   for CPU AHB 64MHz clock.
  *
  */
-extern sys_clk_sel_t Get_Ahb_System_Clk(void);
+sys_clk_sel_t Get_Ahb_System_Clk(void);
 
 /*
  * Select Slow clock source.
@@ -332,14 +332,14 @@ extern sys_clk_sel_t Get_Ahb_System_Clk(void);
  *
  *
  */
-extern void set_slow_clock_source(uint32_t mode);
+void set_slow_clock_source(uint32_t mode);
 /**
 * @brief   Select external 32k input pin.
 *          If system call this function, then the gpio will be slow clock source input.
 * @param   pin_number: It should be GPIO0~GPIO7
 * @return  None
 */
-extern void set_ext32k_pin(uint32_t pin_number);
+void set_ext32k_pin(uint32_t pin_number);
 
 /**
  * @brief   Generate a true 32-bits random number.
@@ -352,7 +352,7 @@ extern void set_ext32k_pin(uint32_t pin_number);
  *       If you want to use non-block mode, maybe you should use interrupt mode.
  *
  */
-extern uint32_t get_random_number(void);
+uint32_t get_random_number(void);
 
 /**
  * @brief sys_set_retention_reg. Use to save some retention value.

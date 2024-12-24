@@ -41,7 +41,7 @@ typedef enum
  *     @arg PMU_MODE_DCDC: Specifies the system PMU DCDC mode
  * @return None
  */
-extern void SystemPmuSetMode(pmu_mode_cfg_t pmu_mode);
+void SystemPmuSetMode(pmu_mode_cfg_t pmu_mode);
 extern uint32_t SystemFrequency;    /*!< System Clock Frequency (Core Clock)  */
 extern uint32_t SystemCoreClock;    /*!< Processor Clock Frequency            */
 
@@ -55,7 +55,7 @@ extern uint32_t SystemCoreClock;    /*!< Processor Clock Frequency            */
  * @brief  Setup the microcontroller system.
  *         Initialize the System and update the SystemCoreClock variable.
  */
-extern void SystemInit(void);
+void SystemInit(void);
 /**
  * Update SystemCoreClock variable
  *
@@ -65,7 +65,7 @@ extern void SystemInit(void);
  * @brief  Updates the SystemCoreClock with current core Clock
  *         retrieved from cpu registers.
  */
-extern void SystemCoreClockUpdate(void);
+void SystemCoreClockUpdate(void);
 /**
  * Update SystemFrequency variable
  *
@@ -76,7 +76,7 @@ extern void SystemCoreClockUpdate(void);
  *         retrieved from clock mode.
  */
 
-extern void SystemFrequencyUpdate(void);
+void SystemFrequencyUpdate(void);
 /*@}*/ /* end of peripheral_group System_cm3_mcu Driver */
 
 #ifdef __cplusplus

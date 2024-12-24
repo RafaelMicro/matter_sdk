@@ -13,7 +13,7 @@ GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x00008000, LENGTH = 0x74000  /* 464KB */
+  FLASH (rx) : ORIGIN = 0x00008000, LENGTH = 0x91000  /* 580KB */
   RAM (rwx)  : ORIGIN = 0x20000000, LENGTH = 0x20000  /* 128KB */
 }
 

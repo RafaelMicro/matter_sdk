@@ -261,12 +261,12 @@ void AppTask::OpenCommissioning(intptr_t arg)
 /**
  * Update cluster status after application level changes
  */
-void AppTask::UpdateClusterState(intptr_t arg)
+void AppTask::ToggleLockState(intptr_t arg)
 {
     using namespace chip::app::Clusters;
-    auto newValue = BoltLockMgr().IsUnlocked() ? DoorLock::DlLockState::kUnlocked : DoorLock::DlLockState::kLocked;
+    auto newValue = BoltLockMgr().IsUnlocked() ? DoorLock::DlLockState::kLocked : DoorLock::DlLockState::kUnlocked;
 
-    ChipLogProgress(NotSpecified, "UpdateClusterState");
+    ChipLogProgress(NotSpecified, "ToggleLockState");
     Status status = DoorLock::Attributes::LockState::Set(1, newValue);
 
     if (status != Status::Success)
@@ -287,12 +287,6 @@ void AppTask::ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor)
     {
         ChipLogProgress(NotSpecified, "Unlock Action has been initiated");
     }
-
-    if (aActor == AppEvent::kEventType_Button)
-    {
-        sAppTask.mSyncClusterToButtonAction = true;
-    }
-
 }
 
 void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
@@ -312,27 +306,6 @@ void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
         ChipLogProgress(NotSpecified, "Unlock Action has been completed");
         ChipLogProgress(NotSpecified, "Door Lock State: Unlocked");
     }
-
-    if (sAppTask.mSyncClusterToButtonAction)
-    {
-        PlatformMgr().ScheduleWork(UpdateClusterState, 0);
-        sAppTask.mSyncClusterToButtonAction = false;
-    }
-}
-
-void AppTask::LockActionEventHandler(AppEvent * aEvent)
-{
-
-}
-
-void AppTask::ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction)
-{
-    AppEvent event;
-    event.Type             = AppEvent::kEventType_Lock;
-    event.LockEvent.Actor  = aActor;
-    event.LockEvent.Action = aAction;
-    event.Handler          = LockActionEventHandler;
-    PostEvent(&event);
 }
 
 void AppTask::InitServer(intptr_t arg)
@@ -381,7 +354,6 @@ void AppTask::InitServer(intptr_t arg)
     }
     BoltLockMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
-    PlatformMgr().ScheduleWork(UpdateClusterState, 0);
 #if RT58x_OTA_ENABLED
     OTAConfig::Init();
 #endif
@@ -620,7 +592,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         case AppEvent::AppActionTypes::kActionTypes_ToggloeLockStatus:
             if(aEvent->ButtonEvent.Action == false)
             {
-                BoltLockMgr().InitiateAction(0,BoltLockMgr().IsUnlocked() ? BoltLockManager::LOCK_ACTION:BoltLockManager::UNLOCK_ACTION);
+                PlatformMgr().ScheduleWork(ToggleLockState, 0);
             }
             break;
     }

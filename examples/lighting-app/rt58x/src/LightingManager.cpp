@@ -66,7 +66,7 @@ CHIP_ERROR LightingManager::Init()
     }
     else
     {
-        mLevel = kHSV.v;
+        mLevel = 0;
     }
     mHSV.v = mLevel;
     status = ColorControl::Attributes::CurrentHue::Get(1, &currentLedHue);
@@ -87,40 +87,33 @@ CHIP_ERROR LightingManager::Init()
     {
         mHSV.s = kHSV.s;
     }
-    status = ColorControl::Attributes::ColorMode::Get(1, &mColorMode);
-    if (status == Status::Success)
-    {
-        mColorMode = ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
-    }
+    ColorControl::Attributes::ColorMode::Get(1, &mColorMode);
     status = ColorControl::Attributes::ColorTemperatureMireds::Get(1, &currentLedColorTemperature);
     if (status == Status::Success)
     {
         mCT.ctMireds = currentLedColorTemperature;
     }
-    // err("color mode: %d\r\n", mColorMode);
-    // err("level: %d\r\n", mHSV.v);
-    // err("hue: %d\r\n", mHSV.h);
-    // err("saturation: %d\r\n", mHSV.s);
-    // err("color temperature: %d\r\n", mCT.ctMireds);
-
-    mXY    = kBlueXY;
-    // mHSV   = kHSV;
+    status = ColorControl::Attributes::CurrentX::Get(1, &mXY.x);
+    if (status != Status::Success)
+    {
+        mXY.x = kBlueXY.x;
+    }
+    status = ColorControl::Attributes::CurrentY::Get(1, &mXY.y);
+    if (status != Status::Success)
+    {
+        mXY.y = kBlueXY.y;
+    }
     if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
         mRGB = HsvToRgb(mHSV);
+    else if (mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
+        mRGB = XYToRgb(mLevel, mXY.x, mXY.y); 
     else if (mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)
-        mRGB = CctToRgb(mCT); 
+        mRGB = CTToRgb(mCT); 
     mState = currentLedState ? kState_On : kState_Off;
     UpdateLight();
 
     return CHIP_NO_ERROR;
 }
-
-void LightingManager::SetCallbacks(LightingCallback_fn aActionInitiated_CB, LightingCallback_fn aActionCompleted_CB)
-{
-    mActionInitiated_CB = aActionInitiated_CB;
-    mActionCompleted_CB = aActionCompleted_CB;
-}
-
 bool LightingManager::IsTurnedOn()
 {
     return mState == kState_On;
@@ -136,7 +129,7 @@ RgbColor_t LightingManager::GetRgb()
     return mRGB;
 }
 
-bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t size, uint8_t * value)
+bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
 {
     bool action_initiated = false;
     State_t new_state;
@@ -234,11 +227,7 @@ bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t 
         }
     }
     if (action_initiated)
-    {        
-        if (mActionInitiated_CB)
-        {
-            mActionInitiated_CB(aAction);
-        }
+    {
         if (aAction == LEVEL_ACTION)
         {
             SetLevel(*value);
@@ -259,16 +248,25 @@ bool LightingManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t 
         {
             Set(new_state == kState_On);
         }
-
-        if (mActionCompleted_CB)
-        {
-            mActionCompleted_CB(aAction);
-        }
+        UpdateLight();
     }
 
     return action_initiated;
 }
-
+void LightingManager::DelayedXYAction(chip::System::Layer * aLayer, void * aAppState)
+{
+    XyColor_t xy;
+    ColorControl::Attributes::CurrentX::Get(1, &xy.x);
+    ColorControl::Attributes::CurrentY::Get(1, &xy.y);
+    sLight.InitiateAction(COLOR_ACTION_XY, (uint8_t *)&xy);
+}
+void LightingManager::DelayedHSVAction(chip::System::Layer * aLayer, void * aAppState)
+{
+    HsvColor_t hsv = {.h = 0, .s = 0, .v = 0};
+    ColorControl::Attributes::CurrentHue::Get(1, &hsv.h);
+    ColorControl::Attributes::CurrentSaturation::Get(1, &hsv.s);
+    sLight.InitiateAction(LightingManager::COLOR_ACTION_HSV, (uint8_t *)&hsv);
+}
 void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
@@ -281,7 +279,6 @@ void LightingManager::SetLevel(uint8_t aLevel)
     {
         mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
     }
-    UpdateLight();
 }
 
 void LightingManager::SetColor(uint16_t x, uint16_t y)
@@ -289,7 +286,6 @@ void LightingManager::SetColor(uint16_t x, uint16_t y)
     mXY.x = x;
     mXY.y = y;
     mRGB  = XYToRgb(mLevel, mXY.x, mXY.y);
-    UpdateLight();
 }
 
 void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
@@ -304,17 +300,12 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 
     // info("===> H: %d, S: %d\r\n", hue, saturation);
     // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-
-    UpdateLight();
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
 {
     mCT.ctMireds = ct.ctMireds;
-    // info("===> mCT.ctMireds: %d\r\n", mCT.ctMireds);
-    // info("===> Kelvin: %d\r\n", 1000000 / mCT.ctMireds);
-    mRGB = CctToRgb(mCT);
-    UpdateLight();
+    mRGB = CTToRgb(mCT);
 }
 
 void LightingManager::SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode)
@@ -332,16 +323,15 @@ void LightingManager::Set(bool aOn)
     {
         mState = kState_Off;
     }
-    UpdateLight();
 }
 
 void LightingManager::UpdateLight()
 {
     //ChipLogProgress(NotSpecified, "UpdateLight: %d Mode: %d L:%d R:%d G:%d B:%d", mState, mColorMode, mLevel, mRGB.r, mRGB.g, mRGB.b);
+    info_color(LOG_GREEN, "R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 
     if (mState == kState_On && mLevel > 1)
     {
-        // err("R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
         if(mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)//using color temperature
         {
             rt58x_led_level_ctl(2, CorrectRGB(mRGB.b,mLevel));
@@ -354,5 +344,11 @@ void LightingManager::UpdateLight()
             rt58x_led_level_ctl(3, mRGB.r);
             rt58x_led_level_ctl(4, mRGB.g);
         }
+    }
+    else
+    {
+        rt58x_led_level_ctl(2, 0);
+        rt58x_led_level_ctl(3, 0);
+        rt58x_led_level_ctl(4, 0);
     }
 }

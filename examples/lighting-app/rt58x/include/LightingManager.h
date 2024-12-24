@@ -59,11 +59,9 @@ public:
     uint8_t GetLevel();
     RgbColor_t GetRgb();
     void SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode);
-    bool InitiateAction(Action_t aAction, int32_t aActor, uint16_t size, uint8_t * value);
-
-    using LightingCallback_fn = std::function<void(Action_t)>;
-
-    void SetCallbacks(LightingCallback_fn aActionInitiated_CB, LightingCallback_fn aActionCompleted_CB);
+    bool InitiateAction(Action_t aAction, uint8_t * value);
+    static void DelayedXYAction(chip::System::Layer * aLayer, void * aAppState);
+    static void DelayedHSVAction(chip::System::Layer * aLayer, void * aAppState);
 
 
 private:
@@ -71,7 +69,6 @@ private:
     State_t mState;
     uint8_t mLevel;
     XyColor_t mXY;
-    CW_t mCW;
     HsvColor_t mHSV;
     RgbColor_t mRGB;
     CtColor_t mCT;
@@ -79,8 +76,6 @@ private:
     chip::app::Clusters::ColorControl::ColorModeEnum mColorMode =
         chip::app::Clusters::ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
 
-    LightingCallback_fn mActionInitiated_CB;
-    LightingCallback_fn mActionCompleted_CB;
 
     void Set(bool aOn);
     void SetLevel(uint8_t aLevel);

@@ -64,7 +64,6 @@ public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
     void PostEvent(const AppEvent * event);
-    void ActionRequest(int32_t aActor, BoltLockManager::Action_t aAction);
 
     static void IdentifyStartHandler(Identify *);
     static void IdentifyStopHandler(Identify *);
@@ -72,14 +71,13 @@ public:
     void PostAppIdentify();
 private:
     friend AppTask & GetAppTask(void);
-    static void UpdateClusterState(intptr_t arg);
+    static void ToggleLockState(intptr_t arg);
     CHIP_ERROR Init();
     static void InitServer(intptr_t arg);
     static void ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor);
     static void ActionCompleted(BoltLockManager::Action_t aAction);    
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
-    static void LockActionEventHandler(AppEvent * aEvent);
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);
 
@@ -103,7 +101,6 @@ private:
 
     Function_t mFunction;
     bool mFunctionTimerActive;
-    bool mSyncClusterToButtonAction = false;
 
     static AppTask sAppTask;   
 

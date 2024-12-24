@@ -35,6 +35,8 @@
 #include <lib/support/logging/CHIPLogging.h>
 
 using namespace ::chip;
+using namespace chip::DeviceLayer;
+using namespace chip::System;
 using namespace ::chip::app::Clusters;
 using chip::Protocols::InteractionModel::Status;
 
@@ -44,127 +46,44 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     EndpointId endpoint     = attributePath.mEndpointId;
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
-
-    DeviceLayer::ChipDeviceEvent event;
-
-    static HsvColor_t hsv = {.h = 0, .s = 0, .v = 0};
-
-    static bool getH = false;
-    static bool getS = false;
-    // static bool powerOnZCLInitOnOff = true;
-    // static bool powerOnZCLInitLevelControl = true;
-    // static bool powerOnZCLInitColortemperature = true;
-
     switch (clusterId)
     {
     case OnOff::Id:
         if (attributeId == OnOff::Attributes::OnOff::Id) 
         {
-            event.Type = DeviceLayer::DeviceEventType::kOnOffAttributeChanged;
-            event.OnOffChanged.value = *value;
-
-            DeviceLayer::PlatformMgr().PostEvent(&event);
+            LightMgr().InitiateAction(*value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, value);
         }
         break;
     case LevelControl::Id:
         if (attributeId == LevelControl::Attributes::CurrentLevel::Id && size == 1)
         {
-            event.Type = DeviceLayer::DeviceEventType::kLevelControlAttributeChanged;
-            event.LevelControlChanged.level = *value;
-            // if (powerOnZCLInitLevelControl) 
-            // {
-            //     powerOnZCLInitLevelControl = false;
-            //     break;
-            // }
-            DeviceLayer::PlatformMgr().PostEvent(&event);
+            LightMgr().InitiateAction(LightingManager::LEVEL_ACTION, value);
         }
         break;
     case ColorControl::Id:
-        if (attributeId == ColorControl::Attributes::RemainingTime::Id)
-        {
-            uint16_t RemainingTime = *reinterpret_cast<uint16_t *>(value);
-            return;
-        }
-        else if (attributeId == ColorControl::Attributes::ColorMode::Id)
+        if (attributeId == ColorControl::Attributes::ColorMode::Id)
         {
             chip::app::Clusters::ColorControl::ColorModeEnum ColorMode = *reinterpret_cast<chip::app::Clusters::ColorControl::ColorModeEnum *>(value);
             LightMgr().SetColorMode(ColorMode);
             return;
         }
-        else if (attributeId == ColorControl::Attributes::EnhancedColorMode::Id)
-        {
-            uint8_t EnhancedColorMode = *reinterpret_cast<uint8_t *>(value);
-            return;
-        }
         else if (attributeId == ColorControl::Attributes::CurrentX::Id || 
                  attributeId == ColorControl::Attributes::CurrentY::Id)
         {
-            event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeXYChanged;
-            DeviceLayer::PlatformMgr().PostEvent(&event);
+            LightMgr().SetColorMode(ColorControl::ColorModeEnum::kCurrentXAndCurrentY);
+            SystemLayer().StartTimer(Clock::Milliseconds32(100), LightMgr().DelayedXYAction, nullptr);
         }
         else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
                  attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
                  attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
         {
-            if (attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
-            {
-                // We only support 8-bit hue. Assuming hue is linear, normalize 16-bit to 8-bit.
-                hsv.h = (uint8_t)((*reinterpret_cast<uint16_t *>(value)) >> 8);
-                // get saturation from cluster value storage
-                Status status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                // getH = true;
-            }
-            else if (attributeId == ColorControl::Attributes::CurrentHue::Id)
-            {
-                hsv.h = *value;
-                // get saturation from cluster value storage
-                Status status = ColorControl::Attributes::CurrentSaturation::Get(endpoint, &hsv.s);
-                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
-                event.ColorControlHSVChanged.hue = hsv.h;
-                event.ColorControlHSVChanged.saturation = hsv.s;
-                DeviceLayer::PlatformMgr().PostEvent(&event);
-
-                // getH = true;
-            }
-            else if (attributeId == ColorControl::Attributes::CurrentSaturation::Id)
-            {
-                hsv.s = *value;
-                // get hue from cluster value storage
-                Status status = ColorControl::Attributes::CurrentHue::Get(endpoint, (uint8_t *)&hsv.h);
-                // assert(status == EMBER_ZCL_STATUS_SUCCESS);
-
-                event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
-                event.ColorControlHSVChanged.hue = hsv.h;
-                event.ColorControlHSVChanged.saturation = hsv.s;
-                DeviceLayer::PlatformMgr().PostEvent(&event);
-
-                // getS = true;
-            }
-
-            // if (getH && getS) 
-            // {
-            //     event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeHSVChanged;
-            //     event.ColorControlHSVChanged.hue = hsv.h;
-            //     event.ColorControlHSVChanged.saturation = hsv.s;
-
-            //     getH = getS = false;
-            //     DeviceLayer::PlatformMgr().PostEvent(&event);
-            // }
+            LightMgr().SetColorMode(ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation);
+            SystemLayer().StartTimer(Clock::Milliseconds32(100), LightMgr().DelayedHSVAction, nullptr);
         }
         else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
         {
-            event.Type = DeviceLayer::DeviceEventType::kColorControlAttributeCTChanged;
-            event.ColorControlCTChanged.ctMireds = *reinterpret_cast<uint16_t *>(value);   
-            // if (powerOnZCLInitColortemperature) 
-            // {
-            //     powerOnZCLInitColortemperature = false;
-            //     break;
-            // }
-            DeviceLayer::PlatformMgr().PostEvent(&event);
+            LightMgr().SetColorMode(ColorControl::ColorModeEnum::kColorTemperatureMireds);
+            LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, value);
         }
         break;
     default:

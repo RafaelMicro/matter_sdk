@@ -18,12 +18,17 @@
  */
 
 #include "BoltLockManager.h"
+#include <app-common/zap-generated/attributes/Accessors.h>
+#include <app/data-model/Nullable.h>
 
 #include "AppConfig.h"
 #include "AppTask.h"
 #include <FreeRTOS.h>
 
 using namespace chip;
+using namespace chip::app;
+using namespace chip::app::Clusters;
+using chip::Protocols::InteractionModel::Status;
 
 BoltLockManager BoltLockManager::sLock;
 
@@ -34,6 +39,9 @@ StaticTimer_t sLockTimerBuffer;
 
 CHIP_ERROR BoltLockManager::Init()
 {
+    Status status;
+    DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> lockstate;
+    ChipLogProgress(NotSpecified, "BoltLockManager::Init()");
 #if defined(CHIP_CONFIG_FREERTOS_USE_STATIC_TASK) && CHIP_CONFIG_FREERTOS_USE_STATIC_TASK
     sLockTimer = xTimerCreateStatic("lockTmr",         // Just a text name, not used by the RTOS kernel
                                     1,                 // == default timer period (mS)
@@ -57,8 +65,32 @@ CHIP_ERROR BoltLockManager::Init()
         ChipLogProgress(NotSpecified, "sLockTimer timer create failed");
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
-
-    mState              = kState_LockingCompleted;
+    status = DoorLock::Attributes::LockState::Get(1,lockstate);
+    if (status == Status::Success && !lockstate.IsNull())
+    {
+        if(lockstate.Value() == DlLockState::kLocked)
+        {
+            mState = kState_LockingCompleted;
+        }
+        else
+        {
+            mState = kState_UnlockingCompleted;
+        }
+    }
+    else
+    {
+        mState = kState_LockingCompleted;
+    }
+    if (mState == kState_LockingCompleted)
+    {
+        gpio_pin_set(21);
+        ChipLogProgress(NotSpecified, "Door Lock State: Locked");
+    }
+    else if (mState == kState_UnlockingCompleted)
+    {
+        gpio_pin_clear(21);
+        ChipLogProgress(NotSpecified, "Door Lock State: Unlocked");
+    }
     mAutoLockTimerArmed = false;
     mAutoRelock         = false;
     mAutoLockDuration   = 0;

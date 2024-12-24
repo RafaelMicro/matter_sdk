@@ -1,6 +1,6 @@
 {
   "fileFormat": 2,
-  "featureLevel": 100,
+  "featureLevel": 103,
   "creator": "zap",
   "keyValuePairs": [
     {
@@ -29,6 +29,7 @@
       "pathRelativity": "relativeToZap",
       "path": "../../../src/app/zap-templates/app-templates.json",
       "type": "gen-templates-json",
+      "category": "matter",
       "version": "chip-v1"
     }
   ],
@@ -521,6 +522,22 @@
               "reportableChange": 0
             },
             {
+              "name": "UniqueID",
+              "code": 18,
+              "mfgCode": null,
+              "side": "server",
+              "type": "char_string",
+              "included": 1,
+              "storageOption": "External",
+              "singleton": 1,
+              "bounded": 0,
+              "defaultValue": "",
+              "reportable": 1,
+              "minInterval": 1,
+              "maxInterval": 65534,
+              "reportableChange": 0
+            },
+            {
               "name": "CapabilityMinima",
               "code": 19,
               "mfgCode": null,
@@ -672,24 +689,6 @@
               "source": "client",
               "isIncoming": 0,
               "isEnabled": 1
-            }
-          ],
-          "attributes": [
-            {
-              "name": "ClusterRevision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "client",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "1",
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65344,
-              "reportableChange": 0
             }
           ]
         },
@@ -1656,7 +1655,6 @@
           "define": "THREAD_NETWORK_DIAGNOSTICS_CLUSTER",
           "side": "server",
           "enabled": 1,
-          "commands": [],
           "attributes": [
             {
               "name": "Channel",
@@ -2482,7 +2480,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2498,7 +2496,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2514,7 +2512,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2530,7 +2528,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2546,7 +2544,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2562,7 +2560,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2578,7 +2576,7 @@
               "storageOption": "External",
               "singleton": 0,
               "bounded": 0,
-              "defaultValue": "",
+              "defaultValue": null,
               "reportable": 1,
               "minInterval": 1,
               "maxInterval": 65534,
@@ -2662,24 +2660,6 @@
               "source": "client",
               "isIncoming": 0,
               "isEnabled": 1
-            }
-          ],
-          "attributes": [
-            {
-              "name": "ClusterRevision",
-              "code": 65533,
-              "mfgCode": null,
-              "side": "client",
-              "type": "int16u",
-              "included": 1,
-              "storageOption": "RAM",
-              "singleton": 0,
-              "bounded": 0,
-              "defaultValue": "4",
-              "reportable": 1,
-              "minInterval": 0,
-              "maxInterval": 65344,
-              "reportableChange": 0
             }
           ]
         },
@@ -3124,7 +3104,7 @@
               "code": 17,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "NVM",
               "singleton": 0,
@@ -3140,7 +3120,7 @@
               "code": 18,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "NVM",
               "singleton": 0,
@@ -3156,7 +3136,7 @@
               "code": 21,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3172,7 +3152,7 @@
               "code": 22,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3188,7 +3168,7 @@
               "code": 23,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,
@@ -3204,7 +3184,7 @@
               "code": 24,
               "mfgCode": null,
               "side": "server",
-              "type": "int16s",
+              "type": "temperature",
               "included": 1,
               "storageOption": "RAM",
               "singleton": 0,

@@ -378,129 +378,24 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
     }
 }
 
-/**
- * Update cluster status after application level changes
- */
-void AppTask::UpdateClusterState(intptr_t arg)
-{
-    // ChipLogProgress(NotSpecified, "UpdateClusterState");
-
-    // write the new on/off value
-    Status status = OnOffServer::Instance().setOnOffValue(1, LightMgr().IsTurnedOn(), true);
-
-    if (status != Status::Success)
-    {
-        ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
-    }
-}
-
-void AppTask::ActionInitiated(LightingManager::Action_t aAction)
-{
-    // Placeholder for light action
-    // if (aAction == LightingManager::ON_ACTION)
-    // {
-    //     ChipLogProgress(NotSpecified, "Light goes on");
-    // }
-    // else if (aAction == LightingManager::OFF_ACTION)
-    // {
-    //     ChipLogProgress(NotSpecified, "Light goes off ");
-    // }
-
-    // if (sAppTask.mSyncClusterToButtonAction)
-    // {
-    //     PlatformMgr().ScheduleWork(UpdateClusterState, 0);
-    //     sAppTask.mSyncClusterToButtonAction = false;
-    // }
-}
-
-void AppTask::ActionCompleted(LightingManager::Action_t aAction)
-{
-    // Placeholder for light action completed
-    uint8_t current_level = 0;
-    RgbColor_t RGB;
-    
-    if (aAction == LightingManager::ON_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light On Action has been completed");
-
-        current_level = LightMgr().GetLevel();
-        RGB = LightMgr().GetRgb();
-        rt58x_led_level_ctl(2, RGB.b);
-        rt58x_led_level_ctl(3, RGB.r);
-        rt58x_led_level_ctl(4, RGB.g);
-#if RAF_ENABLE_MULTI_CONTROL
-        RafMCMgr().ReportOnoff(1,1);
-#endif
-    }
-    else if (aAction == LightingManager::OFF_ACTION)
-    {
-        ChipLogProgress(NotSpecified, "Light Off Action has been completed");
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0); 
-#if RAF_ENABLE_MULTI_CONTROL
-        RafMCMgr().ReportOnoff(1,0);
-#endif
-    }
-    else if (aAction == LightingManager::LEVEL_ACTION)
-    {
-        current_level = LightMgr().GetLevel();
-#if RAF_ENABLE_MULTI_CONTROL
-        RafMCMgr().ReportLevel(1,current_level);
-#endif
-    }
-
-    if (sAppTask.mSyncClusterToButtonAction)
-    {
-        chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
-        sAppTask.mSyncClusterToButtonAction = false;
-    }
-}
 void AppTask::LightActionEventHandler(AppEvent * aEvent)
 {
-    bool initiated = false;
-    LightingManager::Action_t action;
-    int32_t actor;
-    CHIP_ERROR err = CHIP_NO_ERROR;
+    Status status;
 
-    if (aEvent->Type == AppEvent::kEventType_Light)
+    if (aEvent->Type == AppEvent::kEventType_Button)
     {
-        action = static_cast<LightingManager::Action_t>(aEvent->LightEvent.Action);
-        actor  = aEvent->LightEvent.Actor;
-        // Toggle Dimming of light between 2 fixed levels
-        uint8_t val = 0x0;
-        val         = LightMgr().GetLevel() == 0x7f ? 0x1 : 0x7f;
-        action      = LightingManager::LEVEL_ACTION;
-        initiated = LightMgr().InitiateAction(action, 0, 1, &val);
-
-        if (!initiated)
+        PlatformMgr().LockChipStack();
+        Status status = OnOffServer::Instance().setOnOffValue(1, !LightMgr().IsTurnedOn(), true);
+        if (status != Status::Success)
         {
-            ChipLogProgress(NotSpecified, "Action is already in progress or active.");
+            ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
         }
-    }
-    else if (aEvent->Type == AppEvent::kEventType_Button)
-    {
-        action = (LightMgr().IsTurnedOn()) ? LightingManager::OFF_ACTION : LightingManager::ON_ACTION;
-        actor  = AppEvent::kEventType_Button;
-        // Toggle Dimming of light between 2 fixed levels
-        uint8_t val = (action == LightingManager::ON_ACTION) ? 0x7f : 0x1;
-        initiated = LightMgr().InitiateAction(action, 0, 1, &val);
-
-        if (!initiated)
-        {
-            ChipLogProgress(NotSpecified, "Action is already in progress or active.");
-        }
-    }
-    else
-    {
-        err = APP_ERROR_UNHANDLED_EVENT;
+        PlatformMgr().UnlockChipStack();
     }
 }
 
 void AppTask::InitServer(intptr_t arg)
 {
-    
-#if 1
     CHIP_ERROR err;
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
@@ -536,7 +431,6 @@ void AppTask::InitServer(intptr_t arg)
         chip::app::DnssdServer::Instance().StartServer();
         sCommissioned = true;
     }
-#endif
     // Setup light
     err = LightMgr().Init();
     if (err != CHIP_NO_ERROR)
@@ -544,7 +438,6 @@ void AppTask::InitServer(intptr_t arg)
         ChipLogError(NotSpecified, "LightingMgr().Init() failed");
         //return err;
     }
-    LightMgr().SetCallbacks(ActionInitiated, ActionCompleted);
 
 #if RT58x_OTA_ENABLED
     OTAConfig::Init();
@@ -601,30 +494,6 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         {
             chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(1000), FactoryResetEventHandler, nullptr);
         }
-        break;
-    case DeviceEventType::kOnOffAttributeChanged:
-        LightMgr().InitiateAction(aEvent->OnOffChanged.value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, 
-                                  0, 
-                                  sizeof(aEvent->OnOffChanged.value), 
-                                  (uint8_t *)&aEvent->OnOffChanged.value);
-        break;
-    case DeviceEventType::kLevelControlAttributeChanged:
-        LightMgr().InitiateAction(LightingManager::LEVEL_ACTION, 
-                                  0, 
-                                  sizeof(aEvent->LevelControlChanged.level), 
-                                  (uint8_t *)&aEvent->LevelControlChanged.level);
-        break;
-    case DeviceEventType::kColorControlAttributeHSVChanged:
-        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, 
-                                  0, 
-                                  sizeof(aEvent->ColorControlHSVChanged), 
-                                  (uint8_t *)&aEvent->ColorControlHSVChanged);
-        break;
-    case DeviceEventType::kColorControlAttributeCTChanged:
-        LightMgr().InitiateAction(LightingManager::COLOR_ACTION_CT, 
-                                  0, 
-                                  sizeof(aEvent->ColorControlCTChanged), 
-                                  (uint8_t *)&aEvent->ColorControlCTChanged);
         break;
 #if RAF_ENABLE_MULTI_CONTROL
     case DeviceEventType::kBleToApp:

@@ -27,6 +27,7 @@
 #include <lib/support/logging/CHIPLogging.h>
 
 using namespace ::chip;
+using namespace chip::app;
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::DoorLock;
 using chip::Protocols::InteractionModel::Status;
@@ -114,8 +115,14 @@ bool emberAfPluginDoorLockOnDoorUnlockCommand(chip::EndpointId endpointId, const
 
 void emberAfDoorLockClusterInitCallback(EndpointId endpoint)
 {
-    DoorLockServer::Instance().InitServer(endpoint);
+    DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> lockstate;
+    DoorLock::Attributes::LockState::Get(1,lockstate);
 
+    DoorLockServer::Instance().InitServer(endpoint);
+    if (!lockstate.IsNull())
+    {
+        DoorLock::Attributes::LockState::Set(1,lockstate);
+    }
     const auto logOnFailure = [](Status status, const char * attributeName) {
         if (status != Status::Success)
         {

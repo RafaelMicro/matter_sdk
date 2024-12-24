@@ -132,6 +132,7 @@ rt58x_executable("water-valve_app") {
     "-Wl,--print-memory-usage",
     "-fstack-usage",
     "-Wunused-variable",
+    "-Wl,-Map=${output_name}.map"
   ]
 
   # Attestation Credentials

@@ -1,9 +1,0 @@
-build*/
-node_modules
-package-lock.json
-.vscode/.cortex-debug.*
-.vscode/iar-vsc.json
-.vscode/c_cpp_properties.json
-.vscode/configs/jlink_setup.cfg
-.cache
-compile_commands.json

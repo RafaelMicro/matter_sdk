@@ -78,6 +78,30 @@ static void init_lighting_pin_mux(void)
     return;
 }
 
+void init_rt58x_pwm(uint32_t id)
+{
+    pwm_seq_para_t *pwm_seq = NULL;
+    pwm_seq_para_head_t *p_pwm_para_config = &pwm_para_config[id];
+
+    p_pwm_para_config->pwm_id            = (pwm_id_t)id;
+    p_pwm_para_config->pwm_play_cnt      = pwm_play_cnt; //0 means continuous
+    p_pwm_para_config->pwm_seq_order     = pwm_seq_order;
+    p_pwm_para_config->pwm_seq_num       = pwm_seq_num;
+    p_pwm_para_config->pwm_seq_mode      = pwm_seq_mode;
+    p_pwm_para_config->pwm_triggered_src = pwm_trigger_src;
+    p_pwm_para_config->pwm_clk_div       = pwm_clk_div;
+    p_pwm_para_config->pwm_counter_mode  = pwm_counter_mode;
+    p_pwm_para_config->pwm_dma_smp_fmt   = pwm_dma_smp_fmt;
+    p_pwm_para_config->pwm_count_end_val = 0x00;
+
+    pwm_seq = &(p_pwm_para_config->pwm_seq0);
+    pwm_seq->pwm_rdma_addr  = (uint32_t)&pwm_rdma0_addr_temp;
+    pwm_seq->pwm_element_num    = pwm_element_arr;
+    pwm_seq->pwm_repeat_num     = pwm_rep_arr;
+    pwm_seq->pwm_delay_num      = pwm_dly_arr;
+
+    Pwm_Init(&pwm_para_config[id]);
+}
 void rt58x_led_level_ctl(uint32_t id, uint8_t current_lv)
 {
     uint32_t dutycycle ;
@@ -96,7 +120,9 @@ void rt58x_led_level_ctl(uint32_t id, uint8_t current_lv)
 void init_lighting_app_rt58xPlatform(void)
 {
     init_lighting_pin_mux();
-
+    init_rt58x_pwm(2);
+    init_rt58x_pwm(3);
+    init_rt58x_pwm(4);
     rt58x_led_level_ctl(2, 0);
     rt58x_led_level_ctl(3, 0);
     rt58x_led_level_ctl(4, 0);  

@@ -130,6 +130,7 @@ rt58x_executable("lighting_app") {
     "-Wl,--print-memory-usage",
     "-fstack-usage",
     "-Wunused-variable",
+    "-Wl,-Map=${output_name}.map"
   ]
 
   if (chip_build_platform_attestation_credentials_provider) {

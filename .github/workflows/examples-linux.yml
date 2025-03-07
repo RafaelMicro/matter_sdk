@@ -31,7 +31,7 @@ jobs:
         if: github.actor != 'restyled-io[bot]'
 
         container:
-            image: connectedhomeip/chip-build:0.7.3
+            image: ghcr.io/project-chip/chip-build:119
 
         steps:
             - name: Checkout repository
@@ -68,7 +68,7 @@ jobs:
 
             - name: Uploading Files
               if: ${{ always() }}
-              uses: actions/upload-artifact@v3
+              uses: actions/upload-artifact@v4
               with:
                 name: bin_files_and_size_files
                 path: ${{ env.UPLOAD_FOLDER }}/

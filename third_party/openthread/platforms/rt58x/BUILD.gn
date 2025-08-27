@@ -19,7 +19,11 @@ import("//build_overrides/rt58x_sdk.gni")
 import("${chip_root}/src/platform/device.gni")
 import("${rt58x_sdk_build_root}/rt58x_sdk.gni")
 
-openthread_rt58x_root = "${chip_root}/third_party/openthread/ot-rt58x"
+openthread_rt58x_root = "${chip_root}/third_party/openthread/openthread-rafael/openthread"
+if (!use_static_sdk_lib) {
+  openthread_platform_root = "${chip_root}/third_party/openthread/openthread-rafael/openthread_port"
+}
+
 
 config("openthread_rt58x_config") {
   include_dirs = [ "${chip_root}/examples/platform/rt58x" ]
@@ -28,7 +32,7 @@ config("openthread_rt58x_config") {
 source_set("openthread_core_config_rt58x") {
   sources = [
     "${chip_root}/examples/platform/rt58x/project_include/OpenThreadConfig.h",
-    "${openthread_rt58x_root}/openthread/src/cli/cli_config.h",
+    "${openthread_rt58x_root}/src/cli/cli_config.h",
   ]
   public_deps = [ "${rt58x_sdk_build_root}:rt58x_sdk" ]
 
@@ -45,39 +49,103 @@ source_set("libopenthread-rt58x") {
 static_library("openthread-rt58x-platform") {
   public_deps = [
     ":openthread_core_config_rt58x",
-    "${openthread_rt58x_root}/openthread/src/core:libopenthread_core_headers",
+    "${openthread_rt58x_root}/src/core:libopenthread_core_headers",
     "..:libopenthread-platform",
     "..:libopenthread-platform-utils",
   ]
-  include_dirs = [ "${chip_root}/examples/platform/rt58x/project_include/" ]
+  include_dirs = [ "${chip_root}/examples/platform/rt58x/project_include/",
+                   "${openthread_platform_root}/include",]
 
-  if (chip_openthread_ftd) {
-    #public_configs = [ "${openthread_rt58x_root}/openthread:openthread_ftd_config" ]
-    libs = [ "${openthread_rt58x_root}/openthread/libopenthread-ftd.a" ]
+  if (use_static_sdk_lib) {
+    libs = [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58xplatform.a" ]
   } else {
-    #public_configs = [ "${openthread_rt58x_root}/openthread:openthread_mtd_config" ]
-    libs = [ "${openthread_rt58x_root}/openthread/libopenthread-mtd.a" ]
-  }
+    output_name = "libotrt58xplatform"
+    output_dir = "${root_out_dir}/lib"
 
-  libs += [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58xplatform.a" ]
+    sources = [
+      "system.c",
+      "${openthread_platform_root}/src/ot_alarm.c",
+      "${openthread_platform_root}/src/ot_crypto.c",
+      "${openthread_platform_root}/src/ot_entropy.c",
+      "${openthread_platform_root}/src/ot_logging.c",
+      "${openthread_platform_root}/src/ot_memory.c",
+      "${openthread_platform_root}/src/ot_misc.c",
+      "${openthread_platform_root}/src/ot_radio.c",
+      "${openthread_platform_root}/src/ot_settings.c",
+      "${openthread_platform_root}/utils/mac_frame.cpp",
+      "${openthread_platform_root}/utils/mac_frame_gen.c",
+      "${openthread_platform_root}/utils/soft_source_match_table.c",
+    ]
+  }
 }
 
 static_library("openthread-rt58x-root") {
   public_deps = [
     ":openthread_core_config_rt58x",
-    "${openthread_rt58x_root}/openthread/src/core:libopenthread_core_headers",
+    "${openthread_rt58x_root}/src/core:libopenthread_core_headers",
     "..:libopenthread-platform",
     "..:libopenthread-platform-utils",
   ]
   include_dirs = [ "${chip_root}/examples/platform/rt58x/project_include/" ]
 
   if (chip_openthread_ftd) {
-    #public_configs = [ "${openthread_rt58x_root}/openthread:openthread_ftd_config" ]
-    libs = [ "${openthread_rt58x_root}/openthread/libopenthread-ftd.a" ]
+    public_configs = [ "${openthread_rt58x_root}:openthread_ftd_config" ]
   } else {
-    #public_configs = [ "${openthread_rt58x_root}/openthread:openthread_mtd_config" ]
-    libs = [ "${openthread_rt58x_root}/openthread/libopenthread-mtd.a" ]
+    public_configs = [ "${openthread_rt58x_root}:openthread_mtd_config" ]
   }
 
-  libs += [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58x.a" ]
+  if (use_static_sdk_lib) {
+    libs = [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58x.a" ]
+  } else {
+    output_name = "libotrt58x"
+    output_dir = "${root_out_dir}/lib"
+
+    sources = [
+      "${openthread_rt58x_root}/examples/apps/cli/cli_uart.cpp",
+      "${openthread_rt58x_root}/src/cli/cli.cpp",
+      "${openthread_rt58x_root}/src/cli/cli.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_bbr.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_bbr.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_br.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_br.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_coap.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_coap.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_coap_secure.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_coap_secure.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_commissioner.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_commissioner.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_config.h",
+      "${openthread_rt58x_root}/src/cli/cli_dataset.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_dataset.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_dns.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_dns.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_history.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_history.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_joiner.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_joiner.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_link_metrics.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_link_metrics.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_mac_filter.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_mac_filter.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_mdns.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_mdns.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_mesh_diag.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_mesh_diag.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_network_data.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_network_data.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_ping.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_ping.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_srp_client.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_srp_client.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_srp_server.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_srp_server.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_tcp.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_tcp.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_udp.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_udp.hpp",
+      "${openthread_rt58x_root}/src/cli/cli_utils.cpp",
+      "${openthread_rt58x_root}/src/cli/cli_utils.hpp",
+      "${openthread_rt58x_root}/src/cli/x509_cert_key.hpp",
+    ]
+  }
 }

@@ -25,7 +25,6 @@
 #include <cinttypes>
 #include <optional>
 
-#include <lib/core/StringBuilderAdapters.h>
 #include <pw_unit_test/framework.h>
 
 #include <app/AppConfig.h>
@@ -38,6 +37,7 @@
 #include <lib/core/CHIPCore.h>
 #include <lib/core/ErrorStr.h>
 #include <lib/core/Optional.h>
+#include <lib/core/StringBuilderAdapters.h>
 #include <lib/core/TLV.h>
 #include <lib/core/TLVDebug.h>
 #include <lib/core/TLVUtilities.h>
@@ -150,6 +150,7 @@ public:
 
     // No significance with using 0x12 as the CommandId, just using a value.
     static constexpr chip::CommandId GetCommandId() { return 0x12; }
+
     CHIP_ERROR EncodeTo(TLV::TLVWriter & aWriter, TLV::Tag aTag) const override
     {
         VerifyOrReturnError(mBuffer, CHIP_ERROR_NO_MEMORY);
@@ -167,6 +168,8 @@ private:
 struct Fields
 {
     static constexpr chip::CommandId GetCommandId() { return 4; }
+    static constexpr bool kIsFabricScoped = false;
+
     CHIP_ERROR Encode(TLV::TLVWriter & aWriter, TLV::Tag aTag) const
     {
         TLV::TLVType outerContainerType;
@@ -179,6 +182,8 @@ struct Fields
 struct BadFields
 {
     static constexpr chip::CommandId GetCommandId() { return 4; }
+    static constexpr bool kIsFabricScoped = false;
+
     CHIP_ERROR Encode(TLV::TLVWriter & aWriter, TLV::Tag aTag) const
     {
         TLV::TLVType outerContainerType;
@@ -193,7 +198,7 @@ struct BadFields
     }
 };
 
-Protocols::InteractionModel::Status ServerClusterCommandExists(const ConcreteCommandPath & aRequestCommandPath)
+static Protocols::InteractionModel::Status ServerClusterCommandExists(const ConcreteCommandPath & aRequestCommandPath)
 {
     // Mock cluster catalog, only support commands on one cluster on one endpoint.
     if (aRequestCommandPath.mEndpointId != kTestEndpointId)
@@ -372,9 +377,21 @@ public:
     {
         DispatchSingleClusterCommand(aCommandPath, apPayload, &apCommandObj);
     }
-    Protocols::InteractionModel::Status CommandExists(const ConcreteCommandPath & aCommandPath)
+
+    Protocols::InteractionModel::Status ValidateCommandCanBeDispatched(const DataModel::InvokeRequest & request) override
     {
-        return ServerClusterCommandExists(aCommandPath);
+        using Protocols::InteractionModel::Status;
+
+        Status status = ServerClusterCommandExists(request.path);
+        if (status != Status::Success)
+        {
+            return status;
+        }
+
+        // NOTE: IM does more validation here, however for now we do minimal options
+        //       to pass the test.
+
+        return Status::Success;
     }
 
     void ResetCounter() { onFinalCalledTimes = 0; }
@@ -391,10 +408,11 @@ public:
         return &instance;
     }
 
-    TestCommandInteractionModel() {}
+    TestCommandInteractionModel() = default;
 
-    std::optional<DataModel::ActionReturnStatus> Invoke(const DataModel::InvokeRequest & request,
-                                                        chip::TLV::TLVReader & input_arguments, CommandHandler * handler)
+    std::optional<DataModel::ActionReturnStatus> InvokeCommand(const DataModel::InvokeRequest & request,
+                                                               chip::TLV::TLVReader & input_arguments,
+                                                               CommandHandler * handler) override
     {
         DispatchSingleClusterCommand(request.path, input_arguments, handler);
         return std::nullopt; // handler status is set by the dispatch
@@ -1536,6 +1554,43 @@ TEST_F(TestCommandInteraction, TestCommandSenderCommandAsyncSuccessResponseFlow)
 
     EXPECT_EQ(mockCommandSenderDelegate.onResponseCalledTimes, 1);
     EXPECT_EQ(mockCommandSenderDelegate.onFinalCalledTimes, 1);
+    EXPECT_EQ(mockCommandSenderDelegate.onErrorCalledTimes, 0);
+
+    EXPECT_EQ(GetNumActiveCommandResponderObjects(), 0u);
+    EXPECT_EQ(GetExchangeManager().GetNumActiveExchanges(), 0u);
+}
+
+TEST_F(TestCommandInteraction, CommandSenderDeletedWhenResponseIsPending)
+{
+
+    mockCommandSenderDelegate.ResetCounter();
+    app::CommandSender * commandSender = Platform::New<app::CommandSender>(&mockCommandSenderDelegate, &GetExchangeManager());
+
+    AddInvokeRequestData(commandSender);
+    asyncCommand = true;
+
+    EXPECT_EQ(commandSender->SendCommandRequest(GetSessionBobToAlice()), CHIP_NO_ERROR);
+
+    DrainAndServiceIO();
+
+    EXPECT_EQ(mockCommandSenderDelegate.onResponseCalledTimes, 0);
+    EXPECT_EQ(mockCommandSenderDelegate.onFinalCalledTimes, 0);
+    EXPECT_EQ(mockCommandSenderDelegate.onErrorCalledTimes, 0);
+    EXPECT_EQ(GetNumActiveCommandResponderObjects(), 1u);
+    EXPECT_EQ(GetExchangeManager().GetNumActiveExchanges(), 2u);
+
+    // This is NOT deleting CommandSender in one of the callbacks, so we are not violating
+    // the API contract. CommandSender is deleted when no message is being processed which
+    // is a time that deleting CommandSender is considered safe.
+    Platform::Delete(commandSender);
+
+    // Decrease CommandHandler refcount and send response
+    asyncCommandHandle = nullptr;
+
+    DrainAndServiceIO();
+
+    EXPECT_EQ(mockCommandSenderDelegate.onResponseCalledTimes, 0);
+    EXPECT_EQ(mockCommandSenderDelegate.onFinalCalledTimes, 0);
     EXPECT_EQ(mockCommandSenderDelegate.onErrorCalledTimes, 0);
 
     EXPECT_EQ(GetNumActiveCommandResponderObjects(), 0u);

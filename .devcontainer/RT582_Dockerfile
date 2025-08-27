@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-FROM resghst/matter_build
+FROM ghcr.io/rafaelmicro/rafael_matter:1.0
 VOLUME ["/var/chip"]
 RUN git config --global --add safe.directory '*'
 RUN pip install certifi

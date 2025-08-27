@@ -33,11 +33,12 @@ using chip::Shell::streamer_get;
 namespace {
 
 constexpr const char kShellPrompt[] = "CHIP_Cli > ";
-
+char line_buf[CHIP_SHELL_MAX_LINE_SIZE];
 // max > 1
 void ReadLine(char * buffer, size_t max)
 {
     size_t line_sz = 0;
+    uint8_t cnt;
 
     // Read in characters until we get a line ending or EOT.
     for (bool done = false; !done;)
@@ -50,35 +51,49 @@ void ReadLine(char * buffer, size_t max)
         }
 
         //chip::WaitForShellActivity();
-        if (streamer_read(streamer_get(), buffer + line_sz, 1) != 1)
+        cnt = streamer_read(streamer_get(), buffer + line_sz, 1);
+        if (cnt == 0)
         {
             continue;
         }
         // Process character we just read.
-        switch (buffer[line_sz])
+        while(cnt--)
         {
-        case '\r':
-        case '\n':
-            streamer_printf(streamer_get(), "\r\n");
-            buffer[line_sz] = '\0';
-            line_sz++;
-            done = true;
-            break;
-        case 0x7F:
-            // Do not accept backspace character (i.e. don't increment line_sz) and remove 1 additional character if it exists.
-            if (line_sz >= 1u)
+            // printf("[%d] %d\r\n", line_sz, buffer[line_sz]);
+            // line_sz++;
+            switch (buffer[line_sz])
             {
-                streamer_printf(streamer_get(), "\b \b");
-                line_sz--;
+                case '\r':
+                case '\n':
+                    streamer_printf(streamer_get(), "\r\n");
+                    buffer[line_sz] = '\0';
+                    line_sz++;
+                    done = true;
+                    break;
+                case 0x03:
+                case 0x04:
+                    streamer_printf(streamer_get(), "\r\n");
+                    memset(buffer, 0, max);
+                    line_sz = 0;
+                    done = true;
+                    break;
+                case 0x08:
+                case 0x7F:
+                    // Do not accept backspace character (i.e. don't increment line_sz) and remove 1 additional character if it exists.
+                    if (line_sz >= 1u)
+                    {
+                        streamer_printf(streamer_get(), "\b \b");
+                        line_sz--;
+                    }
+                    break;
+                default:
+                    if (isprint(static_cast<int>(buffer[line_sz])) || buffer[line_sz] == '\t')
+                    {
+                        streamer_printf(streamer_get(), "%c", buffer[line_sz]);
+                        line_sz++;
+                    }
+                    break;
             }
-            break;
-        default:
-            if (isprint(static_cast<int>(buffer[line_sz])) || buffer[line_sz] == '\t')
-            {
-                streamer_printf(streamer_get(), "%c", buffer[line_sz]);
-                line_sz++;
-            }
-            break;
         }
     }
 }
@@ -174,8 +189,8 @@ void ProcessShellLine(intptr_t args)
             streamer_printf(streamer_get(), "Done\r\n", argv[0]);
         }
     }
-    MemoryFree(line);
     streamer_printf(streamer_get(), kShellPrompt);
+    memset(line_buf, 0, CHIP_SHELL_MAX_LINE_SIZE);
 }
 
 } // namespace
@@ -189,13 +204,12 @@ void Engine::RunMainLoop()
 
     while (true)
     {
-        char * line = static_cast<char *>(Platform::MemoryAlloc(CHIP_SHELL_MAX_LINE_SIZE));
-        ReadLine(line, CHIP_SHELL_MAX_LINE_SIZE);
+        ReadLine(line_buf, CHIP_SHELL_MAX_LINE_SIZE);
 //#if CONFIG_DEVICE_LAYER
 #if 0
-        DeviceLayer::PlatformMgr().ScheduleWork(ProcessShellLine, reinterpret_cast<intptr_t>(line));
+        DeviceLayer::PlatformMgr().ScheduleWork(ProcessShellLine, reinterpret_cast<intptr_t>(line_buf));
 #else
-        ProcessShellLine(reinterpret_cast<intptr_t>(line));
+        ProcessShellLine(reinterpret_cast<intptr_t>(line_buf));
 #endif
     }
 }

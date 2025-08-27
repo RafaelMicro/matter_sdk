@@ -34,7 +34,7 @@ namespace {
 int streamer_rt_init(streamer_t * streamer)
 {
     (void) streamer;
-    uartConsoleInit();
+    //uartConsoleInit();
     return 0;
 }
 

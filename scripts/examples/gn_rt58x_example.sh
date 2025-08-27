@@ -108,7 +108,7 @@ else
         esac
     done
 
-    if [ "$RAFAEL_BOARD" != "RT583" ]; then
+    if [ "$RAFAEL_BOARD" != "RT583" &&  "$RAFAEL_BOARD" != "RT584H" &&  "$RAFAEL_BOARD" != "RT584L" ]; then
         echo "RAFAEL_BOARD is not defined"
         exit 1
     fi

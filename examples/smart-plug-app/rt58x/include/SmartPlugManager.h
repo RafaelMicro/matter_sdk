@@ -29,7 +29,7 @@
 
 #include <app/clusters/on-off-server/on-off-server.h>
 
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 

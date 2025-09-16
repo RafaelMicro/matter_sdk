@@ -3,9 +3,8 @@
  *********************************************************/
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
-
 #include "RafaelMultiControl.h"
-#include "util_log.h"
+#include "log.h"
 
 using namespace chip;
 using namespace chip::app;
@@ -16,12 +15,12 @@ RafMultiControlManager RafMultiControlManager::sRafMultiManager;
 
 void RafMultiControlManager::HandleBleMessage(const ChipDeviceEvent * aEvent)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
     uint8_t buf_len = 0;
     uint8_t resp_buf[32] = {0};
 
-    // info_color(LOG_RED, "Receive ble command:\n");
-    // util_log_mem(UTIL_LOG_INFO, "  ", aEvent->TRSPData.data, aEvent->TRSPData.len, 0);
+    // ChipLogProgress(NotSpecified, "Receive ble command:\n");
+    // log_hexdump_out("  ", 16, aEvent->Platform.TRSPData, aEvent->TRSPData.len);
 
     switch (cmd_type){
         case ReadFirmwareInformation:
@@ -54,9 +53,9 @@ void RafMultiControlManager::HandleBleMessage(const ChipDeviceEvent * aEvent)
         default:
         break;
     }
-    if(aEvent->TRSPData.data)
+    if(aEvent->Platform.TRSPData.data)
     {
-        chip::Platform::MemoryFree(aEvent->TRSPData.data);
+        chip::Platform::MemoryFree(aEvent->Platform.TRSPData.data);
     }
     if(buf_len > 0)
     {
@@ -71,9 +70,9 @@ void RafMultiControlManager::SendCommandToBle(intptr_t arg)
     uint8_t* buf = reinterpret_cast<uint8_t*>(arg);
 
     ChipDeviceEvent AppToBleEvent;
-    AppToBleEvent.Type = DeviceEventType::kAppToBle;
-    AppToBleEvent.TRSPData.len = buf[1]+2;
-    AppToBleEvent.TRSPData.data = buf;
+    AppToBleEvent.Type = DeviceEventType::PublicPlatformSpecificEventTypes::kAppToBle;
+    AppToBleEvent.Platform.TRSPData.len = buf[1]+2;
+    AppToBleEvent.Platform.TRSPData.data = buf;
     BLEMgr().OnPlatformEvent(&AppToBleEvent);
     chip::Platform::MemoryFree(buf);
 }
@@ -94,9 +93,9 @@ void RafMultiControlManager::ReportOnoff(uint16_t ep, bool onoff)
         report_attr_resp.attr_id = attr_id;
         memcpy(buf, &report_attr_resp, buf_len-1);
         buf[buf_len-1] = onoff;
-        AppToBleEvent.Type = DeviceEventType::kAppToBle;
-        AppToBleEvent.TRSPData.len = buf_len;
-        AppToBleEvent.TRSPData.data = buf;
+        AppToBleEvent.Type = DeviceEventType::PublicPlatformSpecificEventTypes::kAppToBle;
+        AppToBleEvent.Platform.TRSPData.len = buf_len;
+        AppToBleEvent.Platform.TRSPData.data = buf;
         BLEMgr().OnPlatformEvent(&AppToBleEvent);
         chip::Platform::MemoryFree(buf);
     }
@@ -118,18 +117,18 @@ void RafMultiControlManager::ReportLevel(uint16_t ep, uint8_t level)
         report_attr_resp.attr_id = attr_id;
         memcpy(buf, &report_attr_resp, buf_len-1);
         buf[buf_len-1] = level;
-        AppToBleEvent.Type = DeviceEventType::kAppToBle;
-        AppToBleEvent.TRSPData.len = buf_len;
-        AppToBleEvent.TRSPData.data = buf;
+        AppToBleEvent.Type = DeviceEventType::PublicPlatformSpecificEventTypes::kAppToBle;
+        AppToBleEvent.Platform.TRSPData.len = buf_len;
+        AppToBleEvent.Platform.TRSPData.data = buf;
         BLEMgr().OnPlatformEvent(&AppToBleEvent);
         chip::Platform::MemoryFree(buf);
     }
 }
 uint8_t RafMultiControlManager::HandleReadFirmwareInformation(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     if(len == 1 && value[0] == 0)
     {
@@ -150,9 +149,9 @@ uint8_t RafMultiControlManager::HandleReadFirmwareInformation(const ChipDeviceEv
 }
 uint8_t RafMultiControlManager::HandleReadDeviceNumber(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     uint8_t device_index = value[0];
     if(len == 1 && device_index == 0)
@@ -166,9 +165,9 @@ uint8_t RafMultiControlManager::HandleReadDeviceNumber(const ChipDeviceEvent * a
 uint8_t RafMultiControlManager::HandleReadDeviceType(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
     device_type_resp_t device_type_resp;
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     uint8_t device_index = value[0];
     if(len == 1 && device_index < RAF_DEVICE_NUM)
@@ -191,9 +190,9 @@ uint8_t RafMultiControlManager::HandleReadDeviceType(const ChipDeviceEvent * aEv
 
 uint8_t RafMultiControlManager::HandleReadClusterNumber(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     uint8_t device_index = value[0];
     if(len == 1 && device_index < RAF_DEVICE_NUM)
@@ -218,9 +217,9 @@ uint8_t RafMultiControlManager::HandleReadClusterId(const ChipDeviceEvent * aEve
 {
     cluster_id_resp_t cluster_id_resp;
     uint8_t buf_len = 0;
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t device_index = value[0];
     if(len == 2 && device_index < RAF_DEVICE_NUM)
     {
@@ -248,9 +247,9 @@ uint8_t RafMultiControlManager::HandleReadClusterId(const ChipDeviceEvent * aEve
 
 uint8_t RafMultiControlManager::HandleReadDeviceMode(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     if(len == 1 && value[0] == 0)
     {
@@ -263,16 +262,16 @@ uint8_t RafMultiControlManager::HandleReadDeviceMode(const ChipDeviceEvent * aEv
 
 uint8_t RafMultiControlManager::HandleCustomCommand(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t command[len+1];
     uint8_t buf_len = 0;
     if(len > 0)
     {
         memcpy(command, value, len);
         command[len] = '\0';
-        info_color(LOG_RED, "receive custom command %s\n", command);
+        ChipLogProgress(NotSpecified, "receive custom command %s\n", command);
 
         buf[buf_len++] = CustomCommandResp;
         buf[buf_len++] = len;
@@ -285,10 +284,10 @@ uint8_t RafMultiControlManager::HandleCustomCommand(const ChipDeviceEvent * aEve
 uint8_t RafMultiControlManager::HandleReadAttribute(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
     attr_resp_t read_attr_resp;
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
-    util_log_mem(UTIL_LOG_INFO, "  ", value, len, 0);
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
+    log_hexdump_out("  ", 16, value, len);
     uint8_t buf_len = 0;
     Status status = Status::Failure;
     if(len >= 10)
@@ -323,9 +322,9 @@ uint8_t RafMultiControlManager::HandleReadAttribute(const ChipDeviceEvent * aEve
 uint8_t RafMultiControlManager::HandleWriteAttribute(const ChipDeviceEvent * aEvent, uint8_t* buf)
 {
     attr_resp_t write_attr_resp;
-    uint8_t cmd_type = aEvent->TRSPData.data[0];
-    uint8_t len = aEvent->TRSPData.data[1];
-    uint8_t* value = &aEvent->TRSPData.data[2];
+    uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
+    uint8_t len = aEvent->Platform.TRSPData.data[1];
+    uint8_t* value = &aEvent->Platform.TRSPData.data[2];
     uint8_t buf_len = 0;
     Status status = Status::Failure;
     if(len >= 11)

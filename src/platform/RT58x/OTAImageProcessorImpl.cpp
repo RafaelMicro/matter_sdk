@@ -25,12 +25,13 @@
 // #include "platform/emlib/inc/em_bus.h" // For CORE_CRITICAL_SECTION
 // }
 
-// #include "EFR32Config.h"
+// #include "RT58xConfig.h"
 #include <platform/RT58x/RT58xConfig.h>
-#include "cm3_mcu.h"
-#include "util_log.h"
+#include "mcu.h"
+#include "log.h"
 #include "task.h"
 #include "fota_define.h"
+#include "flashctl.h"
 
 /// No error, operation OK
 #define SL_BOOTLOADER_OK 0L
@@ -186,13 +187,13 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     // ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
+    taskENTER_CRITICAL();
     for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB; sector < otaBankStart + otaBankSize; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
     {
         while (flash_check_busy()) {}
-        taskENTER_CRITICAL();
         flash_erase(FLASH_ERASE_SECTOR, sector);
-        taskEXIT_CRITICAL();
     }
+    taskEXIT_CRITICAL();
 
     // CORE_CRITICAL_SECTION(bootloader_init();)
     mSlotId                                 = 0; // Single slot until we support multiple images
@@ -313,7 +314,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
 
 void OTAImageProcessorImpl::HandleRestart(chip::System::Layer * systemLayer, void * appState)
 {
-    Sys_Software_Reset();
+    sys_software_reset();
 }
 
 void OTAImageProcessorImpl::HandleAbort(intptr_t context)
@@ -398,7 +399,7 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessHeader(ByteSpan & block)
         CHIP_ERROR error = mHeaderParser.AccumulateAndDecode(block, header);
 
         // Needs more data to decode the header
-        ReturnErrorCodeIf(error == CHIP_ERROR_BUFFER_TOO_SMALL, CHIP_NO_ERROR);
+        VerifyOrReturnError(error != CHIP_ERROR_BUFFER_TOO_SMALL, CHIP_NO_ERROR);
         ReturnErrorOnFailure(error);
 
         // SL TODO -- store version somewhere

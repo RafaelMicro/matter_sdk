@@ -18,14 +18,17 @@
 /*******************************************************************************/
 #pragma once
 
-#include "util_log.h"
+#include "log.h"
+#include "hosal_pwm.h"
+#include "hosal_gpio.h"
+#include "hosal_sysctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void init_lighting_app_rt58xPlatform(void);
-void rt58x_led_level_ctl(uint32_t id, uint8_t current_lv);
+void pwm_set_color(uint8_t r, uint8_t g, uint8_t b);
 
 #ifdef __cplusplus
 }

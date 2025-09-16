@@ -17,6 +17,7 @@
 
 #pragma once
 
+void cmd_rafael_init();
 namespace chip {
 
 void NotifyShellProcess();

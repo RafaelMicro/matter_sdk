@@ -26,8 +26,11 @@
 #include "FreeRTOS.h"
 #include "timers.h"
 #include "task.h"
+#include "hosal_rf.h"
+#include "lmac15p4.h"
+#include "log.h"
 
-#include <ble/Ble.h>
+#include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
@@ -38,14 +41,11 @@
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
 #endif
 
-#include "task_dual.h"
+#include "ble_host_cmd.h"
 #include "ble_event.h"
 #include "ble_profile.h"
 #include "ble_att_gatt.h"
-#include "util_log.h"
 
-// #include "rfb_comm_common.h"
-extern "C" void rafael_rfb_init(void);
 bool ble_active = false;
 
 using namespace ::chip;
@@ -76,6 +76,7 @@ namespace {
 #define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
+#define CHIP_DEVICE_CONFIG_BLE_TASK_NAME "BLE"
 #define BLE_APP_CB_QUEUE_SIZE           16
 #define APP_ISR_QUEUE_SIZE              2
 #define APP_REQ_QUEUE_SIZE              6
@@ -83,6 +84,19 @@ namespace {
 
 #define APP_TRSP_P_HOST_ID              0
 
+
+#define PHY_PIB_TURNAROUND_TIMER    192
+#define PHY_PIB_CCA_DETECTED_TIME   128 // 8 symbols
+#define PHY_PIB_CCA_DETECT_MODE     0
+#define PHY_PIB_CCA_THRESHOLD       50
+#define MAC_PIB_UNIT_BACKOFF_PERIOD 320
+#define MAC_PIB_MAC_ACK_WAIT_DURATION                                          \
+    544 // non-beacon mode; 864 for beacon mode
+#define MAC_PIB_MAC_MAX_BE                    5
+#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 16416
+#define MAC_PIB_MAC_MAX_FRAME_RETRIES         4
+#define MAC_PIB_MAC_MAX_CSMACA_BACKOFFS       5
+#define MAC_PIB_MAC_MIN_BE                    2
 
 /* FreeRTOS sw timer */
 TimerHandle_t sbleAdvTimeoutTimer;
@@ -105,6 +119,7 @@ static ble_gap_addr_t  DEVICE_ADDR = {.addr_type = RANDOM_STATIC_ADDR,
 
 
 static TaskHandle_t BluetoothEventTaskHandle;
+static TimerHandle_t g_fota_timer;
 
 static xQueueHandle g_app_msg_q;
 static SemaphoreHandle_t semaphore_cb;
@@ -112,7 +127,7 @@ static SemaphoreHandle_t semaphore_isr;
 static SemaphoreHandle_t semaphore_app;
 static uint8_t g_rx_buffer[BLE_GATT_DATA_LENGTH_MAX];
 static uint8_t g_rx_buffer_length;
-static ble_cfg_t gt_app_cfg;
+static ble_task_priority_t ble_task_level;
 static uint8_t g_advertising_host_id = BLE_HOSTID_RESERVED;
 static uint8_t g_mtu_size = BLE_GATT_ATT_MTU_MAX;
 const uint8_t UUID_CHIPoBLEService[]    = { 0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
@@ -158,6 +173,7 @@ typedef enum
     APP_REQUEST_IDLE,             /**< Application request event: idle.*/
     APP_REQUEST_ADV_START,        /**< Application request event: advertising start.*/
     APP_REQUEST_TRSPS_DATA_SEND,  /**< Application request event: TRSP server data send.*/
+    APP_REQUEST_FOTA_TIMER_EXPIRY /**< Application request event: FOTA timer expired.*/
 } app_request_t;
 
 typedef enum
@@ -190,17 +206,6 @@ typedef struct
 
 BLEManagerImpl BLEManagerImpl::sInstance;
 
-CHIP_ERROR BLEManagerImpl::MapBLEError(int bleErr)
-{
-    switch (bleErr)
-    {
-    case BLE_ERR_OK:
-        return CHIP_NO_ERROR;
-    default:
-        return CHIP_ERROR_INCORRECT_STATE;
-    }
-}
-
 void BLEManagerImpl::ble_evt_task(void * arg)
 {
     ChipLogDetail(DeviceLayer, "BLE task running");
@@ -209,6 +214,17 @@ void BLEManagerImpl::ble_evt_task(void * arg)
 
     status = BLE_ERR_OK;
 
+    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
+    lmac15p4_init(LMAC15P4_2P4G_OQPSK, 0);
+    /* PHY PIB */
+    lmac15p4_phy_pib_set(PHY_PIB_TURNAROUND_TIMER, PHY_PIB_CCA_DETECT_MODE,
+                         PHY_PIB_CCA_THRESHOLD, PHY_PIB_CCA_DETECTED_TIME);
+    /* MAC PIB */
+    lmac15p4_mac_pib_set(MAC_PIB_UNIT_BACKOFF_PERIOD,
+                         MAC_PIB_MAC_ACK_WAIT_DURATION, MAC_PIB_MAC_MAX_BE,
+                         MAC_PIB_MAC_MAX_CSMACA_BACKOFFS,
+                         MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME,
+                         MAC_PIB_MAC_MAX_FRAME_RETRIES, MAC_PIB_MAC_MIN_BE);
     // BLE default setting and profile init
     status = ble_init();
     if (status != BLE_ERR_OK)
@@ -217,13 +233,7 @@ void BLEManagerImpl::ble_evt_task(void * arg)
         while (1);
     }
 
-    // start adv
-    //if (app_request_set(APP_TRSP_P_HOST_ID, APP_REQUEST_ADV_START, false) == false)
-    //{
-        // No Application queue buffer. Error.
-    //}
-
-    while (true)
+    for (;;)
     {
         if (xQueueReceive(g_app_msg_q, &p_app_q, portMAX_DELAY) == pdTRUE)
         {
@@ -249,11 +259,11 @@ void BLEManagerImpl::ble_evt_task(void * arg)
                 {
                     switch (p_app_q.param.pt_tlv->type)
                     {
-                    case BLE_APP_GENERAL_EVENT:
+                    case APP_GENERAL_EVENT:
                         ble_evt_handler((ble_evt_param_t *)p_app_q.param.pt_tlv->value);
                         break;
 
-                    case BLE_APP_SERVICE_EVENT:
+                    case APP_SERVICE_EVENT:
                     {
                         ble_evt_att_param_t *p_svcs_param = (ble_evt_att_param_t *)p_app_q.param.pt_tlv->value;
 
@@ -288,42 +298,6 @@ void BLEManagerImpl::ble_evt_task(void * arg)
                 break;
             }
         }
-    }
-}
-
-void BLEManagerImpl::ble_evt_indication_cb(uint32_t data_len)
-{
-    int i32_err;
-    uint8_t *p_buf;
-    app_queue_t p_app_q;
-
-    if (xSemaphoreTake(semaphore_cb, 0) == pdPASS)
-    {
-        do
-        {
-            p_buf = (uint8_t *)pvPortMalloc(data_len);
-            if (!p_buf)
-            {
-                xSemaphoreGive(semaphore_cb);
-                break;
-            }
-
-            p_app_q.event = 0;
-            i32_err = ble_event_msg_recvfrom(p_buf, &data_len);
-            p_app_q.param_type = QUEUE_TYPE_OTHERS;
-            p_app_q.param.pt_tlv = (ble_tlv_t *)p_buf;
-
-            if (i32_err == 0)
-            {
-                while (xQueueSendToBack(g_app_msg_q, &p_app_q, 1) != pdTRUE);
-            }
-            else
-            {
-                info_color(LOG_RED, "[%s] err = %d !\n", __func__, (ble_err_t)i32_err);
-                vPortFree(p_buf);
-                xSemaphoreGive(semaphore_cb);
-            }
-        } while (0);
     }
 }
 
@@ -392,12 +366,12 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
 
             if (xTimerIsTimerActive(sbleConnTimeoutTimer))
             {
-                ChipLogProgress(DeviceLayer, "Start ble connection timeout timer");
                 if (xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
                 {
                     ChipLogError(DeviceLayer, "Failed to stop ble connection timer");
                 }
             }
+            ChipLogProgress(DeviceLayer, "Start ble connection timeout timer");
             if (xTimerChangePeriod(sbleConnTimeoutTimer, 30000 / portTICK_PERIOD_MS, 100) != pdPASS)
             {
                 ChipLogError(DeviceLayer, "Failed to start ble connection timeout timer");
@@ -485,16 +459,19 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         }
         else
         {
+            ble_fota_disconnect();
             ChipLogProgress(DeviceLayer, "Disconnect, ID:%d, Reason:0x%02x", p_disconn_param->host_id, p_disconn_param->reason);
             isBleConnected = false;
-            // if (xTimerIsTimerActive(sbleConnTimeoutTimer))
-            // {
-            //     ChipLogProgress(DeviceLayer, "Stop ble connection timeout timer");
-            //     if (xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
-            //     {
-            //         ChipLogError(DeviceLayer, "Failed to stop ble connection timer");
-            //     }
-            // }
+            if (xTimerIsTimerActive(sbleConnTimeoutTimer))
+            {
+                ChipLogProgress(DeviceLayer, "Stop ble connection timeout timer");
+                if (xTimerStop(sbleConnTimeoutTimer, 0) == pdFAIL)
+                {
+                    ChipLogError(DeviceLayer, "Failed to stop ble connection timer");
+                }
+            }
+            BLEMgrImpl().mFlags.Set(Flags::kRestartAdvertising);
+            PlatformMgr().ScheduleWork(DriveBLEState, 0);
         }        
         /* Send Connection close event */
         disconnectEvent.Type = DeviceEventType::kCHIPoBLEConnectionClosed;
@@ -557,7 +534,6 @@ bool BLEManagerImpl::app_request_set(uint8_t host_id, uint32_t request, bool fro
 
     return true;
 }
-
 void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
 {
     ble_evt_att_param_t *p_param = (ble_evt_att_param_t *)p_matter_evt_param;
@@ -603,7 +579,7 @@ void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
             status = ble_svcs_data_send(TYPE_BLE_GATT_READ_RSP, &gatt_data_param);
             if (status != BLE_ERR_OK)
             {
-                info_color(LOG_RED, "ble_gatt_read_rsp status: %d\n", status);
+                log_error("ble_gatt_read_rsp status: %d\n", status);
             }
             
         }
@@ -649,11 +625,56 @@ void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
         }
     }
 }
+void BLEManagerImpl::fota_timer_handler(TimerHandle_t timer) {
+    /* Optionally do something if the pxTimer parameter is NULL. */
+    configASSERT( timer );
+
+    // fota
+    if (ble_app_link_info[APP_TRSP_P_HOST_ID].state == STATE_CONNECTED)
+    {
+        // FOTA timer tick and check if timer is expired
+        if (ble_fota_timertick() == EXPIRED)
+        {
+            BLEMgrImpl().app_request_set(APP_TRSP_P_HOST_ID, APP_REQUEST_FOTA_TIMER_EXPIRY, false);
+        }
+    }
+}
+bool BLEManagerImpl::fota_sw_timer_start(void) {
+    if (xTimerIsTimerActive(g_fota_timer) == pdFALSE) {
+        if (xTimerStart(g_fota_timer, 0) != pdTRUE) {
+            // The timer could not be set into the Active state.
+            return false;
+        }
+    }
+    return true;
+}
+void BLEManagerImpl::ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param)
+{
+    if (p_param->gatt_role == BLE_GATT_ROLE_SERVER) {
+        /* ----------------- Handle event from client ----------------- */
+        BLEMgrImpl().CancelBleConnTimeoutTimer();
+        switch (p_param->event) {
+            case BLESERVICE_FOTAS_DATA_WRITE_WITHOUT_RSP_EVENT: {
+                ble_fota_data(p_param->host_id, p_param->length, p_param->data);
+                fota_sw_timer_start();
+            } break;
+
+            case BLESERVICE_FOTAS_COMMAND_WRITE_EVENT: {
+                ble_fota_cmd(p_param->host_id, p_param->length, p_param->data);
+                fota_sw_timer_start();
+            }
+
+            default: break;
+        }
+    }
+}
+
 int BLEManagerImpl::server_profile_init(uint8_t host_id)
 {
-    ble_err_t status;
-    ble_info_link0_t *p_profile_info = (ble_info_link0_t*)ble_app_link_info[host_id].profile_info;
+    ble_err_t status = BLE_ERR_OK;
+    ble_info_link0_t *p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
 
+    // set link's state
     ble_app_link_info[host_id].state = STATE_STANDBY;
 
     do
@@ -689,8 +710,97 @@ int BLEManagerImpl::server_profile_init(uint8_t host_id)
             break;
         }
         status = ble_svcs_matter_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_matter), (ble_svcs_evt_matter_handler_t)ble_svcs_matter_evt_handler);
+        if (status != BLE_ERR_OK)
+        {
+            break;
+        }
+        // FOTA Related
+        // -------------------------------------
+        status = ble_svcs_fotas_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_fotas), (ble_svcs_evt_fotas_handler_t)ble_svcs_fota_evt_handler);
+        if (status != BLE_ERR_OK)
+        {
+            break;
+        }
+        
+    } while (0);
 
-    }while(0);
+    return status;
+}
+
+ble_err_t BLEManagerImpl::ble_app_event_cb(void *p_param)
+{
+    ble_err_t status;
+    app_queue_t p_app_q;
+    ble_tlv_t *p_tlv;
+
+    status = BLE_ERR_OK;
+    do {
+        if (xSemaphoreTake(semaphore_cb, 0) == pdTRUE)
+        {
+            p_tlv = (ble_tlv_t*) pvPortMalloc(sizeof(ble_tlv_t) + sizeof(ble_evt_param_t));
+            if (p_tlv == NULL)
+            {
+                status = BLE_ERR_DATA_MALLOC_FAIL;
+                xSemaphoreGive(semaphore_cb);
+                break;
+            }
+
+            p_app_q.param_type = QUEUE_TYPE_OTHERS;
+            p_app_q.param.pt_tlv = p_tlv;
+            p_app_q.param.pt_tlv->type = APP_GENERAL_EVENT;
+            memcpy(p_tlv->value, p_param, sizeof(ble_evt_param_t));
+
+            if (xQueueSendToBack(g_app_msg_q, &p_app_q, 1) != pdTRUE)
+            {
+                status = BLE_BUSY;
+                xSemaphoreGive(semaphore_cb);
+            }
+        }
+        else
+        {
+            status = BLE_BUSY;
+        }
+    } while (0);
+
+    return status;
+}
+
+ble_err_t BLEManagerImpl::ble_service_data_cb(void *p_param)
+{
+    ble_err_t status;
+    app_queue_t p_app_q;
+    ble_tlv_t *p_tlv;
+    ble_evt_att_param_t *p_evt_att;
+
+    status = BLE_ERR_OK;
+    do {
+        if (xSemaphoreTake(semaphore_cb, 0) == pdTRUE)
+        {
+            p_evt_att = (ble_evt_att_param_t*) p_param;
+            p_tlv =(ble_tlv_t*) pvPortMalloc(sizeof(ble_tlv_t) + sizeof(ble_evt_att_param_t) + p_evt_att->length);
+            if (p_tlv == NULL)
+            {
+                status = BLE_ERR_DATA_MALLOC_FAIL;
+                xSemaphoreGive(semaphore_cb);
+                break;
+            }
+
+            p_app_q.param_type = QUEUE_TYPE_OTHERS;
+            p_app_q.param.pt_tlv = p_tlv;
+            p_app_q.param.pt_tlv->type = APP_SERVICE_EVENT;
+            memcpy(p_tlv->value, p_param, sizeof(ble_evt_att_param_t) + p_evt_att->length);
+
+            if (xQueueSendToBack(g_app_msg_q, &p_app_q, 1) != pdTRUE)
+            {
+                status = BLE_BUSY;
+                xSemaphoreGive(semaphore_cb);
+            }
+        }
+        else
+        {
+            status = BLE_BUSY;
+        }
+    } while (0);
 
     return status;
 }
@@ -704,6 +814,17 @@ int BLEManagerImpl::ble_init(void)
     status = BLE_ERR_OK;
     do
     {
+        status = ble_host_callback_set(APP_GENERAL_EVENT, ble_app_event_cb);
+        if (status != BLE_ERR_OK)
+        {
+            break;
+        }
+
+        status = ble_host_callback_set(APP_SERVICE_EVENT, ble_service_data_cb);
+        if (status != BLE_ERR_OK)
+        {
+            break;
+        }
         status = ble_cmd_phy_controller_init();
         if (status != BLE_ERR_OK)
         {
@@ -711,7 +832,8 @@ int BLEManagerImpl::ble_init(void)
         }
 
         status = ble_cmd_read_unique_code(&unique_code_param);
-        if (status == BLE_ERR_OK)
+        uint8_t invalid_ble_addr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+        if (memcmp(unique_code_param.ble_addr, invalid_ble_addr, 6) && unique_code_param.addr_type <= RANDOM_RESOLVABLE_ADDR)
         {
             device_addr_param.addr_type = unique_code_param.addr_type;
             memcpy(&device_addr_param.addr, &unique_code_param.ble_addr, 6);
@@ -753,6 +875,8 @@ int BLEManagerImpl::ble_init(void)
         {
             break;
         }
+        ble_fota_fw_buffer_flash_check();
+        ble_fota_init();
     } while (0);
 
     return status;
@@ -770,131 +894,14 @@ void BLEManagerImpl::app_evt_handler(void *p_param)
 
     switch (p_app_param->app_req)
     {
-    case APP_REQUEST_ADV_START:
-        do
-        {
-            // set preferred MTU size and data length
-            #if 0
-            status = ble_cmd_default_mtu_size_set(host_id, BLE_GATT_ATT_MTU_MAX);
-            if (status != BLE_ERR_OK)
-            {
-                info_color(LOG_RED, "ble_cmd_default_mtu_size_set() status = %d\n", status);
-                break;
-            }
-            #endif
-            // enable advertising
-            status = (ble_err_t)adv_init();
-            if (status != BLE_ERR_OK)
-            {
-                info_color(LOG_RED, "adv_init() status = %d\n", status);
-                break;
-            }
-
-            status = (ble_err_t)adv_enable(host_id);
-            if (status != BLE_ERR_OK)
-            {
-                info_color(LOG_RED, "adv_enable() status = %d\n", status);
-                break;
-            }
-        } while (0);
-
-        //g_mtu_size = BLE_GATT_ATT_MTU_MIN;
+    case APP_REQUEST_FOTA_TIMER_EXPIRY:
+        // handle FOTA timer expired event
+        ble_fota_timerexpiry_handler(host_id);
         break;
-
     default:
         break;
     }
 }
-
-int BLEManagerImpl::adv_init(void)
-{
-    ble_err_t status;
-    ble_adv_param_t adv_param;
-    ble_adv_data_param_t adv_data_param;
-    ble_adv_data_param_t adv_scan_data_param;
-    ble_gap_addr_t addr_param;
-    const uint8_t SCANRSP_ADLENGTH = (1) + sizeof(DEVICE_NAME_STR); //  1 byte data type
-
-    // adv data
-    uint8_t adv_data[] =
-        {
-            0x02,
-            GAP_AD_TYPE_FLAGS,
-            BLE_GAP_FLAGS_LIMITED_DISCOVERABLE_MODE,
-        };
-
-    // scan response data
-    uint8_t adv_scan_rsp_data[] =
-        {
-            SCANRSP_ADLENGTH,                // AD length
-            GAP_AD_TYPE_LOCAL_NAME_COMPLETE, // AD data type
-            DEVICE_NAME,                     // the name is shown on scan list
-        };
-
-    ble_cmd_device_addr_get(&addr_param);
-    do
-    {
-        adv_param.adv_type = ADV_TYPE_ADV_IND;
-        adv_param.own_addr_type = addr_param.addr_type;
-        if (g_use_slow_adv_interval == true)
-        {
-            adv_param.adv_interval_min = CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MIN;
-            adv_param.adv_interval_max = CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX;       
-        }
-        else
-        {
-            adv_param.adv_interval_min = CHIP_DEVICE_CONFIG_BLE_FAST_ADVERTISING_INTERVAL_MIN;
-            adv_param.adv_interval_max = CHIP_DEVICE_CONFIG_BLE_FAST_ADVERTISING_INTERVAL_MAX;              
-        }
-        adv_param.adv_channel_map = ADV_CHANNEL_ALL;
-        adv_param.adv_filter_policy = ADV_FILTER_POLICY_ACCEPT_ALL;
-
-        // set adv parameter
-        status = ble_cmd_adv_param_set(&adv_param);
-        if (status != BLE_ERR_OK)
-        {
-            info_color(LOG_RED, "ble_cmd_adv_param_set() status = %d\n", status);
-            break;
-        }
-
-        // set adv data
-        adv_data_param.length = sizeof(adv_data);
-        memcpy(&adv_data_param.data, &adv_data, sizeof(adv_data));
-        status = ble_cmd_adv_data_set(&adv_data_param);
-        if (status != BLE_ERR_OK)
-        {
-            info_color(LOG_RED, "ble_cmd_adv_data_set() status = %d\n", status);
-            break;
-        }
-
-        // set scan rsp data
-        adv_scan_data_param.length = sizeof(adv_scan_rsp_data);
-        memcpy(&adv_scan_data_param.data, &adv_scan_rsp_data, sizeof(adv_scan_rsp_data));
-        status = ble_cmd_adv_scan_rsp_set(&adv_scan_data_param);
-        if (status != BLE_ERR_OK)
-        {
-            info_color(LOG_RED, "ble_cmd_adv_scan_rsp_set() status = %d\n", status);
-            break;
-        }
-    } while (0);
-
-    return status;
-}
-
-int BLEManagerImpl::adv_enable(uint8_t host_id)
-{
-    ble_err_t status;
-
-    status = ble_cmd_adv_enable(host_id);
-    if (status != BLE_ERR_OK)
-    {
-        info_color(LOG_RED, "adv_enable() status = %d\n", status);
-    }
-
-    return status;
-}
-
-
 CHIP_ERROR BLEManagerImpl::_Init()
 {
     CHIP_ERROR err= CHIP_NO_ERROR;
@@ -904,12 +911,17 @@ CHIP_ERROR BLEManagerImpl::_Init()
     // Initialize the CHIP BleLayer.
     err = BleLayer::Init(this, this, &DeviceLayer::SystemLayer());
     // SuccessOrExit(err);
-#if 1
-    gt_app_cfg.pf_evt_indication = ble_evt_indication_cb;
 
-    task_dual_init();
+    // BLE Stack init  
+    ble_task_level.ble_host_level = configMAX_PRIORITIES - 7;
+    ble_task_level.hci_tx_level = configMAX_PRIORITIES - 6;
+    if (ble_host_stack_init(&ble_task_level) == 0) {
+        ChipLogProgress(NotSpecified, "BLE stack initial success...\n");
+    }
+    else {
+        ChipLogProgress(NotSpecified, "BLE stack initial fail...\n");
+    }
 
-    ble_host_stack_init(&gt_app_cfg);
 
     g_app_msg_q = xQueueCreate(APP_QUEUE_SIZE, sizeof(app_queue_t));
     semaphore_cb = xSemaphoreCreateCounting(BLE_APP_CB_QUEUE_SIZE, BLE_APP_CB_QUEUE_SIZE);
@@ -922,17 +934,16 @@ CHIP_ERROR BLEManagerImpl::_Init()
     }
 
     xTaskCreate(ble_evt_task, 
-        CHIP_DEVICE_CONFIG_THREAD_TASK_NAME,
+        CHIP_DEVICE_CONFIG_BLE_TASK_NAME,
         CHIP_DEVICE_CONFIG_BLE_APP_TASK_STACK_SIZE / sizeof(StackType_t), 
         this, 
-        TASK_PRIORITY_APP,
+        E_TASK_PRIORITY_APP,
         &BluetoothEventTaskHandle);
 
     if (BluetoothEventTaskHandle == NULL)
     {
         return CHIP_ERROR_NO_MEMORY;
     }    
-#endif
 
     // Create FreeRTOS sw timer for BLE timeouts and interval change.
     sbleAdvTimeoutTimer = xTimerCreate("BleAdvTimer",       // Just a text name, not used by the RTOS kernel
@@ -946,7 +957,10 @@ CHIP_ERROR BLEManagerImpl::_Init()
                                         false,               
                                         (void *) this,      
                                         BleConnTimeoutHandler
-    ); 
+    );
+    // application SW timer, tick = 1s
+    g_fota_timer = xTimerCreate("FOTA_Timer", pdMS_TO_TICKS(1000), pdTRUE,
+                                (void*)0, fota_timer_handler);
     mFlags.Set(Flags::kRTBLEStackInitialized);
     mFlags.Set(Flags::kFastAdvertisingEnabled);
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
@@ -1042,7 +1056,7 @@ CHIP_ERROR BLEManagerImpl::_SetDeviceName(const char * deviceName)
     if (status != BLE_ERR_OK)
     {
         mFlags.Clear(Flags::kDeviceNameSet);
-        info_color(LOG_RED, "device name set() status = %d\n", status);
+        log_error("device name set() status = %d\n", status);
         err = BLE_ERR_STATE_TRANSLATE(status);
     }
     else
@@ -1167,7 +1181,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
         status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
         if (status != BLE_ERR_OK)
         {
-            info_color(LOG_RED, "ble_cmd_default_mtu_size_set() status = %d\n", status);
+            ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
             err = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
@@ -1191,13 +1205,12 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
     CHIP_ERROR err = CHIP_NO_ERROR;
 
     mFlags.Set(Flags::kAdvertising);
-    mFlags.Clear(Flags::kRestartAdvertising);
-
-    if (mFlags.Has(Flags::kFastAdvertisingEnabled))
+    if (!mFlags.Has(Flags::kRestartAdvertising) && mFlags.Has(Flags::kFastAdvertisingEnabled))
     {
         ChipLogProgress(DeviceLayer, "Start Slow Advertisment Timer");
         StartBleAdvTimeoutTimer(CHIP_DEVICE_CONFIG_BLE_ADVERTISING_INTERVAL_CHANGE_TIME);
     }
+    mFlags.Clear(Flags::kRestartAdvertising);
 
     err = ConfigureAdvertisingData();
     if (err == CHIP_NO_ERROR)
@@ -1377,18 +1390,16 @@ CHIP_ERROR BLEManagerImpl::UnsubscribeCharacteristic(BLE_CONNECTION_OBJECT conId
 CHIP_ERROR BLEManagerImpl::CloseConnection(BLE_CONNECTION_OBJECT conId)
 {
     ble_err_t status = BLE_ERR_OK;
-    CHIP_ERROR err = CHIP_NO_ERROR;
 
     status = ble_cmd_conn_terminate(0);
-    err = MapBLEError(status);
     ChipLogProgress(DeviceLayer, "Closing BLE GATT connection (con %u)", conId);
 
     if (status != BLE_ERR_OK)
     {
-        ChipLogError(DeviceLayer, "sl_bt_connection_close() failed: %d", status);
+        ChipLogError(DeviceLayer, "ble_cmd_conn_terminate() failed: %d", status);
     }
 
-    return err;
+    return (status == BLE_ERR_OK) ? CHIP_NO_ERROR : BLE_ERR_STATE_TRANSLATE(status);
 }
 
 uint16_t BLEManagerImpl::GetMTU(BLE_CONNECTION_OBJECT conId) const
@@ -1400,7 +1411,7 @@ CHIP_ERROR BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const Chi
                                     PacketBufferHandle data)
 {
     ble_err_t status;
-    CHIP_ERROR err              = CHIP_NO_ERROR;
+    CHIP_ERROR err;
     ble_gatt_data_param_t param;
     ble_info_link0_t *p_profile_info = (ble_info_link0_t*)ble_app_link_info[0].profile_info;
 
@@ -1411,19 +1422,34 @@ CHIP_ERROR BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const Chi
     param.p_data = data->Start();
     param.length  = data->DataLength();
     status = ble_svcs_data_send(TYPE_BLE_GATT_INDICATION, &param);
-    err = MapBLEError(status);
+    
 
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer, "BLEManagerImpl::SendIndication() failed: %d", status);
+        return BLE_ERR_STATE_TRANSLATE(status);
     }
-    return err;
+    return CHIP_NO_ERROR;
 }
 
 CHIP_ERROR BLEManagerImpl::SendWriteRequest(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId,
                                       PacketBufferHandle pBuf)
 {
     ChipLogProgress(DeviceLayer, "BLEManagerImpl::SendWriteRequest() not supported");
+    return CHIP_ERROR_NOT_IMPLEMENTED;
+}
+
+CHIP_ERROR BLEManagerImpl::SendReadRequest(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId,
+                                     PacketBufferHandle pBuf)
+{
+    ChipLogProgress(DeviceLayer, "BLEManagerImpl::SendReadRequest() not supported");
+    return CHIP_ERROR_NOT_IMPLEMENTED;
+}
+
+CHIP_ERROR BLEManagerImpl::SendReadResponse(BLE_CONNECTION_OBJECT conId, BLE_READ_REQUEST_CONTEXT requestContext,
+                                      const ChipBleUUID * svcId, const ChipBleUUID * charId)
+{
+    ChipLogProgress(DeviceLayer, "BLEManagerImpl::SendReadResponse() not supported");
     return CHIP_ERROR_NOT_IMPLEMENTED;
 }
 

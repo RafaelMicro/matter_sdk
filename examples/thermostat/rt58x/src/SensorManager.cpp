@@ -42,7 +42,7 @@ constexpr uint16_t kMinTemperatureDelta  = 50;    // 0.5 degree Celcius
  *********************************************************/
 
 TimerHandle_t sSensorTimer;
-StaticTimer_t sStaticSensorTimerStruct;
+StaticTimer_t sPowerTimerStruct;
 
 SensorManager SensorManager::sSensorManager;
 
@@ -53,7 +53,7 @@ CHIP_ERROR SensorManager::Init()
 {
     // Create FreeRTOS sw timer for temp sensor timer.
     sSensorTimer = xTimerCreateStatic("sensorTmr", pdMS_TO_TICKS(kSensorTImerPeriodMs), true, nullptr, SensorTimerEventHandler,
-                                      &sStaticSensorTimerStruct);
+                                      &sPowerTimerStruct);
 
     if (sSensorTimer == NULL)
     {

@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Platform-specific configuration overrides for the CHIP System
- *          Layer on Silcon Labs EFR32 Platforms.
+ *          Layer on Rafael RT58x Platforms.
  *
  */
 

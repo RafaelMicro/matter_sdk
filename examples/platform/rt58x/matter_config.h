@@ -26,19 +26,4 @@
 #include "SubscriptionCallback.h"
 #endif // CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
 
-class RT58xMatterConfig
-{
-public:
-    static CHIP_ERROR InitMatter(const char * appName);
-
-#ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
-    static SubscriptionCallback mSubscriptionHandler;
-#endif // CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
-
-private:
-    static CHIP_ERROR InitOpenThread(void);
-    static void InitWiFi(void);
-    static void ConnectivityEventCallback(const chip::DeviceLayer::ChipDeviceEvent * event, intptr_t arg);
-    static void InitOTARequestorHandler(chip::System::Layer * systemLayer, void * appState);
-    
-};
+void MatterFotaInit(void);

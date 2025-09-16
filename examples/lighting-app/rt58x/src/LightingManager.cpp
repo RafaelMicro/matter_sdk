@@ -29,7 +29,7 @@
 
 #include <lib/support/TypeTraits.h>
 
-#include "util_log.h"
+#include "log.h"
 
 /*Macro to correct RGB value proportional to current level*/
 #define CorrectRGB(v,l) ((uint8_t) ((uint16_t) (v) * (uint16_t) (l) / 255))
@@ -298,8 +298,8 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
 
     mRGB = HsvToRgb(mHSV);
 
-    // info("===> H: %d, S: %d\r\n", hue, saturation);
-    // info("===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+    // ChipLogProgress(NotSpecified, "===> H: %d, S: %d\r\n", hue, saturation);
+    // ChipLogProgress(NotSpecified, "===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
@@ -328,27 +328,21 @@ void LightingManager::Set(bool aOn)
 void LightingManager::UpdateLight()
 {
     //ChipLogProgress(NotSpecified, "UpdateLight: %d Mode: %d L:%d R:%d G:%d B:%d", mState, mColorMode, mLevel, mRGB.r, mRGB.g, mRGB.b);
-    info_color(LOG_GREEN, "R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
+    ChipLogProgress(NotSpecified, "R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 
     if (mState == kState_On && mLevel > 1)
     {
         if(mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)//using color temperature
         {
-            rt58x_led_level_ctl(2, CorrectRGB(mRGB.b,mLevel));
-            rt58x_led_level_ctl(3, CorrectRGB(mRGB.r,mLevel));
-            rt58x_led_level_ctl(4, CorrectRGB(mRGB.g,mLevel));
+            pwm_set_color(CorrectRGB(mRGB.r,mLevel), CorrectRGB(mRGB.g,mLevel), CorrectRGB(mRGB.b,mLevel));
         }
         else
         {
-            rt58x_led_level_ctl(2, mRGB.b);
-            rt58x_led_level_ctl(3, mRGB.r);
-            rt58x_led_level_ctl(4, mRGB.g);
+            pwm_set_color(mRGB.r, mRGB.g, mRGB.b);
         }
     }
     else
     {
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0);
+            pwm_set_color(0, 0, 0);
     }
 }

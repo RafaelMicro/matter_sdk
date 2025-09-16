@@ -31,6 +31,7 @@
 #include <app/server/Dnssd.h>
 #include <app/util/attribute-storage.h>
 #include <app/InteractionModelEngine.h>
+#include <data-model-providers/codegen/Instance.h>
 
 #include <assert.h>
 #include <DeviceInfoProviderImpl.h>
@@ -54,16 +55,14 @@
 #endif
 
 #include "uart.h"
-#include "cm3_mcu.h"
-#include "init_rt58xPlatform.h"
+#include "mcu.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"
-#include "bsp.h"
-#include "bsp_button.h"
+
 #include "matter_config.h"
 
-#include "fota_define.h"
 #include "flashctl.h"
-#include "util_log.h"
+#include "log.h"
 
 using namespace chip;
 using namespace ::chip::app;
@@ -73,13 +72,13 @@ using namespace ::chip::DeviceLayer;
 using chip::Protocols::InteractionModel::Status;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
-#define APP_TASK_STACK_SIZE (2 * 1024)
+#define APP_TASK_STACK_SIZE (4 * 1024)
 #define APP_TASK_PRIORITY 2
 #define APP_EVENT_QUEUE_SIZE 10
 #define LIGHT_ENDPOINT_ID (1)
 
 #ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
-SubscriptionCallback RT58xMatterConfig::mSubscriptionHandler;
+SubscriptionCallback mSubscriptionHandler;
 #endif // CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
 
 namespace {
@@ -116,37 +115,37 @@ Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::E
 void IdentifyToggleOnOff(bool onoff)
 {
     //turn on/off led indicator
+    RgbColor_t RGB;
+    RGB = LightMgr().GetRgb();
     if(onoff)
     {
-        rt58x_led_level_ctl(2, 128);
-        rt58x_led_level_ctl(3, 128);
-        rt58x_led_level_ctl(4, 128);
+        pwm_set_color(RGB.r, RGB.g, RGB.b);
     }
     else
     {
-        rt58x_led_level_ctl(2, 0);
-        rt58x_led_level_ctl(3, 0);
-        rt58x_led_level_ctl(4, 0);
+        pwm_set_color(0, 0, 0);
     }
 }
 void IdentifyChannelMinLevel(void)
 {
-    rt58x_led_level_ctl(2, 20);
-    rt58x_led_level_ctl(3, 20);
-    rt58x_led_level_ctl(4, 20);
+    pwm_set_color(20, 20, 20);
 }
 
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
     ChipLogProgress(Zcl, "Trigger Identify Complete");
     sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
-    uint8_t current_level = 0;
     RgbColor_t RGB;
-    current_level = LightMgr().GetLevel();
     RGB = LightMgr().GetRgb();
-    rt58x_led_level_ctl(2, LightMgr().IsTurnedOn() ? RGB.b : 0);
-    rt58x_led_level_ctl(3, LightMgr().IsTurnedOn() ? RGB.r : 0);
-    rt58x_led_level_ctl(4, LightMgr().IsTurnedOn() ? RGB.g : 0);
+    if(LightMgr().IsTurnedOn())
+    {
+        pwm_set_color(RGB.r, RGB.g, RGB.b);
+    }
+    else
+    {
+        pwm_set_color(0, 0, 0);
+    }
+
 }
 
 void OnTriggerIdentifyEffectBlink(chip::System::Layer * systemLayer, void * appState)
@@ -245,7 +244,7 @@ void OnTriggerIdentifyEffect(Identify * identify)
 {
     sIdentifyEffect = identify->mCurrentEffectIdentifier;
 
-// #if CHIP_CONFIG_ENABLE_ICD_SERVER == 1
+// #if CONFIG_HOSAL_SOC_IDLE_SLEEP == 1
 //     AppTask::GetAppTask().StartStatusLEDTimer();
 // #endif
 
@@ -303,28 +302,6 @@ void LockOpenThreadTask(void)
 void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
-}
-
-void MatterFotaInit(void)
-{
-    fota_information_t  *p_fota_info = (fota_information_t *)(FOTA_UPDATE_BANK_INFO_ADDRESS);
-
-    if (p_fota_info->fotabank_ready == FOTA_IMAGE_READY)
-    { 
-        if (p_fota_info->fota_result == FOTA_RESULT_SUCCESS)
-        {
-            // err("sw ver: %d\r\n", p_fota_info->reserved[0]);
-            chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(p_fota_info->reserved[0]);
-        } 
-        else
-        {
-            err("fota result: %d\r\n", p_fota_info->fota_result);
-        }  
-        while (flash_check_busy());
-        taskENTER_CRITICAL();
-        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
-        taskEXIT_CRITICAL();
-    }
 }
 
 void AppTask::IdentifyStartHandler(Identify *)
@@ -399,6 +376,7 @@ void AppTask::InitServer(intptr_t arg)
     CHIP_ERROR err;
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
+    initParams.dataModelProvider = app::CodegenDataModelProviderInstance(initParams.persistentStorageDelegate);
 
     gExampleDeviceInfoProvider.SetStorageDelegate(initParams.persistentStorageDelegate);
     SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
@@ -417,7 +395,7 @@ void AppTask::InitServer(intptr_t arg)
 
 #ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
     // Register ICD subscription callback to match subscription max intervals to its idle time interval
-    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&RT58xMatterConfig::mSubscriptionHandler);
+    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&mSubscriptionHandler);
 #endif // CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
 
     if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
@@ -448,11 +426,11 @@ void AppTask::UpdateStatusLED()
 {
     if (sCommissioned)
     {
-        gpio_pin_set(20);
+        hosal_gpio_pin_set(20);
     }
     else
     {
-        gpio_pin_clear(20);
+        hosal_gpio_pin_clear(20);
     }
 }
 
@@ -496,7 +474,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         }
         break;
 #if RAF_ENABLE_MULTI_CONTROL
-    case DeviceEventType::kBleToApp:
+    case DeviceEventType::PublicPlatformSpecificEventTypes::kBleToApp:
         RafMCMgr().HandleBleMessage(aEvent);
         break;
 #endif
@@ -508,8 +486,8 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
 CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err;
+    ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
 
-    FactoryResetCheck();
     MatterFotaInit();
 
     err = ThreadStackMgr().InitThreadStack();
@@ -520,7 +498,7 @@ CHIP_ERROR AppTask::Init()
 
     ChipLogError(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
 
-#if CHIP_CONFIG_ENABLE_ICD_SERVER
+#if CONFIG_HOSAL_SOC_IDLE_SLEEP
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
 #else
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
@@ -548,34 +526,26 @@ CHIP_ERROR AppTask::Init()
     return CHIP_NO_ERROR;
 }
 
-void AppTask::FactoryResetCheck()
-{
-    if(rt58x_factory_reset_check())
-    {
-        ChipLogProgress(NotSpecified, "Do Factory Reset" );
-
-        for(int i=0;i<3;i++)
-        {
-            rt58x_led_level_ctl(2, 120);
-            rt58x_led_level_ctl(3, 120);
-            rt58x_led_level_ctl(4, 120);
-            Delay_ms(500);
-            rt58x_led_level_ctl(2, 250);
-            rt58x_led_level_ctl(3, 250);
-            rt58x_led_level_ctl(4, 250);
-            Delay_ms(500);
-        }
-        chip::Server::GetInstance().ScheduleFactoryReset();
- 
-    }
-}
-
 CHIP_ERROR AppTask::StartAppTask()
 {
     CHIP_ERROR err;
 
-    bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
+    hosal_gpio_input_config_t pin_cfg;
+    /* gpio0 pin setting */
+    pin_cfg.param = NULL;
+    pin_cfg.pin_int_mode = HOSAL_GPIO_PIN_INT_BOTH_EDGE;
+    pin_cfg.usr_cb = (void*)ButtonEventHandler;
 
+    hosal_gpio_set_debounce_time(DEBOUNCE_SLOWCLOCKS_1024);
+    NVIC_SetPriority(Gpio_IRQn, 7);
+    NVIC_EnableIRQ(Gpio_IRQn);
+    for (uint8_t i = 0; i < 5; i++)
+    {
+        hosal_pin_set_pullopt(i, HOSAL_PULL_UP_100K);
+        hosal_gpio_cfg_input(i, pin_cfg);
+        hosal_gpio_debounce_enable(i);
+        hosal_gpio_int_enable(i);
+    }
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
     if (sAppEventQueue == nullptr)
@@ -586,7 +556,7 @@ CHIP_ERROR AppTask::StartAppTask()
 
     // Start App task.
     sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
-                                    ArraySize(appStack), nullptr, 1, appStack, &appTaskStruct);
+                                    MATTER_ARRAY_SIZE(appStack), nullptr, 1, appStack, &appTaskStruct);
     if (sAppTaskHandle == nullptr)
     {
         return CHIP_ERROR_NO_MEMORY;
@@ -606,7 +576,11 @@ CHIP_ERROR AppTask::StartAppTask()
 
 void AppTask::FactoryResetEventHandler(chip::System::Layer * aLayer, void * aAppState)
 {
-    chip::Server::GetInstance().ScheduleFactoryReset();
+    ChipLogProgress(NotSpecified, "Performing Factory Reset");
+    vTaskSuspendAll();
+    efd_env_set_default();
+    sys_software_reset();
+    vTaskSuspendAll();
 }
 
 void AppTask::TimerEventHandler(chip::System::Layer * aLayer, void * aAppState)
@@ -681,7 +655,11 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
     {
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
-        chip::Server::GetInstance().ScheduleFactoryReset();
+        ChipLogProgress(NotSpecified, "Performing Factory Reset");
+        vTaskSuspendAll();
+        efd_env_set_default();
+        sys_software_reset();
+        vTaskSuspendAll();
     }
 }
 
@@ -747,29 +725,30 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
     }
 }
 
-void AppTask::ButtonEventHandler(bsp_event_t event)
+void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param) 
 {
-    // ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event), bsp_button_state_get(event-5));
-    switch (event)
+    uint32_t pin_status;
+    hosal_gpio_pin_get(pin, &pin_status);
+    ChipLogProgress(NotSpecified, "ButtonEventHandler pin %d %d", pin, pin_status);
+    switch (pin)
     {
-    case (BSP_EVENT_BUTTONS_0):
+    case (0):
         {
             AppEvent button_event              = {};
             button_event.Type                  = AppEvent::kEventType_Button;
             button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_FactoryReset;
-            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_0)?0:1;
+            button_event.ButtonEvent.Action    = (pin_status) ? 0 : 1;
             // Hand off to Functionality handler - depends on duration of press
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
         break;
-    
-    case (BSP_EVENT_BUTTONS_1):
+    case (1):
         {
             AppEvent button_event              = {};
             button_event.Type                  = AppEvent::kEventType_Button;
             button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_Switch_1;
-            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_1)?0:1;
+            button_event.ButtonEvent.Action    = (pin_status) ? 0 : 1;
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }

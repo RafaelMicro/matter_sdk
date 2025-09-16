@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Provides an implementation of the BLEManager singleton object
- *          for the Silicon Labs EFR32 platforms.
+ *          for the Rafael RT58x platforms.
  */
 
 #pragma once
@@ -42,7 +42,7 @@ namespace Internal {
 
 using namespace chip::Ble;
 /**
- * Concrete implementation of the BLEManager singleton object for the EFR32 platforms.
+ * Concrete implementation of the BLEManager singleton object for the RT58x platforms.
  */
 class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePlatformDelegate, private BleApplicationDelegate
 {
@@ -76,6 +76,8 @@ private:
                         System::PacketBufferHandle pBuf) override;
     CHIP_ERROR SendWriteRequest(BLE_CONNECTION_OBJECT conId, const Ble::ChipBleUUID * svcId, const Ble::ChipBleUUID * charId,
                           System::PacketBufferHandle pBuf) override;
+    CHIP_ERROR SendReadRequest(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId, PacketBufferHandle pBuf);
+    CHIP_ERROR SendReadResponse(BLE_CONNECTION_OBJECT conId, BLE_READ_REQUEST_CONTEXT requestContext, const ChipBleUUID * svcId, const ChipBleUUID * charId);
     // ===== Members that implement virtual methods on BleApplicationDelegate.
 
     void NotifyChipConnectionClosed(BLE_CONNECTION_OBJECT conId) override;
@@ -126,15 +128,17 @@ private:
     CHIP_ERROR StopAdvertising(void);
     CHIP_ERROR ConfigureAdvertisingData(void);
 
+    static ble_err_t ble_app_event_cb(void *p_param);
+    static ble_err_t ble_service_data_cb(void *p_param);
+
     static void ble_evt_task(void * arg);
     static void ble_evt_indication_cb(uint32_t data_len);
     static void ble_evt_handler(void *p_param);
     static void ble_svcs_matter_evt_handler(void *p_matter_evt_param);
+    static void ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param);
 
     static int server_profile_init(uint8_t host_id);
     static int ble_init(void);
-    static int adv_init(void);
-    static int adv_enable(uint8_t host_id);
     static bool app_request_set(uint8_t host_id, uint32_t request, bool from_isr);
     static void app_evt_handler(void *p_param);
 
@@ -145,6 +149,8 @@ private:
     void CancelBleConnTimeoutTimer(void);
     void CancelBleAdvTimeoutTimer(void);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
+    static void fota_timer_handler(TimerHandle_t timer);
+    static bool fota_sw_timer_start(void);
 #if RAF_ENABLE_MULTI_CONTROL
     CHIP_ERROR ConfigureAdvertisingData(uint8_t host_id);
     static void BleLinkTimerHandler(TimerHandle_t xTimer);
@@ -181,7 +187,7 @@ inline BLEManager & BLEMgr(void)
  * Returns the platform-specific implementation of the BLEManager singleton object.
  *
  * Internal components can use this to gain access to features of the BLEManager
- * that are specific to the EFR32 platforms.
+ * that are specific to the RT58x platforms.
  */
 inline BLEManagerImpl & BLEMgrImpl(void)
 {

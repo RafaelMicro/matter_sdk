@@ -19,13 +19,12 @@
 /**
  *    @file
  *          Defines platform-specific event types and data for the Chip
- *          Device Layer on EFR32 platforms using the Silicon Labs SDK.
+ *          Device Layer on RT58x platforms using the Rafael SDK.
  */
 
 #pragma once
 
 #include <platform/CHIPDeviceEvent.h>
-
 
 namespace chip {
 namespace DeviceLayer {
@@ -33,32 +32,38 @@ namespace DeviceLayer {
 namespace DeviceEventType {
 
 /**
- * Enumerates EFR32 platform-specific event types that are visible to the application.
+ * Enumerates Rafael platform-specific event types that are visible to the application.
  */
 enum PublicPlatformSpecificEventTypes
 {
-    /* None currently defined */
+    kRafaelEvent = kRange_PublicPlatformSpecific,
+	kBleToApp,
+    kAppToBle,
 };
 
 /**
- * Enumerates EFR32 platform-specific event types that are internal to the Chip Device Layer.
+ * Enumerates Rafael platform-specific event types that are internal to the Chip Device Layer.
  */
 enum InternalPlatformSpecificEventTypes
 {
-    kWFXSystemEvent = kRange_InternalPlatformSpecific,
+    /* None currently defined */
 };
 
 } // namespace DeviceEventType
 
 /**
- * Represents platform-specific event information for Silicon Labs EFR32 platforms.
+ * Represents platform-specific event information for Rafael platforms.
  */
 
 struct ChipDevicePlatformEvent final
 {
     union
     {
-
+		struct 
+        {
+            uint8_t len;
+            uint8_t* data;
+        } TRSPData;
     };
 };
 }; // namespace DeviceLayer

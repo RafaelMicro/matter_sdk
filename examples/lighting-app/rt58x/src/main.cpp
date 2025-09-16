@@ -20,8 +20,9 @@
 #include <AppTask.h>
 
 #include "AppConfig.h"
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"
+#include "EnhancedFlashDataset.h"
 #include <DeviceInfoProviderImpl.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <lib/support/CHIPPlatformMemory.h>
@@ -49,14 +50,31 @@ using namespace ::chip::DeviceLayer::Internal;
 // ================================================================================
 // Main Code
 // ================================================================================
-extern void cmd_rafael_init();
+
 int main(void)
 {
     CHIP_ERROR err;
 
-    write_reboot_count();
-    init_rt58xPlatform();
+    init_rt58x_platform();
     init_lighting_app_rt58xPlatform();
+    write_reboot_count();
+
+    if(rt58x_factory_reset_check())
+    {
+        ChipLogProgress(NotSpecified, "Do Factory Reset" );
+
+        for(int i=0;i<3;i++)
+        {
+            pwm_set_color(120, 120, 120);
+            delay_ms(500);
+            pwm_set_color(250, 250, 250);
+            delay_ms(500);
+        }
+        vTaskSuspendAll();
+        efd_env_set_default();
+        sys_software_reset();
+        vTaskSuspendAll();
+    }
 
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
@@ -66,14 +84,9 @@ int main(void)
     }
 
 
-#if (ENABLE_CHIP_SHELL && (CHIP_CONFIG_ENABLE_ICD_SERVER == 0))
-    startShellTask();
-    cmd_rafael_init();
-#endif
-
-    info( "==================================================\r\n");
-    info( "Rafael-Light-example(Matter 1.4) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
-    info( "==================================================\r\n");
+    ChipLogProgress(NotSpecified, "==================================================");
+    ChipLogProgress(NotSpecified, "Rafael-Light-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "==================================================");
 
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
@@ -87,9 +100,10 @@ int main(void)
     {
        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
-
+#if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
+    startShellTask();
+#endif
     vTaskStartScheduler();
-
 
 exit:    
     return 0;

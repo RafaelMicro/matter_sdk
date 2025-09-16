@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Provides an implementation of the PlatformManager object
- *          for EFR32 platforms using the Silicon Labs EFR32 SDK.
+ *          for RT58x platforms using the Rafael RT58x SDK.
  */
 /* this file behaves like a config.h, comes first */
 #include <platform/internal/CHIPDeviceLayerInternal.h>
@@ -37,7 +37,9 @@
 #include "AppConfig.h"
 #include "FreeRTOS.h"
 #include "FreeRTOSConfig.h"
-#include "cm3_mcu.h"
+#include "mcu.h"
+
+#include "hosal_trng.h"
 
 namespace chip {
 namespace DeviceLayer {
@@ -46,9 +48,12 @@ PlatformManagerImpl PlatformManagerImpl::sInstance;
 
 static int app_entropy_source(void * data, unsigned char * output, size_t len, size_t * olen)
 {
-  
-    for(int i =0; i<len; i++)
-        output[i] = (get_random_number() % 0xFF);
+    uint32_t randnum;
+    for(int i =0; i<len; i++) 
+    {
+        hosal_trng_get_random_number(&randnum, 1);
+        output[i] = (randnum & 0xFF);
+    }
 
     *olen = len;
     return 0;

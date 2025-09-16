@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Utilities for accessing persisted device configuration on
- *          platforms based on the Silicon Labs SDK.
+ *          platforms based on the Rafael SDK.
  */
 
 
@@ -29,9 +29,9 @@
 #include <platform/RT58x/RT58xConfig.h>
 #include <lib/core/CHIPEncoding.h>
 
-// #include "util_log.h"
-#include "cm3_mcu.h"
-#include "chip_define.h"
+// #include "log.h"
+#include "mcu.h"
+#include "flashctl.h"
 #include "EnhancedFlashDataset.h"
 
 

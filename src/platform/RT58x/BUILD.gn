@@ -14,7 +14,7 @@
 
 import("//build_overrides/chip.gni")
 import("//build_overrides/pigweed.gni")
-
+import("//build_overrides/rt58x_sdk.gni")
 import("//build_overrides/nlassert.gni")
 import("${chip_root}/src/platform/device.gni")
 
@@ -63,10 +63,6 @@ static_library("RT58x") {
   include_dirs = []
   deps = []
 
-  if (rafael_board == "RT583") {
-    defines = [ "RAFAEL_BOARD=0x03" ]
-  }
-
   if (chip_enable_ota_requestor) {
     sources += [
       "OTAImageProcessorImpl.cpp",
@@ -74,7 +70,12 @@ static_library("RT58x") {
     ]
   }
 
-  public_deps = [ "${chip_root}/src/platform:platform_base" ]
+  public_deps = [ 
+    "${chip_root}/src/app:app_config",
+    "${chip_root}/src/platform:platform_base",
+    "${chip_root}/src/access:types",
+    ]
+
   if(raf_enable_multi_control)
   {
     sources += [ "BLEManagerImpl_Multicontrol.cpp",
@@ -90,6 +91,7 @@ static_library("RT58x") {
 
     #deps += [ "${chip_root}/third_party/openthread:openthread_cli" ]
 
+    deps += [ "${chip_root}/src/app:app_config" ]
     sources += [
       "../OpenThread/OpenThreadUtils.cpp",
       "ThreadStackManagerImpl.cpp",
@@ -108,9 +110,8 @@ static_library("RT58x") {
 
   public_deps += [ "${chip_root}/src/crypto" ]
 
-#  public_configs =
-#      [ "${chip_root}/src/lib/address_resolve:default_address_resolve_config",
-#        ":rafael-multi-control" ]
+ public_configs =
+     [":rafael-multi-control" ]
 }
 
 config("attestation-credentials-config") {

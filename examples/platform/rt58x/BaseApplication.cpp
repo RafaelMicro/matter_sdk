@@ -53,7 +53,7 @@
 #endif // CHIP_ENABLE_OPENTHREAD
 
 
-#include "util_log.h"
+#include "log.h"
 
 /**********************************************************
  * Defines and Constants
@@ -120,7 +120,7 @@ Identify * gIdentifyptr = nullptr;
 CHIP_ERROR BaseApplication::StartAppTask(TaskFunction_t taskFunction)
 {
 
-    info("BaseApplication::StartAppTask\n");
+    ChipLogProgress(NotSpecified, "BaseApplication::StartAppTask\n");
     sAppEventQueue = xQueueCreateStatic(
                     APP_EVENT_QUEUE_SIZE, 
                     sizeof(AppEvent), 
@@ -136,7 +136,7 @@ CHIP_ERROR BaseApplication::StartAppTask(TaskFunction_t taskFunction)
     sAppTaskHandle = xTaskCreateStatic(
                     taskFunction, 
                     APP_TASK_NAME, 
-                    ArraySize(appStack), 
+                    MATTER_ARRAY_SIZE(appStack), 
                     &sAppEventQueue, 
                     1, 
                     appStack, 

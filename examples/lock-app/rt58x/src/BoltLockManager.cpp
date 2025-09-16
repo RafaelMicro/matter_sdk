@@ -83,12 +83,12 @@ CHIP_ERROR BoltLockManager::Init()
     }
     if (mState == kState_LockingCompleted)
     {
-        gpio_pin_set(21);
+        hosal_gpio_pin_set(21);
         ChipLogProgress(NotSpecified, "Door Lock State: Locked");
     }
     else if (mState == kState_UnlockingCompleted)
     {
-        gpio_pin_clear(21);
+        hosal_gpio_pin_clear(21);
         ChipLogProgress(NotSpecified, "Door Lock State: Unlocked");
     }
     mAutoLockTimerArmed = false;

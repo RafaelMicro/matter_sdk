@@ -25,10 +25,10 @@
 
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
+#include "hosal_gpio.h" // provides FreeRTOS timer support
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <lib/core/CHIPError.h>
-#include "bsp_led.h"
 using namespace ::chip::app::Clusters::SmokeCoAlarm;
 
 class SmokeManager

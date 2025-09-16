@@ -19,18 +19,18 @@
 /**
  *    @file
  *          Platform-specific configuration overrides for CHIP on
- *          Silcon Labs EFR32 platforms.
+ *          Rafael RT58x platforms.
  */
 
 #pragma once
 
 #include <stdint.h>
-#include "cm3_mcu.h"
+#include "mcu.h"
 
 // ==================== General Platform Adaptations ====================
 
-#define NL_ASSERT_ABORT()   Sys_Software_Reset()
-#define CHIP_CONFIG_ABORT() Sys_Software_Reset()
+#define NL_ASSERT_ABORT()   sys_software_reset()
+#define CHIP_CONFIG_ABORT() sys_software_reset()
 
 #define CHIP_CONFIG_PERSISTED_STORAGE_KEY_TYPE uint16_t
 #define CHIP_CONFIG_PERSISTED_STORAGE_ENC_MSG_CNTR_ID 1
@@ -95,13 +95,13 @@
 #define CHIP_DEVICE_CONFIG_ICD_FAST_POLL_INTERVAL CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL
 #endif
 
-#ifndef CHIP_CONFIG_ICD_IDLE_MODE_DURATION_SEC
-#define CHIP_CONFIG_ICD_IDLE_MODE_DURATION_SEC 60
+#ifndef CHIP_CONFIG_ICD_IDLE_MODE_INTERVAL_SEC
+#define CHIP_CONFIG_ICD_IDLE_MODE_INTERVAL_SEC 60
 #endif
 
 //minimum 300ms
-#ifndef CHIP_CONFIG_ICD_ACTIVE_MODE_DURATION_MS
-#define CHIP_CONFIG_ICD_ACTIVE_MODE_DURATION_MS 300
+#ifndef CHIP_CONFIG_ICD_ACTIVE_MODE_INTERVAL_MS
+#define CHIP_CONFIG_ICD_ACTIVE_MODE_INTERVAL_MS 300
 #endif
 
 //minimum 300ms

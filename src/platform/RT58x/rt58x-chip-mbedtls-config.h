@@ -60,7 +60,6 @@
 #define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECJPAKE_WITH_AES_128_CCM_8
 
 #include "mbedtls/check_config.h"
-#include "sys_arch.h"
 
 // <<< Use Configuration Wizard in Context Menu >>>
 // <h> TLS/DTLS configuration

@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Platform-specific configuration overrides for the Chip Device Layer
- *          on EFR32 platforms using the Silicon Labs SDK.
+ *          on RT58x platforms using the Rafael SDK.
  */
 
 #pragma once
@@ -43,10 +43,14 @@
 
 // ========== Platform-specific Configuration =========
 
-// These are configuration options that are unique to the EFR32 platform.
+// These are configuration options that are unique to the RT58x platform.
 // These can be overridden by the application as needed.
 
 // ========== Platform-specific Configuration Overrides =========
+
+#ifndef CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
+#define CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME "RAFAEL_SAMPLE"
+#endif // CHIP_DEVICE_CONFIG_DEVICE_PRODUCT_NAME
 
 #ifndef CHIP_DEVICE_CONFIG_BLE_LL_TASK_PRIORITY
 #define CHIP_DEVICE_CONFIG_BLE_LL_TASK_PRIORITY TASK_PRIORITY_PROTOCOL_MEDIUM
@@ -69,7 +73,7 @@
 #endif // CHIP_DEVICE_CONFIG_CHIP_TASK_STACK_SIZE
 
 #ifndef CHIP_DEVICE_CONFIG_THREAD_TASK_STACK_SIZE
-#define CHIP_DEVICE_CONFIG_THREAD_TASK_STACK_SIZE (8 * 1024)
+#define CHIP_DEVICE_CONFIG_THREAD_TASK_STACK_SIZE (12 * 1024)
 #endif // CHIP_DEVICE_CONFIG_THREAD_TASK_STACK_SIZE
 
 #define CHIP_DEVICE_CONFIG_ENABLE_WIFI_TELEMETRY 0

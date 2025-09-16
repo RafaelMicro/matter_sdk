@@ -24,7 +24,7 @@
 #include "AppTask.h"
 #include "WindowControl.h"
 #include "WindowManager.h"
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"
 
 #include <app-common/zap-generated/attributes/Accessors.h>

@@ -29,8 +29,8 @@
 #include "AppEvent.h"
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
-#include "SensorManager.h"
 #include "OccupancyManager.h"
+#include "PowerManager.h"
 
 // #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
@@ -38,8 +38,10 @@
 #include <ble/BLEEndPoint.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
+#include "EnhancedFlashDataset.h"
+#include "hosal_gpio.h"
+#include "hosal_sysctrl.h"
 
-#include "bsp.h"
 #include "FactoryDataProvider.h"
 
 /**********************************************************
@@ -80,7 +82,7 @@ private:
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);
 
-    static void ButtonEventHandler(bsp_event_t event);
+    static void ButtonEventHandler(uint32_t pin, void* isr_param) ;
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
     static void TimerEventHandler(chip::System::Layer * aLayer, void * aAppState);

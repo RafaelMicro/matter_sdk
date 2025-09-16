@@ -27,7 +27,7 @@
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
@@ -76,10 +76,10 @@ public:
 private:
     friend WindowManager & WindowMgr(void);
     uint8_t mMinLevel = 0;
-    uint8_t mMaxLevel = 200;
+    uint8_t mMaxLevel = 100;
     // default initialization value for the light level after start
-    const uint8_t kDefaultLIFILevel = 200;
-    const uint8_t kDefaultTILILevel = 200;
+    const uint8_t kDefaultLIFILevel = 100;
+    const uint8_t kDefaultTILILevel = 100;
     State_t mState;
     uint8_t lifi_level;
     uint8_t tili_level;

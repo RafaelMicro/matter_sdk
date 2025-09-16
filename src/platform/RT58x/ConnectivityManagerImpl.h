@@ -51,7 +51,7 @@ namespace DeviceLayer {
 class PlatformManagerImpl;
 
 /**
- * Concrete implementation of the ConnectivityManager singleton object for Silicon Labs EFR32 platforms.
+ * Concrete implementation of the ConnectivityManager singleton object for Rafael RT58x platforms.
  */
 class ConnectivityManagerImpl final : public ConnectivityManager,
                                       public Internal::GenericConnectivityManagerImpl<ConnectivityManagerImpl>,

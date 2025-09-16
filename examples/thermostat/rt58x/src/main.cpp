@@ -20,7 +20,7 @@
 #include <AppTask.h>
 
 #include "AppConfig.h"
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"
 #include <DeviceInfoProviderImpl.h>
 
@@ -39,7 +39,7 @@ using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer::Internal;
-extern void cmd_rafael_init();
+
 // ================================================================================
 // Main Code
 // ================================================================================
@@ -47,7 +47,7 @@ int main(void)
 {
     CHIP_ERROR err;
 
-    init_rt58xPlatform();
+    init_rt58x_platform();
     init_device_environment();
 
     err = chip::Platform::MemoryInit();
@@ -56,15 +56,9 @@ int main(void)
         ChipLogError(NotSpecified, "Platform::MemoryInit() failed");
         return 0; 
     }
-
-#if (ENABLE_CHIP_SHELL && (CHIP_CONFIG_ENABLE_ICD_SERVER == 0))
-    startShellTask();
-    cmd_rafael_init();
-#endif
-    info( "==================================================\n");
-    info( "Rafael-Thermostat-example(Matter 1.4) starting Version %d\r\n", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
-    info( "==================================================\n\n");
-
+    ChipLogProgress(NotSpecified, "=============================================================================");
+    ChipLogProgress(NotSpecified, "Rafael-Thermostat-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "=============================================================================");
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
     {
@@ -78,8 +72,10 @@ int main(void)
        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 
+#if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
+    startShellTask();
+#endif
     vTaskStartScheduler();
-
 
 exit:    
     return 0;

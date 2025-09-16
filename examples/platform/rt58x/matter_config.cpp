@@ -26,50 +26,16 @@
 
 #include <mbedtls/platform.h>
 
-#ifdef SL_WIFI
-#include "wfx_host_events.h"
-#endif /* SL_WIFI */
-
-#if PW_RPC_ENABLED
-#include "Rpc.h"
-#endif
-
 #ifdef ENABLE_CHIP_SHELL
 #include "matter_shell.h"
 #endif
 
-#ifdef HEAP_MONITORING
-#include "MemMonitoring.h"
-#endif
-
-using namespace ::chip;
-using namespace ::chip::Inet;
-using namespace ::chip::DeviceLayer;
-
-#include <crypto/CHIPCryptoPAL.h>
-#if CHIP_ENABLE_OPENTHREAD
-#include <inet/EndPointStateOpenThread.h>
-#include <openthread/cli.h>
-#include <openthread/dataset.h>
-#include <openthread/error.h>
-#include <openthread/heap.h>
-#include <openthread/icmp6.h>
-#include <openthread/instance.h>
-#include <openthread/link.h>
-#include <openthread/platform/openthread-system.h>
-#include <openthread/tasklet.h>
-#include <openthread/thread.h>
-
-// ================================================================================
-// Matter Networking Callbacks
-// ================================================================================
-#endif // CHIP_ENABLE_OPENTHREAD
-
-#include "cm3_mcu.h"
-#include "util_log.h"
+#include "mcu.h"
+#include "log.h"
 #include <EnhancedFlashDataset.h>
+#include "fota_define.h"
+#include "flashctl.h"
 
-extern void vPortSetupTimerInterrupt(void);
 // ================================================================================
 // FreeRTOS Callbacks
 // ================================================================================
@@ -80,51 +46,23 @@ extern "C" void vApplicationIdleHook(void)
     // Check CHIP Config nvm3 and repack flash if necessary.
     //Internal::RT58xConfig::RepackNvm3Flash();
 }
-
-extern "C" void vPortSuppressTicksAndSleep(TickType_t xExpectedIdleTime_ms)
+void MatterFotaInit(void)
 {
-#if CHIP_CONFIG_ENABLE_ICD_SERVER
-    TickType_t xModifiableIdleTime;
+    fota_information_t  *p_fota_info = (fota_information_t *)(FOTA_UPDATE_BANK_INFO_ADDRESS);
 
-    __disable_irq();
-
-    if( eTaskConfirmSleepModeStatus() == eAbortSleep )
-    {
-        __enable_irq();
-    }
-    else
-    {
-        timern_t *TIMER;
-        uint32_t now_v;
-
-        if(xExpectedIdleTime_ms > 0)
+    if (p_fota_info->fotabank_ready == FOTA_IMAGE_READY)
+    { 
+        if (p_fota_info->fota_result == FOTA_RESULT_SUCCESS)
         {
-            TIMER = TIMER4;
-
-            TIMER->LOAD = (xExpectedIdleTime_ms * 40) -1;
-
-            TIMER->CLEAR = 1;
-            TIMER->CONTROL.bit.INT_ENABLE = 1;
-            TIMER->CONTROL.bit.EN = 1;
-
-            Lpm_Enter_Low_Power_Mode();
-
-            TIMER->CONTROL.bit.EN = 0;
-            TIMER->CONTROL.bit.INT_ENABLE = 0;
-            TIMER->CLEAR = 1;
-            Delay_us(250);
-            now_v = (TIMER->VALUE/40);
-
-            if(now_v > xExpectedIdleTime_ms)
-            {
-                now_v = 0;
-            }
-            xModifiableIdleTime = xExpectedIdleTime_ms - now_v;
-
-            vTaskStepTick( xModifiableIdleTime );
-
-            __enable_irq();
-        }
+            log_error("fota success\r\n");
+        } 
+        else
+        {
+            log_error("fota failed: %d\r\n", p_fota_info->fota_result);
+        }  
+        while (flash_check_busy());
+        taskENTER_CRITICAL();
+        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
+        taskEXIT_CRITICAL();
     }
-#endif
 }

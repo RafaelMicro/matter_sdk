@@ -20,6 +20,7 @@
 #include "AppTask.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
+#include "UartTask.h"
 #include <OTAConfig.h>
 
 #include <app-common/zap-generated/attributes/Accessors.h>
@@ -30,6 +31,7 @@
 #include <app/server/Server.h>
 #include <app/util/attribute-storage.h>
 #include <app/InteractionModelEngine.h>
+#include <data-model-providers/codegen/Instance.h>
 
 #include <assert.h>
 
@@ -49,15 +51,12 @@
 #include <DeviceInfoProviderImpl.h>
 
 #include "uart.h"
-#include "util_log.h"
-#include "cm3_mcu.h"
-#include "init_rt58xPlatform.h"
+#include "log.h"
+#include "mcu.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"
-#include "bsp.h"
-#include "bsp_button.h"
-#include "bsp_led.h"
+
 #include "matter_config.h"
-#include "fota_define.h"
 
 
 using namespace chip;
@@ -68,13 +67,13 @@ using namespace ::chip::DeviceLayer;
 using chip::Protocols::InteractionModel::Status;
 
 #define FACTORY_RESET_TRIGGER_TIMEOUT 6000
-#define APP_TASK_STACK_SIZE (2 * 1024)
+#define APP_TASK_STACK_SIZE (4 * 1024)
 #define APP_TASK_PRIORITY 2
 #define APP_EVENT_QUEUE_SIZE 10
 
-#ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
-ICDSubscriptionCallback RT58xMatterConfig::mICDSubscriptionHandler;
-#endif // CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+#ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
+SubscriptionCallback mSubscriptionHandler;
+#endif // CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
 
 namespace {
 
@@ -118,11 +117,11 @@ void IdentifyToggleOnOff(bool onoff)
     //turn on/off led indicator
     if(onoff)
     {
-        gpio_pin_clear(21);
+        hosal_gpio_pin_clear(21);
     }
     else
     {
-        gpio_pin_set(21);
+        hosal_gpio_pin_set(21);
     }
 }
 void OnTriggerIdentifyEffect(Identify * identify)
@@ -180,27 +179,7 @@ void UnlockOpenThreadTask(void)
 {
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
 }
-void MatterFotaInit(void)
-{
-    fota_information_t  *p_fota_info = (fota_information_t *)(FOTA_UPDATE_BANK_INFO_ADDRESS);
 
-    if (p_fota_info->fotabank_ready == FOTA_IMAGE_READY)
-    { 
-        if (p_fota_info->fota_result == FOTA_RESULT_SUCCESS)
-        {
-            // err("sw ver: %d\r\n", p_fota_info->reserved[0]);
-            chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(p_fota_info->reserved[0]);
-        } 
-        else
-        {
-            err("fota result: %d\r\n", p_fota_info->fota_result);
-        }  
-        while (flash_check_busy());
-        taskENTER_CRITICAL();
-        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
-        taskEXIT_CRITICAL();
-    }
-}
 void AppTask::IdentifyStartHandler(Identify *)
 {
     AppEvent event;
@@ -296,13 +275,17 @@ void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
     // Turn off the lock LED if in an UNLOCKED state.
     if (aAction == BoltLockManager::LOCK_ACTION)
     {
-        gpio_pin_set(BSP_LED_1);
+        uint8_t status = 1;
+        hosal_gpio_pin_set(21);
+        GetUartTask().SendCommand(0x8001, 1, &status);
         ChipLogProgress(NotSpecified, "Lock Action has been completed");
         ChipLogProgress(NotSpecified, "Door Lock State: Locked");
     }
     else if (aAction == BoltLockManager::UNLOCK_ACTION)
     {
-        gpio_pin_clear(BSP_LED_1);
+        uint8_t status = 0;
+        hosal_gpio_pin_clear(21);
+        GetUartTask().SendCommand(0x8001, 1, &status);
         ChipLogProgress(NotSpecified, "Unlock Action has been completed");
         ChipLogProgress(NotSpecified, "Door Lock State: Unlocked");
     }
@@ -313,6 +296,7 @@ void AppTask::InitServer(intptr_t arg)
     CHIP_ERROR err;
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
+    initParams.dataModelProvider = app::CodegenDataModelProviderInstance(initParams.persistentStorageDelegate);
 
     gExampleDeviceInfoProvider.SetStorageDelegate(initParams.persistentStorageDelegate);
     SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
@@ -329,9 +313,9 @@ void AppTask::InitServer(intptr_t arg)
         ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
     }
     
-#ifdef CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
+#ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
     // Register ICD subscription callback to match subscription max intervals to its idle time interval
-    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&RT58xMatterConfig::mICDSubscriptionHandler);
+    chip::app::InteractionModelEngine::GetInstance()->RegisterReadHandlerAppCallback(&mSubscriptionHandler);
 #endif // CHIP_CONFIG_USE_ICD_SUBSCRIPTION_CALLBACKS
 
     if (chip::Server::GetInstance().GetFabricTable().FabricCount() == 0)
@@ -352,8 +336,14 @@ void AppTask::InitServer(intptr_t arg)
         ChipLogError(NotSpecified, "BoltLockMgr().Init() failed");
         return;
     }
-    BoltLockMgr().SetCallbacks(ActionInitiated, ActionCompleted);
+    err = PowerMgr().Init();
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "PowerMgr::Init() failed");
 
+    }
+    BoltLockMgr().SetCallbacks(ActionInitiated, ActionCompleted);
+    GetUartTask().Init();
 #if RT58x_OTA_ENABLED
     OTAConfig::Init();
 #endif
@@ -363,11 +353,11 @@ void AppTask::UpdateStatusLED()
 {
     if (sCommissioned)
     {
-        gpio_pin_set(20);
+        hosal_gpio_pin_set(20);
     }
     else
     {
-        gpio_pin_clear(20);
+        hosal_gpio_pin_clear(20);
     }
 }
 
@@ -421,7 +411,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-#if CHIP_CONFIG_ENABLE_ICD_SERVER
+#if CONFIG_HOSAL_SOC_IDLE_SLEEP
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
 #else
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
@@ -452,9 +442,22 @@ CHIP_ERROR AppTask::Init()
 CHIP_ERROR AppTask::StartAppTask()
 {
     CHIP_ERROR err;
-    
-    bsp_init(BSP_INIT_LEDS | BSP_INIT_BUTTONS, ButtonEventHandler);
+    hosal_gpio_input_config_t pin_cfg;
+    /* gpio0 pin setting */
+    pin_cfg.param = NULL;
+    pin_cfg.pin_int_mode = HOSAL_GPIO_PIN_INT_BOTH_EDGE;
+    pin_cfg.usr_cb = (void*)ButtonEventHandler;
 
+    hosal_gpio_set_debounce_time(DEBOUNCE_SLOWCLOCKS_1024);
+    NVIC_SetPriority(Gpio_IRQn, 7);
+    NVIC_EnableIRQ(Gpio_IRQn);
+    for (uint8_t i = 0; i < 5; i++)
+    {
+        hosal_pin_set_pullopt(i, HOSAL_PULL_UP_100K);
+        hosal_gpio_cfg_input(i, pin_cfg);
+        hosal_gpio_debounce_enable(i);
+        hosal_gpio_int_enable(i);
+    }
     sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
     if (sAppEventQueue == nullptr)
@@ -465,7 +468,7 @@ CHIP_ERROR AppTask::StartAppTask()
 
     //Start App task.
     sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
-                                    ArraySize(appStack), nullptr, 1, appStack, &appTaskStruct);
+                                    MATTER_ARRAY_SIZE(appStack), nullptr, 1, appStack, &appTaskStruct);
 
     if (sAppTaskHandle == nullptr)
     {
@@ -554,7 +557,10 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
     {
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
-        chip::Server::GetInstance().ScheduleFactoryReset();
+        vTaskSuspendAll();
+        efd_env_set_default();
+        sys_software_reset();
+        vTaskSuspendAll();
     }
 }
 
@@ -600,29 +606,29 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
 }
 
 
-void AppTask::ButtonEventHandler(bsp_event_t event)
+void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param) 
 {
-    //ChipLogProgress(NotSpecified, "ButtonEventHandler %d %d", (event-5), bsp_button_state_get(event-5));
-    switch (event)
+    uint32_t pin_status;
+    hosal_gpio_pin_get(pin, &pin_status);
+    ChipLogProgress(NotSpecified, "ButtonEventHandler pin %d %d", pin, pin_status);
+    switch (pin)
     {
-    case (BSP_EVENT_BUTTONS_0):
+    case (0):
         {
             AppEvent button_event              = {};
             button_event.Type                  = AppEvent::kEventType_Button;
             button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_FactoryReset;
-            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_0)?0:1;
-            // Hand off to Functionality handler - depends on duration of press
+            button_event.ButtonEvent.Action    = (pin_status) ? 0 : 1;
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
         break;
-    case (BSP_EVENT_BUTTONS_1):
+    case (1):
         {
             AppEvent button_event              = {};
             button_event.Type                  = AppEvent::kEventType_Button;
             button_event.ButtonEvent.ButtonIdx = AppEvent::AppActionTypes::kActionTypes_ToggloeLockStatus;
-            button_event.ButtonEvent.Action    = bsp_button_state_get(BSP_BUTTON_1)?0:1;
-            // Hand off to Functionality handler - depends on duration of press
+            button_event.ButtonEvent.Action    = (pin_status) ? 0 : 1;
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }

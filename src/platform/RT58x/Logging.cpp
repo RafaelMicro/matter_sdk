@@ -17,7 +17,7 @@
 #include <string.h>
 #include <task.h>
 
-#include "util_log.h"
+#include "log.h"
 
 #define LOG_ERROR "<error > "
 #define LOG_WARN "<warn  > "
@@ -41,7 +41,7 @@ static uint8_t sCmdLineBuffer[LOG_RTT_BUFFER_SIZE];
 
 static void PrintLog(const char * msg)
 {
-    info("%s\r\n", msg);
+    log_printk("%s\r\n", msg);
 }
 
 
@@ -173,7 +173,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 }
 #endif // CHIP_ENABLE_OPENTHREAD
 
-//#if HARD_FAULT_LOG_ENABLE && EFR32_LOG_ENABLED
+//#if HARD_FAULT_LOG_ENABLE && RT58x_LOG_ENABLED
 
 /**
  * Log register contents to UART when a hard fault occurs.
@@ -255,4 +255,4 @@ extern "C" void vApplicationGetTimerTaskMemory(StaticTask_t ** ppxTimerTaskTCBBu
     configMINIMAL_STACK_SIZE is specified in words, not bytes. */
     *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
 }
-//#endif // HARD_FAULT_LOG_ENABLE && EFR32_LOG_ENABLED
+//#endif // HARD_FAULT_LOG_ENABLE && RT58x_LOG_ENABLED

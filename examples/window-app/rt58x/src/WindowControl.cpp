@@ -28,7 +28,7 @@ using namespace ::chip::DeviceLayer;
 using namespace chip::app::Clusters::WindowCovering;
 using chip::Protocols::InteractionModel::Status;
 
-static constexpr uint32_t sMoveTimeoutMs{ 200 };
+static constexpr uint32_t sMoveTimeoutMs{ 500 };
 
 WindowControl::WindowControl()
 {
@@ -107,11 +107,18 @@ chip::Percent100ths WindowControl::CalculateSingleStep(MoveType aMoveType)
         {
             if(opState == OperationalState::MovingDownOrClose)
             {
-                sPercentDelta = chip::min(WC_PERCENT100THS_MAX_CLOSED / 10, target.Value() - current.Value());
+                if(target.Value() != 0)
+                {
+                    sPercentDelta = std::min(WC_PERCENT100THS_MAX_CLOSED / 10, target.Value() - current.Value());
+                }
+                else
+                {
+                    sPercentDelta = std::min(WC_PERCENT100THS_MAX_CLOSED / 10, WC_PERCENT100THS_MAX_CLOSED - current.Value());
+                }
             }
             else if(opState == OperationalState::MovingUpOrOpen)
             {
-                sPercentDelta = chip::min(WC_PERCENT100THS_MAX_CLOSED / 10, current.Value() - target.Value());
+                sPercentDelta = std::min(WC_PERCENT100THS_MAX_CLOSED / 10, current.Value() - target.Value());
             }
         }
         else

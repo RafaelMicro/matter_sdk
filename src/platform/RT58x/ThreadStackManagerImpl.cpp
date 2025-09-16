@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Provides an implementation of the ThreadStackManager object for
- *          EFR32 platforms using the Silicon Labs SDK and the OpenThread
+ *          RT58x platforms using the Rafael SDK and the OpenThread
  *          stack.
  *
  */
@@ -38,7 +38,7 @@
 
 #define __WEAK __attribute__((__WEAK__))
 
-#include "util_log.h"
+#include "log.h"
 namespace chip {
 namespace DeviceLayer {
 

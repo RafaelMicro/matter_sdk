@@ -36,17 +36,14 @@ StaticTask_t shellTaskStruct;
 
 void MatterShellTask(void * args)
 {
+    cmd_misc_init();
+    cmd_otcli_init();
+    cmd_rafael_init();
     chip::Shell::Engine::Root().RunMainLoop();
 }
 
 } // namespace
 
-extern "C" unsigned int sleep(unsigned int seconds)
-{
-    const TickType_t xDelay = 1000 * seconds / portTICK_PERIOD_MS;
-    vTaskDelay(xDelay);
-    return 0;
-}
 
 namespace chip {
 
@@ -77,11 +74,8 @@ void startShellTask()
 
     // For now also register commands from shell_common (shell app).
     // TODO move at least OTCLI to default commands in lib/shell/commands
-    cmd_misc_init();
-    cmd_otcli_init();
-    //cmd_rafael_init();
 
-    shellTaskHandle = xTaskCreateStatic(MatterShellTask, "matter_cli", ArraySize(shellStack), NULL, SHELL_TASK_PRIORITY, shellStack,
+    shellTaskHandle = xTaskCreateStatic(MatterShellTask, "matter_cli", MATTER_ARRAY_SIZE(shellStack), NULL, SHELL_TASK_PRIORITY, shellStack,
                                         &shellTaskStruct);
 }
 

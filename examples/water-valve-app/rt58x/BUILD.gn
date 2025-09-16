@@ -71,13 +71,13 @@ rt58x_sdk("sdk") {
 }
 
 rt58x_executable("water-valve_app") {
-  output_name = "chip-rt58x-water-valve-app-example.out"
+  output_name = "${rafael_board}-water-valve-app-example.out"
   include_dirs = [ "include" ]
   defines = []
 
   sources = [
-    "${examples_plat_dir}/heap_4_rt58x.c",
-    "${examples_plat_dir}/init_rt58xPlatform.cpp",
+    "${examples_plat_dir}/heap_5_rt58x.c",
+    "${examples_plat_dir}/init_rt58x_platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "include/WaterValveManager.h",
@@ -96,7 +96,6 @@ rt58x_executable("water-valve_app") {
     "${chip_root}/examples/water-valve-app/water-valve-common",
     "${chip_root}/src/lib",
     "${chip_root}/src/setup_payload",
-    "${chip_root}/third_party/rafael/sdk/Portable/freertos",
   ]
 
   # OpenThread Settings
@@ -112,17 +111,19 @@ rt58x_executable("water-valve_app") {
     deps += [ "${examples_plat_dir}:rt58x-subscription-callback" ]
   }
 
-  deps += [
-    "${chip_root}/src/lib/shell",
-    "${chip_root}/src/lib/shell:shell_core",
-  ]
-
   if (chip_enable_ota_requestor) {
     defines += [ "RT58x_OTA_ENABLED=1" ]
     sources += [ "${examples_plat_dir}/OTAConfig.cpp" ]
   }
 
-  ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
+  if (rafael_board == "RT583")
+  {
+    ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
+  }
+  else
+  {
+    ldscript = "${examples_plat_dir}/ldscript/rt584.ld"
+  }
 
   inputs = [ ldscript ]
 

@@ -23,20 +23,26 @@
 #include "AppConfig.h"
 #include "AppTask.h"
 #include <FreeRTOS.h>
+#include "log.h"
 
 #include <app/clusters/window-covering-server/window-covering-server.h>
+#include <app-common/zap-generated/attributes/Accessors.h>
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
+using namespace chip::app::Clusters;
 
 WindowManager WindowManager::sWindow;
 
 CHIP_ERROR WindowManager::Init()
 {
+    NPercent100ths current;
     bool currentLedState = kState_On;
     lifi_level = kDefaultLIFILevel;
     tili_level = kDefaultTILILevel;
     mState = currentLedState ? kState_On : kState_Off;
+    WindowCovering::Attributes::CurrentPositionLiftPercent100ths::Get(WindowControl::Endpoint(), current);
+    WindowCovering::Attributes::TargetPositionLiftPercent100ths::Set(WindowControl::Endpoint(), current);
 
     return CHIP_NO_ERROR;
 }
@@ -62,7 +68,7 @@ bool WindowManager::InitiateAction(MoveType_t aMoveType, Action_t aAction, int32
     default:
         break;
     }        
-
+    UpdateWindow();
     if (mActionCompleted_CB)
     {
         mActionCompleted_CB(aAction);
@@ -73,5 +79,6 @@ bool WindowManager::InitiateAction(MoveType_t aMoveType, Action_t aAction, int32
 
 void WindowManager::UpdateWindow()
 {
-    ChipLogProgress(NotSpecified, "UpdateWindow Level: LIFT: %d TILT: %d", lifi_level, tili_level);
+    //ChipLogProgress(NotSpecified, "UpdateWindow Level: LIFT: %d TILT: %d", lifi_level, tili_level);
+    ChipLogProgress(NotSpecified, "\r\nWindow Opened %d%%, Angle: %d%%\r\n", 100-lifi_level, 100-tili_level);
 }

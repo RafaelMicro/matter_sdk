@@ -28,9 +28,9 @@
 #include <lib/support/Base64.h>
 
 // #include <logging/log.h>
-// #include "util_log.h"
+// #include "log.h"
 #include "FactoryDataParser.h"
-#include "cm3_mcu.h"
+#include "mcu.h"
 
 namespace chip {
 namespace {
@@ -242,8 +242,8 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetCertificationDeclaration(Mu
     // };
     // return CopySpanToMutableSpan(ByteSpan{ kCdForAllExamples }, out_cd_buffer);
 
-    ReturnErrorCodeIf(out_cd_buffer.size() < mFactoryData.cd.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-    ReturnErrorCodeIf(!mFactoryData.cd.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(out_cd_buffer.size() >= mFactoryData.cd.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.cd.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     memcpy(out_cd_buffer.data(), mFactoryData.cd.data, mFactoryData.cd.len);
     out_cd_buffer.reduce_size(mFactoryData.cd.len);
@@ -262,8 +262,8 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetFirmwareInformation(Mutable
 template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetDeviceAttestationCert(MutableByteSpan & out_dac_buffer)
 {
-    ReturnErrorCodeIf(out_dac_buffer.size() < mFactoryData.dac_cert.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-    ReturnErrorCodeIf(!mFactoryData.dac_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(out_dac_buffer.size() >= mFactoryData.dac_cert.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.dac_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     memcpy(out_dac_buffer.data(), mFactoryData.dac_cert.data, mFactoryData.dac_cert.len);
     out_dac_buffer.reduce_size(mFactoryData.dac_cert.len);
@@ -273,8 +273,8 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetDeviceAttestationCert(Mutab
 template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductAttestationIntermediateCert(MutableByteSpan & out_pai_buffer)
 {
-    ReturnErrorCodeIf(out_pai_buffer.size() < mFactoryData.pai_cert.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-    ReturnErrorCodeIf(!mFactoryData.pai_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(out_pai_buffer.size() >= mFactoryData.pai_cert.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.pai_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     memcpy(out_pai_buffer.data(), mFactoryData.pai_cert.data, mFactoryData.pai_cert.len);
     out_pai_buffer.reduce_size(mFactoryData.pai_cert.len);
@@ -289,8 +289,8 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SignWithDeviceAttestationKey(c
     Crypto::P256Keypair keypair;
 
     VerifyOrReturnError(out_signature_buffer.size() >= signature.Capacity(), CHIP_ERROR_BUFFER_TOO_SMALL);
-    ReturnErrorCodeIf(!mFactoryData.dac_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-    ReturnErrorCodeIf(!mFactoryData.dac_privkey.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(mFactoryData.dac_cert.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(mFactoryData.dac_privkey.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // Extract public key from DAC cert.
     ByteSpan dacCertSpan{ reinterpret_cast<uint8_t *>(mFactoryData.dac_cert.data), mFactoryData.dac_cert.len };
@@ -344,7 +344,7 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::SetSetupDiscriminator(uint16_t
 template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pIterationCount(uint32_t & iterationCount)
 {
-    ReturnErrorCodeIf(mFactoryData.spake2_it == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(mFactoryData.spake2_it != 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
     iterationCount = mFactoryData.spake2_it;
 
     return CHIP_NO_ERROR;
@@ -356,14 +356,14 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pSalt(MutableByteSpan
     static constexpr size_t kSpake2pSalt_MaxBase64Len = BASE64_ENCODED_LEN(chip::Crypto::kSpake2p_Max_PBKDF_Salt_Length) + 1;
     char saltB64[kSpake2pSalt_MaxBase64Len] = { 0 };
 
-    ReturnErrorCodeIf(mFactoryData.spake2_salt.len > sizeof(saltB64), CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.spake2_salt.len <= sizeof(saltB64), CHIP_ERROR_BUFFER_TOO_SMALL);
     memcpy(saltB64, mFactoryData.spake2_salt.data, mFactoryData.spake2_salt.len);
 
     VerifyOrReturnError(chip::CanCastTo<uint32_t>(mFactoryData.spake2_salt.len), CHIP_ERROR_INTERNAL);
 
     size_t saltLen = chip::Base64Decode32(saltB64, static_cast<uint32_t>(mFactoryData.spake2_salt.len), reinterpret_cast<uint8_t *>(saltB64));
 
-    ReturnErrorCodeIf(mFactoryData.spake2_salt.len > saltBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.spake2_salt.len <= saltBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
     memcpy(saltBuf.data(), saltB64, mFactoryData.spake2_salt.len);
 
     saltBuf.reduce_size(saltLen);
@@ -379,14 +379,14 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pVerifier(MutableByte
 
     char verifierB64[kSpake2pSerializedVerifier_MaxBase64Len] = { 0 };
 
-    ReturnErrorCodeIf(mFactoryData.spake2_verifier.len > sizeof(verifierB64), CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(mFactoryData.spake2_verifier.len <= sizeof(verifierB64), CHIP_ERROR_BUFFER_TOO_SMALL);
     memcpy(verifierB64, mFactoryData.spake2_verifier.data, mFactoryData.spake2_verifier.len);
 
     VerifyOrReturnError(chip::CanCastTo<uint32_t>(mFactoryData.spake2_verifier.len), CHIP_ERROR_INTERNAL);
     verifierLen =
     chip::Base64Decode32(verifierB64, static_cast<uint32_t>(mFactoryData.spake2_verifier.len), reinterpret_cast<uint8_t *>(verifierB64));
 
-    ReturnErrorCodeIf(verifierLen > verifierBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
+    VerifyOrReturnError(verifierLen <= verifierBuf.size(), CHIP_ERROR_BUFFER_TOO_SMALL);
     memcpy(verifierBuf.data(), verifierB64, verifierLen);
     verifierBuf.reduce_size(verifierLen);
 
@@ -396,7 +396,7 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSpake2pVerifier(MutableByte
 template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSetupPasscode(uint32_t & setupPasscode)
 {
-    ReturnErrorCodeIf(mFactoryData.passcode == 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    VerifyOrReturnError(mFactoryData.passcode != 0, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
     setupPasscode = mFactoryData.passcode;
 
     return CHIP_NO_ERROR;
@@ -412,8 +412,8 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetVendorName(char * buf, size_t bufSize)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(bufSize < mFactoryData.vendor_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-    // ReturnErrorCodeIf(!mFactoryData.vendor_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(bufSize >= mFactoryData.vendor_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.vendor_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // memcpy(buf, mFactoryData.vendor_name.data, mFactoryData.vendor_name.len);
     // buf[mFactoryData.vendor_name.len] = 0;
@@ -439,8 +439,8 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetProductName(char * buf, size_t bufSize)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(bufSize < mFactoryData.product_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-    // ReturnErrorCodeIf(!mFactoryData.product_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(bufSize >= mFactoryData.product_name.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.product_name.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // memcpy(buf, mFactoryData.product_name.data, mFactoryData.product_name.len);
     // buf[mFactoryData.product_name.len] = 0;
@@ -490,20 +490,20 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSerialNumber(char * buf, size_t bufSize)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(bufSize < mFactoryData.sn.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-    // ReturnErrorCodeIf(!mFactoryData.sn.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(bufSize >= mFactoryData.sn.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.sn.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // memcpy(buf, mFactoryData.sn.data, mFactoryData.sn.len);
     // buf[mFactoryData.sn.len] = 0;
 
-    // memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
-    // buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
+    memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
+    buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
 
-    uint8_t temp[256];
+    // uint8_t temp[256];
 
-    flash_read_sec_register((uint32_t)temp, 0x1100);
-    sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x", 
-        temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
+    // flash_read_sec_register((uint32_t)temp, 0x1100);
+    // sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x", 
+    //     temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
 
     // err("serial number: %s\r\n", buf);
     return CHIP_NO_ERROR;
@@ -534,8 +534,8 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetHardwareVersionString(char * buf, size_t bufSize)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(bufSize < mFactoryData.hw_ver_str.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
-    // ReturnErrorCodeIf(!mFactoryData.hw_ver_str.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(bufSize >= mFactoryData.hw_ver_str.len + 1, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.hw_ver_str.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // memcpy(buf, mFactoryData.hw_ver_str.data, mFactoryData.hw_ver_str.len);
     // buf[mFactoryData.hw_ver_str.len] = 0;
@@ -548,8 +548,8 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetRotatingDeviceIdUniqueId(MutableByteSpan & uniqueIdSpan)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(uniqueIdSpan.size() < mFactoryData.rd_uid.len, CHIP_ERROR_BUFFER_TOO_SMALL);
-    // ReturnErrorCodeIf(!mFactoryData.rd_uid.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(uniqueIdSpan.size() >= mFactoryData.rd_uid.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.rd_uid.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
 
     // memcpy(uniqueIdSpan.data(), mFactoryData.rd_uid.data, mFactoryData.rd_uid.len);
 
@@ -560,8 +560,8 @@ template <class FlashFactoryData>
 CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetEnableKey(MutableByteSpan & enableKey)
 {
     // err("enter %s\r\n", __FUNCTION__);
-    // ReturnErrorCodeIf(!mFactoryData.enable_key.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
-    // ReturnErrorCodeIf(enableKey.size() < mFactoryData.enable_key.len, CHIP_ERROR_BUFFER_TOO_SMALL);
+    // VerifyOrReturnError(mFactoryData.enable_key.data, CHIP_ERROR_PERSISTED_STORAGE_VALUE_NOT_FOUND);
+    // VerifyOrReturnError(enableKey.size() >= mFactoryData.enable_key.len, CHIP_ERROR_BUFFER_TOO_SMALL);
 
     // memcpy(enableKey.data(), mFactoryData.enable_key.data, mFactoryData.enable_key.len);
 

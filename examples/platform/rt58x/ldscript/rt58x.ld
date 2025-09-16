@@ -10,21 +10,21 @@
 /* Library configurations */
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
-__STACK_SIZE = DEFINED(__STACK_SIZE) ? __STACK_SIZE : 0x200;
-__HEAP_SIZE = DEFINED(__HEAP_SIZE) ? __HEAP_SIZE : 31K;
+
+__STACK_SIZE = DEFINED(__STACK_SIZE) ? __STACK_SIZE : 2K;
+__CACHE_SIZE = DEFINED(__CACHE_SIZE) ? __CACHE_SIZE : 4K;
 
 MEMORY
 {
-	/* LMA regions */
+	/* LMA regions MA_BOOT	(rx) : ORIGIN = 0x00000000, LENGTH = 32K*/
 	LMA_BOOT	(rx) : ORIGIN = 0x00000000, LENGTH = 32K
 	LMA_CORE	(rx) : ORIGIN = 0x00008000, LENGTH = 928K
-	LMA_USER	(rx) : ORIGIN = 0x000F0000, LENGTH = 32K
-	LMA_MP		(rx) : ORIGIN = 0x000F0800, LENGTH = 32K
+	LMA_USER	(rx) : ORIGIN = 0x001F0000, LENGTH = 32K
+	LMA_MP		(rx) : ORIGIN = 0x001F0800, LENGTH = 32K
 
 	/* VMA regions */
-	VMA_DATA	(rwx) : ORIGIN = 0x20000000, LENGTH = 144K - __HEAP_SIZE - __STACK_SIZE
-	VMA_HEAP	(rwx) : ORIGIN = 0x20024000 - __STACK_SIZE - __HEAP_SIZE, LENGTH = __HEAP_SIZE
-	VMA_STACK	(rwx) : ORIGIN = 0x20024000 - __STACK_SIZE, LENGTH = __STACK_SIZE
+	VMA_DATA	(rwx) : ORIGIN = 0x20000000, LENGTH = 144K - __STACK_SIZE
+	VMA_STACK	(rwx) : ORIGIN = ORIGIN(VMA_DATA) + LENGTH(VMA_DATA), LENGTH = __STACK_SIZE
 }
 
 /* Linker script to place sections and symbol values. Should be used together
@@ -84,6 +84,7 @@ SECTIONS
 		KEEP(*(.eh_frame*))
 	} > LMA_CORE
 
+
 	.ARM.extab :
 	{
 		*(.ARM.extab* .gnu.linkonce.armextab.*)
@@ -95,6 +96,34 @@ SECTIONS
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
 	} > LMA_CORE
 	__exidx_end = .;
+
+	.cli_cmd_pool :
+	{
+		__cli_cmd_pool_start__ = ALIGN(4);
+		KEEP(*(cli_cmd_pool*))
+		__cli_cmd_pool_end__ = ALIGN(4);
+		/* static log code1 */
+		. = ALIGN(4);
+		_rf_static_logcomponent_code_start = .;
+		KEEP(SORT(*)(.static_logcomponent_code*))
+		*(.static_logcomponent_code*)
+		_rf_static_logcomponent_code_end = .;
+
+		/* static log code2 */
+		. = ALIGN(4);
+		_rf_static_logfile_code_start = .;
+		KEEP(SORT(*)(.static_logfile_code*))
+		*(.static_logfile_code*)
+		_rf_static_logfile_code_end = .;
+
+		/* static log code3 */
+		. = ALIGN(4);
+		_rf_static_logpri_code_start = .;
+		KEEP(SORT(*)(.static_logpri_code*))
+		*(.static_logpri_code*)
+		_rf_static_logpri_code_end = .;
+
+	} > LMA_CORE
 
 	__etext = .;
 
@@ -143,15 +172,30 @@ SECTIONS
 		*(COMMON)
 		. = ALIGN(4);
 		__bss_end__ = .;
+		__end__ = .;
+		end = __end__;		
 	} > VMA_DATA
 
-	.heap (COPY) :
-	{
-		__end__ = .;
-		end = __end__;
-		KEEP(*(reloc_heap*))
-		__heap_end__ = .;
-	} > VMA_HEAP
+	/* first Heap region： RAM end */
+	. = ALIGN(8);
+	PROVIDE(_heap_start = .);
+	. = ORIGIN(VMA_DATA) + LENGTH(VMA_DATA);
+	PROVIDE(_heap_end = .);
+	PROVIDE(_heap_size = _heap_end - _heap_start);
+
+	/* seconde Heap region */
+	PROVIDE(_heap2_start = 0);
+	PROVIDE(_heap2_end   = 0);
+	PROVIDE(_heap2_size  = 0);
+
+	/* log */
+	PROVIDE( _ld_rf_static_logcomponent_code_start = _rf_static_logcomponent_code_start );
+	PROVIDE( _ld_rf_static_logcomponent_code_end   = _rf_static_logcomponent_code_end );
+	PROVIDE( _ld_rf_static_logfile_code_start = _rf_static_logfile_code_start );
+	PROVIDE( _ld_rf_static_logfile_code_end   = _rf_static_logfile_code_end );
+	PROVIDE( _ld_rf_static_logpri_code_start = _rf_static_logpri_code_start );
+	PROVIDE( _ld_rf_static_logpri_code_end   = _rf_static_logpri_code_end );
+
 
 	/* .stack_dummy section doesn't contains any symbols. It is only
 	 * used for linker to calculate size of stack sections, and assign

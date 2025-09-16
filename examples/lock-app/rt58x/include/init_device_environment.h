@@ -18,7 +18,9 @@
 /*******************************************************************************/
 #pragma once
 
-#include "util_log.h"
+#include "log.h"
+#include "hosal_gpio.h"
+#include "hosal_sysctrl.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,7 +18,7 @@
 
 /**
  *    @file
- *          Platform-specific key value storage implementation for EFR32.
+ *          Platform-specific key value storage implementation for RT58x.
  *
  */
 

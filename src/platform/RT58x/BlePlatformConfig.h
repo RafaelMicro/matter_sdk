@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Platform-specific configuration overrides for the CHIP BLE
- *          Layer on EFR32 platforms using the Silicon Labs SDK.
+ *          Layer on RT58x platforms using the Rafael SDK.
  *
  */
 

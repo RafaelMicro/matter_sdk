@@ -133,14 +133,14 @@ void SmokeManager::ToggleSmokeState(AlarmStateEnum  AlarmState)
 }
 void SmokeManager::AlarmLedTimerHandler(TimerHandle_t xTimer)
 {
-    bsp_led_toggle(BSP_LED_1);
+    hosal_gpio_pin_toggle(21);
 }
 void SmokeManager::HandleSmokeState(uint8_t SmokeAlarmState)
 {
     if(SmokeAlarmState == 0 && sLedTimer && xTimerIsTimerActive(sLedTimer))
     {
         xTimerStop(sLedTimer, 0);
-        bsp_led_Off(BSP_LED_1);
+        hosal_gpio_pin_set(21);
     }
     else if(sLedTimer && !xTimerIsTimerActive(sLedTimer))
     {

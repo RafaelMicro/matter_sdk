@@ -39,7 +39,7 @@ public:
 
 private:
     friend HumidityManager & HumiMgr();
-
+    static void HumiTimerEventHandler(TimerHandle_t xTimer);
     static HumidityManager sHumiMgr;
 };
 

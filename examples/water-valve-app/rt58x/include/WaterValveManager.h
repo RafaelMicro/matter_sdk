@@ -31,7 +31,7 @@
 #include <app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-delegate.h>
 #include <app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-server.h>
 
-#include "init_rt58xPlatform.h"
+#include "init_rt58x_platform.h"
 #include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 

@@ -23,7 +23,7 @@
 
 // ---- Lighting Example App Config ----
 
-#define APP_TASK_NAME "Lit"
+#define APP_TASK_NAME "APP"
 
 // Time it takes in ms for the simulated actuator to move from one
 // state to another.

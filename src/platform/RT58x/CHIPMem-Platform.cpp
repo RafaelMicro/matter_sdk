@@ -44,9 +44,8 @@
 //#include <lib/core/CHIPConfig.h>
 #include <lib/support/CHIPMem.h>
 
-#include "heap_4_rt58x.h"
+#include "heap_5_rt58x.h"
 #include "task.h"
-#include "sys_arch.h"
 
 #include <atomic>
 #include <cstdio>
@@ -109,7 +108,7 @@ void * MemoryAlloc(size_t size)
 {
     void * ptr;
     VERIFY_INITIALIZED();
-    ptr = sys_malloc(size);
+    ptr = pvPortMalloc(size);
     trackAlloc(ptr, size);
     return ptr;
 }
@@ -118,7 +117,7 @@ void * MemoryAlloc(size_t size, bool isLongTermAlloc)
 {
     void * ptr;
     VERIFY_INITIALIZED();
-    ptr = sys_malloc(size);
+    ptr = pvPortMalloc(size);
     trackAlloc(ptr, size);
     return ptr;
 }
@@ -143,7 +142,7 @@ void MemoryFree(void * p)
 {
     VERIFY_INITIALIZED();
     trackFree(p, 0);
-    sys_free(p);
+    vPortFree(p);
 }
 
 bool MemoryInternalCheckPointer(const void * p, size_t min_size)

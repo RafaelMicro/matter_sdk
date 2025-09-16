@@ -56,27 +56,20 @@ static_library("openthread-rt58x-platform") {
   include_dirs = [ "${chip_root}/examples/platform/rt58x/project_include/",
                    "${openthread_platform_root}/include",]
 
-  if (use_static_sdk_lib) {
-    libs = [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58xplatform.a" ]
-  } else {
-    output_name = "libotrt58xplatform"
-    output_dir = "${root_out_dir}/lib"
-
-    sources = [
-      "system.c",
-      "${openthread_platform_root}/src/ot_alarm.c",
-      "${openthread_platform_root}/src/ot_crypto.c",
-      "${openthread_platform_root}/src/ot_entropy.c",
-      "${openthread_platform_root}/src/ot_logging.c",
-      "${openthread_platform_root}/src/ot_memory.c",
-      "${openthread_platform_root}/src/ot_misc.c",
-      "${openthread_platform_root}/src/ot_radio.c",
-      "${openthread_platform_root}/src/ot_settings.c",
-      "${openthread_platform_root}/utils/mac_frame.cpp",
-      "${openthread_platform_root}/utils/mac_frame_gen.c",
-      "${openthread_platform_root}/utils/soft_source_match_table.c",
-    ]
-  }
+  sources = [
+    "system.c",
+    "${openthread_platform_root}/src/ot_alarm.c",
+    "${openthread_platform_root}/src/ot_crypto.c",
+    "${openthread_platform_root}/src/ot_entropy.c",
+    "${openthread_platform_root}/src/ot_logging.c",
+    "${openthread_platform_root}/src/ot_memory.c",
+    "${openthread_platform_root}/src/ot_misc.c",
+    "${openthread_platform_root}/src/ot_radio.c",
+    "${openthread_platform_root}/src/ot_settings.c",
+    "${openthread_platform_root}/utils/mac_frame.cpp",
+    "${openthread_platform_root}/utils/mac_frame_gen.c",
+    "${openthread_platform_root}/utils/soft_source_match_table.c",
+  ]
 }
 
 static_library("openthread-rt58x-root") {
@@ -93,13 +86,6 @@ static_library("openthread-rt58x-root") {
   } else {
     public_configs = [ "${openthread_rt58x_root}:openthread_mtd_config" ]
   }
-
-  if (use_static_sdk_lib) {
-    libs = [ "${chip_root}/third_party/rafael/sdk/Library/libotrt58x.a" ]
-  } else {
-    output_name = "libotrt58x"
-    output_dir = "${root_out_dir}/lib"
-
     sources = [
       "${openthread_rt58x_root}/examples/apps/cli/cli_uart.cpp",
       "${openthread_rt58x_root}/src/cli/cli.cpp",
@@ -147,5 +133,4 @@ static_library("openthread-rt58x-root") {
       "${openthread_rt58x_root}/src/cli/cli_utils.hpp",
       "${openthread_rt58x_root}/src/cli/x509_cert_key.hpp",
     ]
-  }
 }

@@ -136,7 +136,7 @@
  * Enables the use of a hard-coded default serial number if none
  * is found in Chip NV storage.
  */
-#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER "TEST_SN"
+#define CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER "RAFAEL_TEST_SN"
 
 /**
  * CHIP_CONFIG_EVENT_LOGGING_UTC_TIMESTAMPS

@@ -26,15 +26,15 @@ extern "C" {
 #include <string.h>
 
 #include "init_device_environment.h"
-#include "cm3_mcu.h"
+#include "mcu.h"
 
 
 static void init_pin_mux(void)
 {
-    gpio_cfg_output(20);
-    gpio_cfg_output(21);
-    gpio_pin_set(20);
-    gpio_pin_set(21);
+    hosal_gpio_cfg_output(20);
+    hosal_gpio_cfg_output(21);
+    hosal_gpio_pin_set(20);
+    hosal_gpio_pin_set(21);
     return;
 }
 

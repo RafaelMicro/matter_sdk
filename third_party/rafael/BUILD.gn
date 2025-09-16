@@ -24,8 +24,7 @@ import("${mbedtls_root}/mbedtls.gni")
 declare_args() {
   # Build target to use for rt58x SDK. Use this to set global SDK defines.
   rt58x_sdk_target = ""
-  rf_ot_rt58x_root = "${chip_root}/third_party/openthread/ot-rt58x"
-  rf_openthread_root = "${chip_root}/third_party/openthread/ot-rt58x/openthread"
+  rf_openthread_root = "${chip_root}/third_party/openthread/openthread-rafael/openthread"
   use_thread_coap_lib = false
 }
 
@@ -41,7 +40,7 @@ source_set("syscalls_stub") {
 
 config("mbedtls_rt58x_config") {
   defines = [
-    "MBEDTLS_CONFIG_FILE=<third_party/openthread/ot-rt58x/openthread/third_party/mbedtls/mbedtls-config.h>",
+    "MBEDTLS_CONFIG_FILE=<third_party/openthread/openthread-rafael/openthread/third_party/mbedtls/mbedtls-config.h>",
     "MBEDTLS_USER_CONFIG_FILE=<src/platform/RT58x/rt58x-chip-mbedtls-config.h>",
   ]
 

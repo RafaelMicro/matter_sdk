@@ -24,7 +24,7 @@
 #include <platform/ConfigurationManager.h>
 #include <platform/RT58x/RT58xConfig.h>
 
-#include "cm3_mcu.h"
+#include "mcu.h"
 
 namespace chip {
 namespace DeviceLayer {
@@ -68,14 +68,7 @@ exit:
 
 CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
 {
-    CHIP_ERROR err;
-
-    err = RT58xConfig::ReadConfigValue(RT58xConfig::kConfigKey_SoftwareVersion, softwareVer);
-    if (err != CHIP_NO_ERROR)
-    {
-        softwareVer = CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION;
-        StoreSoftwareVersion(softwareVer);
-    }
+    softwareVer = CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION;
     ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
 
     return CHIP_NO_ERROR;
@@ -207,19 +200,10 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
         ChipLogError(DeviceLayer, "FactoryResetConfig() failed: %s", chip::ErrorStr(err));
     }
 
-    ConfigurationMgr().StoreRebootCount(reboot_cnt);
-
-#if CHIP_DEVICE_CONFIG_ENABLE_THREAD
-
-    ChipLogProgress(DeviceLayer, "Clearing Thread provision");
-    ThreadStackMgr().ErasePersistentInfo();
-
-#endif // CHIP_DEVICE_CONFIG_ENABLE_THREAD
-
     // Restart the system.
     ChipLogProgress(DeviceLayer, "System restarting");
     vTaskDelay(300);
-    Sys_Software_Reset();
+    sys_software_reset();
 }
 
 ConfigurationManager & ConfigurationMgrImpl()

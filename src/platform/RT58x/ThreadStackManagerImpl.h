@@ -19,7 +19,7 @@
 /**
  *    @file
  *          Provides an implementation of the ThreadStackManager object
- *          for EFR32 platforms using the Silicon Labs SDK and the OpenThread
+ *          for RT58x platforms using the Rafael SDK and the OpenThread
  *          stack.
  */
 
@@ -39,12 +39,12 @@ namespace DeviceLayer {
 class ThreadStackManager;
 class ThreadStackManagerImpl;
 namespace Internal {
-extern int GetEntropy_EFR32(uint8_t * buf, size_t bufSize);
+extern int GetEntropy_RT58x(uint8_t * buf, size_t bufSize);
 }
 
 /**
- * Concrete implementation of the ThreadStackManager singleton object for EFR32 platforms
- * using the Silicon Labs SDK and the OpenThread stack.
+ * Concrete implementation of the ThreadStackManager singleton object for RT58x platforms
+ * using the Rafael SDK and the OpenThread stack.
  */
 class ThreadStackManagerImpl final : public ThreadStackManager,
                                      public Internal::GenericThreadStackManagerImpl_OpenThread<ThreadStackManagerImpl>,
@@ -93,7 +93,7 @@ private:
 
     friend ThreadStackManager & ::chip::DeviceLayer::ThreadStackMgr(void);
     friend ThreadStackManagerImpl & ::chip::DeviceLayer::ThreadStackMgrImpl(void);
-    friend int Internal::GetEntropy_EFR32(uint8_t * buf, size_t bufSize);
+    friend int Internal::GetEntropy_RT58x(uint8_t * buf, size_t bufSize);
 
     static ThreadStackManagerImpl sInstance;
 
@@ -119,7 +119,7 @@ inline ThreadStackManager & ThreadStackMgr(void)
  * Returns the platform-specific implementation of the ThreadStackManager singleton object.
  *
  * Chip applications can use this to gain access to features of the ThreadStackManager
- * that are specific to EFR32 platforms.
+ * that are specific to RT58x platforms.
  */
 inline ThreadStackManagerImpl & ThreadStackMgrImpl(void)
 {

@@ -11,8 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import("rt58x_sdk.gni")
+assert((rafael_board == "RT583") || (rafael_board == "RT584H") || rafael_board == "RT584L")
 
-arm_arch = "armv7-m"
-arm_abi = "aapcs"
-arm_cpu = "cortex-m3"
-arm_float_abi = "soft"
+if (rafael_board == "RT583") {
+    arm_arch = "armv7-m"
+    arm_abi = "aapcs"
+    arm_cpu = "cortex-m3"
+    arm_float_abi = "soft"
+}
+else {
+    arm_arch = "armv8-m.main+dsp"
+    arm_abi = "aapcs"
+    arm_cpu = "cortex-m33"
+    arm_fpu = "fpv4-sp-d16"
+    arm_float_abi = "soft"
+    arm_use_thumb = true
+}

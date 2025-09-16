@@ -25,7 +25,6 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
-#include "semphr.h"
 
 /**********************************************************
  * Defines and Constants
@@ -36,21 +35,55 @@ using namespace ::chip::DeviceLayer;
 
 constexpr EndpointId kHumidityMeasurementEndpoint = 1;
 
-//namespace ThermAttr = chip::app::Clusters::Thermostat::Attributes;
 namespace HumidityAttr = chip::app::Clusters::RelativeHumidityMeasurement::Attributes;
+
 /**********************************************************
  * Variable declarations
  *********************************************************/
 
+TimerHandle_t sHumiTimer;
+StaticTimer_t sStaticHumiTimerStruct;
+
 HumidityManager HumidityManager::sHumiMgr;
+
+static int16_t mSimulatedHumi[]               = { 5500, 6800, 7200, 6500, 5200, 4000, 5000, 3900, 2700, 4200 };
 
 CHIP_ERROR HumidityManager::Init()
 {
+    /* Simulate Humidity changes every minutes*/
+    sHumiTimer = xTimerCreateStatic("HumiTmr", pdMS_TO_TICKS(60000), true, nullptr, HumiTimerEventHandler,
+                                      &sStaticHumiTimerStruct);
+
+    if (sHumiTimer == NULL)
+    {
+        ChipLogProgress(NotSpecified, "sHumiTimer timer create failed");
+        return APP_ERROR_CREATE_TIMER_FAILED;
+    }
+    xTimerStart(sHumiTimer, 10);
+
+    ChipLogProgress(NotSpecified, "HumiManager::Init");
+
     return CHIP_NO_ERROR;
 }
-
 void HumidityManager::AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size)
 {
-
+    
 }
+void HumidityManager::HumiTimerEventHandler(TimerHandle_t xTimer)
+{
+    int16_t humidity            = 0;
+    static uint8_t simulatedIndex = 0;
+    if (simulatedIndex >= 9)
+    {
+        simulatedIndex = 0;
+    }
+    humidity = mSimulatedHumi[simulatedIndex];
+    ChipLogProgress(NotSpecified, "Humidity is : %d", humidity);
 
+    
+    PlatformMgr().LockChipStack();
+    // The HumiMagager shouldn't be aware of the Endpoint ID TODO Fix this.
+    // TODO Per Spec we should also apply the Offset stored in the same cluster before saving the temp
+    HumidityAttr::MeasuredValue::Set(kHumidityMeasurementEndpoint, humidity);
+    PlatformMgr().UnlockChipStack();
+}

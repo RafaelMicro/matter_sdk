@@ -773,18 +773,9 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
         break;
     }
 
-    if(host_id == 0)
-    {
-        ble_info_link0_t *p_profile_info;
-        p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-        param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-    }
-    else
-    {
-        ble_info_link1_t *p_profile_info;
-        p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
-        param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-    }
+    ble_info_link1_t *p_profile_info;
+    p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
+    param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
     // set parameters
     param.host_id = host_id;
     param.length = ind_len;
@@ -873,18 +864,9 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
     if (fota_notify.notify_code != OTA_DATA_NOTIFY_NONE)/*Check if notification needs to send*/
     {
         ble_gatt_data_param_t param;
-        if(host_id == 0)
-        {
-            ble_info_link0_t *p_profile_info;
-            p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-            param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-        }
-        else
-        {
-            ble_info_link1_t *p_profile_info;
-            p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
-            param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-        }
+        ble_info_link1_t *p_profile_info;
+        p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
+        param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
 
         // set parameters
         param.host_id = host_id;
@@ -909,18 +891,9 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
         if (fota_data_param.expectaddr >= (fota_data_param.notify_interval + fota_data_param.last_notify_addr))
         {
             ble_gatt_data_param_t param;
-            if(host_id == 0)
-            {
-                ble_info_link0_t *p_profile_info;
-                p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-                param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-            }
-            else if(host_id == 1)
-            {
-                ble_info_link1_t *p_profile_info;
-                p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
-                param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
-            }
+            ble_info_link1_t *p_profile_info;
+            p_profile_info = (ble_info_link1_t *)ble_app_link_info[host_id].profile_info;
+            param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
 
             fota_data_param.last_notify_addr = fota_data_param.expectaddr;
 

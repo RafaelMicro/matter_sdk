@@ -135,7 +135,6 @@ private:
     static void ble_evt_indication_cb(uint32_t data_len);
     static void ble_evt_handler(void *p_param);
     static void ble_svcs_matter_evt_handler(void *p_matter_evt_param);
-    static void ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param);
 
     static int server_profile_init(uint8_t host_id);
     static int ble_init(void);
@@ -149,8 +148,6 @@ private:
     void CancelBleConnTimeoutTimer(void);
     void CancelBleAdvTimeoutTimer(void);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
-    static void fota_timer_handler(TimerHandle_t timer);
-    static bool fota_sw_timer_start(void);
 #if RAF_ENABLE_MULTI_CONTROL
     CHIP_ERROR ConfigureAdvertisingData(uint8_t host_id);
     static void BleLinkTimerHandler(TimerHandle_t xTimer);
@@ -159,6 +156,9 @@ private:
     static void ble_svcs_trsps_evt_handler(void *p_matter_evt_param);
     static int server_profile_init_link1(uint8_t host_id);
     void HandleAppToBleEvent(const ChipDeviceEvent * event);
+    static void ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param);
+    static void fota_timer_handler(TimerHandle_t timer);
+    static bool fota_sw_timer_start(void);
 #else
 //    CHIP_ERROR ConfigureAdvertising(void);
 //    CHIP_ERROR StartAdvertising(void);

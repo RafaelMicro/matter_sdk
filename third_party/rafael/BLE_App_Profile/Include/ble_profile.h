@@ -40,7 +40,7 @@ extern "C" {
 #define MAX_NUM_CONN_TRSPS     1
 
 /** Define the maximum number of BLE FOTAS link. */
-#define MAX_NUM_CONN_FOTAS     2
+#define MAX_NUM_CONN_FOTAS     1
 /**************************************************************************
  * Profile Application LINK Public Definitions and Functions
  **************************************************************************/
@@ -52,7 +52,6 @@ typedef struct ble_info_link0_s
     ble_svcs_gatts_info_t     svcs_info_gatts;     /**< GATTS information (server). */
     ble_svcs_dis_info_t       svcs_info_dis;       /**< DIS information (server). */
     ble_svcs_matter_info_t    svcs_info_matter;    /**< Matter information (server). */
-    ble_svcs_fotas_info_t     svcs_info_fotas;    /**< FOTA information (server). */
 } ble_info_link0_t;
 
 typedef struct ble_info_link1_s

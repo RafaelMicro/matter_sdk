@@ -119,7 +119,6 @@ static ble_gap_addr_t  DEVICE_ADDR = {.addr_type = RANDOM_STATIC_ADDR,
 
 
 static TaskHandle_t BluetoothEventTaskHandle;
-static TimerHandle_t g_fota_timer;
 
 static xQueueHandle g_app_msg_q;
 static SemaphoreHandle_t semaphore_cb;
@@ -173,7 +172,6 @@ typedef enum
     APP_REQUEST_IDLE,             /**< Application request event: idle.*/
     APP_REQUEST_ADV_START,        /**< Application request event: advertising start.*/
     APP_REQUEST_TRSPS_DATA_SEND,  /**< Application request event: TRSP server data send.*/
-    APP_REQUEST_FOTA_TIMER_EXPIRY /**< Application request event: FOTA timer expired.*/
 } app_request_t;
 
 typedef enum
@@ -459,7 +457,6 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         }
         else
         {
-            ble_fota_disconnect();
             ChipLogProgress(DeviceLayer, "Disconnect, ID:%d, Reason:0x%02x", p_disconn_param->host_id, p_disconn_param->reason);
             isBleConnected = false;
             if (xTimerIsTimerActive(sbleConnTimeoutTimer))
@@ -625,49 +622,6 @@ void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
         }
     }
 }
-void BLEManagerImpl::fota_timer_handler(TimerHandle_t timer) {
-    /* Optionally do something if the pxTimer parameter is NULL. */
-    configASSERT( timer );
-
-    // fota
-    if (ble_app_link_info[APP_TRSP_P_HOST_ID].state == STATE_CONNECTED)
-    {
-        // FOTA timer tick and check if timer is expired
-        if (ble_fota_timertick() == EXPIRED)
-        {
-            BLEMgrImpl().app_request_set(APP_TRSP_P_HOST_ID, APP_REQUEST_FOTA_TIMER_EXPIRY, false);
-        }
-    }
-}
-bool BLEManagerImpl::fota_sw_timer_start(void) {
-    if (xTimerIsTimerActive(g_fota_timer) == pdFALSE) {
-        if (xTimerStart(g_fota_timer, 0) != pdTRUE) {
-            // The timer could not be set into the Active state.
-            return false;
-        }
-    }
-    return true;
-}
-void BLEManagerImpl::ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param)
-{
-    if (p_param->gatt_role == BLE_GATT_ROLE_SERVER) {
-        /* ----------------- Handle event from client ----------------- */
-        BLEMgrImpl().CancelBleConnTimeoutTimer();
-        switch (p_param->event) {
-            case BLESERVICE_FOTAS_DATA_WRITE_WITHOUT_RSP_EVENT: {
-                ble_fota_data(p_param->host_id, p_param->length, p_param->data);
-                fota_sw_timer_start();
-            } break;
-
-            case BLESERVICE_FOTAS_COMMAND_WRITE_EVENT: {
-                ble_fota_cmd(p_param->host_id, p_param->length, p_param->data);
-                fota_sw_timer_start();
-            }
-
-            default: break;
-        }
-    }
-}
 
 int BLEManagerImpl::server_profile_init(uint8_t host_id)
 {
@@ -710,13 +664,6 @@ int BLEManagerImpl::server_profile_init(uint8_t host_id)
             break;
         }
         status = ble_svcs_matter_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_matter), (ble_svcs_evt_matter_handler_t)ble_svcs_matter_evt_handler);
-        if (status != BLE_ERR_OK)
-        {
-            break;
-        }
-        // FOTA Related
-        // -------------------------------------
-        status = ble_svcs_fotas_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_fotas), (ble_svcs_evt_fotas_handler_t)ble_svcs_fota_evt_handler);
         if (status != BLE_ERR_OK)
         {
             break;
@@ -875,8 +822,6 @@ int BLEManagerImpl::ble_init(void)
         {
             break;
         }
-        ble_fota_fw_buffer_flash_check();
-        ble_fota_init();
     } while (0);
 
     return status;
@@ -894,10 +839,6 @@ void BLEManagerImpl::app_evt_handler(void *p_param)
 
     switch (p_app_param->app_req)
     {
-    case APP_REQUEST_FOTA_TIMER_EXPIRY:
-        // handle FOTA timer expired event
-        ble_fota_timerexpiry_handler(host_id);
-        break;
     default:
         break;
     }
@@ -958,9 +899,6 @@ CHIP_ERROR BLEManagerImpl::_Init()
                                         (void *) this,      
                                         BleConnTimeoutHandler
     );
-    // application SW timer, tick = 1s
-    g_fota_timer = xTimerCreate("FOTA_Timer", pdMS_TO_TICKS(1000), pdTRUE,
-                                (void*)0, fota_timer_handler);
     mFlags.Set(Flags::kRTBLEStackInitialized);
     mFlags.Set(Flags::kFastAdvertisingEnabled);
     PlatformMgr().ScheduleWork(DriveBLEState, 0);

@@ -807,11 +807,11 @@ int BLEManagerImpl::server_profile_init(uint8_t host_id)
         }
         // FOTA Related
         // -------------------------------------
-        status = ble_svcs_fotas_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_fotas), (ble_svcs_evt_fotas_handler_t)ble_svcs_fota_evt_handler);
-        if (status != BLE_ERR_OK)
-        {
-            break;
-        }
+        // status = ble_svcs_fotas_init(host_id, BLE_GATT_ROLE_SERVER, &(p_profile_info->svcs_info_fotas), (ble_svcs_evt_fotas_handler_t)ble_svcs_fota_evt_handler);
+        // if (status != BLE_ERR_OK)
+        // {
+        //     break;
+        // }
 
     }while(0);
 

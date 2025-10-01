@@ -62,16 +62,22 @@ void ContactManager::AttributeChangeHandler(EndpointId endpointId, AttributeId a
 CHIP_ERROR ContactManager::ToggleStateValue()
 {
     if(mStateValue == true)
+    {
       mStateValue = false;
+      ChipLogProgress(NotSpecified, "Not contact");
+      hosal_gpio_pin_clear(21);
+    }
     else
+    {
       mStateValue = true;
+      ChipLogProgress(NotSpecified, "Contact");
+      hosal_gpio_pin_set(21);
+    }
 
     PlatformMgr().LockChipStack();
     ContactAttr::StateValue::Set(kContactEndpoint, mStateValue);
     PlatformMgr().UnlockChipStack();
 
-    ChipLogProgress(NotSpecified, "contact sensor status : %d", mStateValue);
 
     return CHIP_NO_ERROR;
 }
-

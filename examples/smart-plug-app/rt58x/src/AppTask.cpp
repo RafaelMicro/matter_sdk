@@ -114,22 +114,22 @@ void IdentifyToggleOnOff(bool onoff)
     //turn on/off led indicator
     if(onoff)
     {
-        hosal_gpio_pin_clear(21);
+        hosal_gpio_pin_clear(2201);
     }
     else
     {
-        hosal_gpio_pin_set(21);
+        hosal_gpio_pin_set(20);
     }
 }
 void IdentifyChannelMinLevel(void)
 {
-        hosal_gpio_pin_set(21);
+    hosal_gpio_pin_set(20);
 }
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
     ChipLogProgress(Zcl, "Trigger Identify Complete");
     sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
-    hosal_gpio_pin_set(21);
+    hosal_gpio_pin_set(20);
 }
 
 void OnTriggerIdentifyEffectBlink(chip::System::Layer * systemLayer, void * appState)
@@ -319,6 +319,7 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
     {
         identifyState = 1;
         identify_onoff = 0;
+        ChipLogProgress(NotSpecified, "Identify Start");
     }
 
     else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
@@ -331,7 +332,7 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
     {
         identifyState = 0;
         IdentifyToggleOnOff(0);
-        ChipLogProgress(NotSpecified, "identify stop");
+        ChipLogProgress(NotSpecified, "Identify Stop");
     }
 }
 

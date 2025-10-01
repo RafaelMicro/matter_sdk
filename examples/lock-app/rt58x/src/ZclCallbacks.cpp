@@ -93,7 +93,7 @@ bool emberAfPluginDoorLockOnDoorLockCommand(chip::EndpointId endpointId, const N
 
     if (BoltLockMgr().ValidatePIN(pinCode, err))
     {
-        returnValue = BoltLockMgr().InitiateAction(0, BoltLockManager::LOCK_ACTION);
+        returnValue = (DoorLock::Attributes::LockState::Set(1,DlLockState::kLocked) == Status::Success) ? 1 : 0;
     }
 
     return returnValue;
@@ -107,7 +107,7 @@ bool emberAfPluginDoorLockOnDoorUnlockCommand(chip::EndpointId endpointId, const
 
     if (BoltLockMgr().ValidatePIN(pinCode, err))
     {
-        returnValue = BoltLockMgr().InitiateAction(0, BoltLockManager::UNLOCK_ACTION);
+        returnValue =  (DoorLock::Attributes::LockState::Set(1,DlLockState::kUnlocked) == Status::Success) ? 1 : 0;
     }
 
     return returnValue;

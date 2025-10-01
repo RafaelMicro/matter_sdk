@@ -35,7 +35,7 @@ class TemperatureManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
+    static void TempTimerEventHandler(TimerHandle_t xTimer);
 
 private:
     friend TemperatureManager & TempMgr();

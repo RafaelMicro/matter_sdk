@@ -43,8 +43,4 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     {
         GetAppTask().PostAppIdentify();
     }
-    else if (clusterId == TemperatureMeasurement::Id)
-    {
-        TempMgr().AttributeChangeHandler(attributePath.mEndpointId, attributeId, value, size);
-    }
 }

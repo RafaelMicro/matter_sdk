@@ -339,6 +339,7 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
     {
         identifyState = 1;
         identify_onoff = 0;
+        ChipLogProgress(NotSpecified, "Identify Start");
     }
 
     else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
@@ -350,8 +351,8 @@ void AppTask::IdentifyHandleOp(AppEvent * aEvent)
     else if (aEvent->Type == AppEvent::kEventType_Identify_Stop)
     {
         identifyState = 0;
-        IdentifyToggleOnOff(0);
-        ChipLogProgress(NotSpecified, "identify stop");
+        IdentifyToggleOnOff(LightMgr().IsTurnedOn());
+        ChipLogProgress(NotSpecified, "Identify Stop");
     }
 }
 

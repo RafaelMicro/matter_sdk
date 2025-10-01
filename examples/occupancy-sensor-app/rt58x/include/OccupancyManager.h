@@ -42,7 +42,7 @@ public:
 private:
     friend OccupancyManager & OccuMgr();
 
-    int16_t mOccupancy;
+    uint8_t mOccupancy;
     int16_t mOccupancySensorType;
     int16_t mOccupancySensorTypeBitmap;
 

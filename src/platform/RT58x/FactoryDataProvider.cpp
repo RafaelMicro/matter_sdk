@@ -28,9 +28,10 @@
 #include <lib/support/Base64.h>
 
 // #include <logging/log.h>
-// #include "log.h"
+#include "log.h"
 #include "FactoryDataParser.h"
 #include "mcu.h"
+#include "flashctl.h"
 
 namespace chip {
 namespace {
@@ -496,16 +497,14 @@ CHIP_ERROR FactoryDataProvider<FlashFactoryData>::GetSerialNumber(char * buf, si
     // memcpy(buf, mFactoryData.sn.data, mFactoryData.sn.len);
     // buf[mFactoryData.sn.len] = 0;
 
-    memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1);
-    buf[strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER) + 1] = 0;
+    uint8_t temp[8];
 
-    // uint8_t temp[256];
+    flash_get_unique_id((uint32_t)temp, 8);
+    //memcpy(buf, CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER, strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER));
+    //memcpy(buf + strlen(CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER), &temp[12], 4);
+    sprintf(buf, "%s_%02x%02x%02x%02x", CHIP_DEVICE_CONFIG_TEST_SERIAL_NUMBER,
+    temp[4], temp[5], temp[6], temp[7]);
 
-    // flash_read_sec_register((uint32_t)temp, 0x1100);
-    // sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x%02x", 
-    //     temp[8], temp[9], temp[10], temp[11], temp[12], temp[13], temp[14], temp[15]);
-
-    // err("serial number: %s\r\n", buf);
     return CHIP_NO_ERROR;
 }
 

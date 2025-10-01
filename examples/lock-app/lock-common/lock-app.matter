@@ -2798,6 +2798,8 @@ endpoint 0 {
   server cluster NetworkCommissioning {
     ram      attribute maxNetworks;
     callback attribute networks;
+    ram      attribute scanMaxTimeSeconds;
+    ram      attribute connectMaxTimeSeconds;
     ram      attribute interfaceEnabled;
     ram      attribute lastNetworkingStatus;
     ram      attribute lastNetworkID;
@@ -2805,8 +2807,20 @@ endpoint 0 {
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
-    ram      attribute featureMap default = 0;
+    ram      attribute featureMap default = 2;
     ram      attribute clusterRevision default = 1;
+
+    handle command ScanNetworks;
+    handle command ScanNetworksResponse;
+    handle command AddOrUpdateWiFiNetwork;
+    handle command AddOrUpdateThreadNetwork;
+    handle command RemoveNetwork;
+    handle command NetworkConfigResponse;
+    handle command ConnectNetwork;
+    handle command ConnectNetworkResponse;
+    handle command ReorderNetwork;
+    handle command QueryIdentity;
+    handle command QueryIdentityResponse;
   }
 
   server cluster GeneralDiagnostics {

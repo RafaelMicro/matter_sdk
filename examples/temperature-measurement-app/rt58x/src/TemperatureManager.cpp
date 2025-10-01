@@ -45,7 +45,7 @@ namespace TemperatureAttr = chip::app::Clusters::TemperatureMeasurement::Attribu
 TimerHandle_t sTempTimer;
 StaticTimer_t sStaticTempTimerStruct;
 
-TemperatureManager TemperatureManager::sTempManager;
+TemperatureManager TemperatureManager::sTempMgr;
 
 static int16_t mSimulatedTemp[]               = { 2300, 2400, 2800, 2550, 2200, 2125, 2100, 2600, 1800, 2700 };
 

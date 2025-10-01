@@ -56,22 +56,26 @@ CHIP_ERROR OccupancyManager::Init()
 
 void OccupancyManager::AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size)
 {
-
 }
 
 CHIP_ERROR OccupancyManager::ToggleOccupancy()
 {
-    if(mOccupancy == 1)
-      mOccupancy = 0;
+    mOccupancy ^= 0x1; // toggle occupancy bit
+    if(mOccupancy & 0x1)
+    {
+      ChipLogProgress(NotSpecified, "Occupancied");
+      hosal_gpio_clear(21);
+    }
     else
-      mOccupancy = 1;
-
+    {
+      ChipLogProgress(NotSpecified, "Unoccupancied");
+      hosal_gpio_set(21);
+    }
     PlatformMgr().LockChipStack();
     OccupancyAttr::Occupancy::Set(kOccupancyEndpoint, mOccupancy);
     PlatformMgr().UnlockChipStack();
 
-    ChipLogProgress(NotSpecified, "occupancy status : %d", mOccupancy);
+    ChipLogProgress(NotSpecified, "Occupancy status : %d", mOccupancy);
 
     return CHIP_NO_ERROR;
 }
-

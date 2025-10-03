@@ -22,8 +22,8 @@ runs:
     
     - name: Copy bin file to upload project directory
       shell: bash
-      run : cp ./out/${{ inputs.example_name }}/RT583/chip-rt58x-${{ inputs.example_name }}-example.bin ${{ inputs.upload_bin_path }}/chip-rt58x-${{ inputs.example_name }}-example.bin
+      run : cp ./out/${{ inputs.example_name }}/RT583/RT583-${{ inputs.example_name }}-example.bin ${{ inputs.upload_bin_path }}/RT583-${{ inputs.example_name }}-example.bin
     
     - name: Copy size file to upload project directory
       shell: bash
-      run : cp ./out/${{ inputs.example_name }}/RT583/size.txt ${{ inputs.upload_size_path }}/chip-rt58x-${{ inputs.example_name }}-example-size.txt
+      run : cp ./out/${{ inputs.example_name }}/RT583/size.txt ${{ inputs.upload_size_path }}/RT583-${{ inputs.example_name }}-example-size.txt

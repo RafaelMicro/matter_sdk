@@ -16,4 +16,4 @@ current_hash = get_git_revision_hash()
 if current_hash:
     print(current_hash)
 else:
-    print("N/A")
+    print("00000000")

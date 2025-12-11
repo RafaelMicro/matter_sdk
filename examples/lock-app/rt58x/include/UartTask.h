@@ -57,6 +57,7 @@ private:
     int mTotalLen = 0;
     int mOffset = 0;
     uint8_t mDataBuf[UART_BUF_SIZE];
+    uint8_t mUartInit = 0;
 
     static UartTask sUartTask;
 };

@@ -20,8 +20,7 @@ sdk_library_add_sources(
 )
 
 elseif(
-  (${CONFIG_CHIP} STREQUAL "RT584S")
-  OR (${CONFIG_CHIP} STREQUAL "RT584H")
+	(${CONFIG_CHIP} STREQUAL "RT584H")
   OR (${CONFIG_CHIP} STREQUAL "RT584L"))
 
     sdk_generate_library(rt584_freertos)

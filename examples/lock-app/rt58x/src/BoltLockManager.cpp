@@ -28,6 +28,7 @@
 using namespace chip;
 using namespace chip::app;
 using namespace chip::app::Clusters;
+using namespace ::chip::DeviceLayer;
 using chip::Protocols::InteractionModel::Status;
 
 BoltLockManager BoltLockManager::sLock;
@@ -311,27 +312,19 @@ void BoltLockManager::TimerEventHandler(TimerHandle_t xTimer)
 {
     // Get lock obj context from timer id.
     BoltLockManager * lock = static_cast<BoltLockManager *>(pvTimerGetTimerID(xTimer));
-
-    // The timer event handler will be called in the context of the timer task
-    // once sLockTimer expires. Post an event to apptask queue with the actual handler
-    // so that the event can be handled in the context of the apptask.
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Timer;
-    event.TimerEvent.Context = lock;
     if (lock->mAutoLockTimerArmed)
     {
-        event.Handler = AutoReLockTimerEventHandler;
+        PlatformMgr().ScheduleWork(AutoReLockTimerEventHandler, reinterpret_cast<intptr_t>(lock));
     }
     else
     {
-        event.Handler = ActuatorMovementTimerEventHandler;
+        PlatformMgr().ScheduleWork(ActuatorMovementTimerEventHandler, reinterpret_cast<intptr_t>(lock));
     }
-    AppTask().PostEvent(&event);
 }
 
-void BoltLockManager::AutoReLockTimerEventHandler(AppEvent * aEvent)
+void BoltLockManager::AutoReLockTimerEventHandler(intptr_t arg)
 {
-    BoltLockManager * lock = static_cast<BoltLockManager *>(aEvent->TimerEvent.Context);
+    BoltLockManager * lock = reinterpret_cast<BoltLockManager *>(arg);
     int32_t actor          = 0;
 
     // Make sure auto lock timer is still armed.
@@ -347,12 +340,11 @@ void BoltLockManager::AutoReLockTimerEventHandler(AppEvent * aEvent)
     lock->InitiateAction(actor, LOCK_ACTION);
 }
 
-void BoltLockManager::ActuatorMovementTimerEventHandler(AppEvent * aEvent)
+void BoltLockManager::ActuatorMovementTimerEventHandler(intptr_t arg)
 {
     Action_t actionCompleted = INVALID_ACTION;
 
-    BoltLockManager * lock = static_cast<BoltLockManager *>(aEvent->TimerEvent.Context);
-
+    BoltLockManager * lock = reinterpret_cast<BoltLockManager *>(arg);
     if (lock->mState == kState_LockingInitiated)
     {
         lock->mState    = kState_LockingCompleted;

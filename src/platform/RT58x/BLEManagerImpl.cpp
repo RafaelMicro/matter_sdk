@@ -29,6 +29,7 @@
 #include "hosal_rf.h"
 #include "lmac15p4.h"
 #include "log.h"
+#include "flashctl.h"
 
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
@@ -46,7 +47,6 @@
 #include "ble_profile.h"
 #include "ble_att_gatt.h"
 
-bool ble_active = false;
 
 using namespace ::chip;
 using namespace ::chip::Ble;
@@ -64,26 +64,13 @@ namespace {
 
 #define CHIP_ADV_DATA_FLAGS 0x06
 
-#define CHIP_ADV_DATA 0
-#define CHIP_ADV_SCAN_RESPONSE_DATA 1
 #define CHIP_ADV_SHORT_UUID_LEN 2
-
-// Default Connection  parameters
-#define BLE_CONFIG_MIN_INTERVAL (48) // Time = Value x 0.625 ms = 30ms
-#define BLE_CONFIG_MAX_INTERVAL (160) // Time = Value x 0.625 ms = 100ms
-#define BLE_CONFIG_LATENCY (0)
-#define BLE_CONFIG_TIMEOUT (100)          // Time = Value x 10 ms = 1s
-#define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
-#define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
 #define CHIP_DEVICE_CONFIG_BLE_TASK_NAME "BLE"
 #define BLE_APP_CB_QUEUE_SIZE           16
 #define APP_ISR_QUEUE_SIZE              2
 #define APP_REQ_QUEUE_SIZE              6
 #define APP_QUEUE_SIZE                  (BLE_APP_CB_QUEUE_SIZE + APP_ISR_QUEUE_SIZE + APP_REQ_QUEUE_SIZE)
-
-#define APP_TRSP_P_HOST_ID              0
-
 
 #define PHY_PIB_TURNAROUND_TIMER    192
 #define PHY_PIB_CCA_DETECTED_TIME   128 // 8 symbols
@@ -103,12 +90,6 @@ TimerHandle_t sbleAdvTimeoutTimer;
 TimerHandle_t sbleConnTimeoutTimer;
 static bool isBleConnected = false;
 
-/* advertising configuration */
-#define BLERT_ADV_MAX_NO (2)
-#define BLERT_SCAN_RSP_MAX_NO (2)
-#define BLERT_MAX_ADV_DATA_LEN (31)
-#define CHIP_ADV_SHORT_UUID_LEN (2)
-
 // GAP device name
 static const uint8_t   DEVICE_NAME_STR[] = {DEVICE_NAME};
 
@@ -124,13 +105,9 @@ static xQueueHandle g_app_msg_q;
 static SemaphoreHandle_t semaphore_cb;
 static SemaphoreHandle_t semaphore_isr;
 static SemaphoreHandle_t semaphore_app;
-static uint8_t g_rx_buffer[BLE_GATT_DATA_LENGTH_MAX];
-static uint8_t g_rx_buffer_length;
 static ble_task_priority_t ble_task_level;
 static uint8_t g_advertising_host_id = BLE_HOSTID_RESERVED;
 static uint8_t g_mtu_size = BLE_GATT_ATT_MTU_MAX;
-const uint8_t UUID_CHIPoBLEService[]    = { 0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
-                                         0x00, 0x10, 0x00, 0x00, 0xF6, 0xFF, 0x00, 0x00 };
 const uint8_t ShortUUID_CHIPoBLEService[]  = { 0xF6, 0xFF };
 const ChipBleUUID ChipUUID_CHIPoBLEChar_RX = { { 0x18, 0xEE, 0x2E, 0xF5, 0x26, 0x3D, 0x45, 0x59, 0x95, 0x9F, 0x4F, 0x9C, 0x42, 0x9F,
                                                  0x9D, 0x11 } };
@@ -344,7 +321,6 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
         }
         else
         {
-            ble_active = true;
             isBleConnected = true;
             ble_app_link_info[p_conn_param->host_id].state = STATE_CONNECTED;
             ChipLogProgress(DeviceLayer, "Connected, ID=%d, Connected to %02x:%02x:%02x:%02x:%02x:%02x",
@@ -772,15 +748,23 @@ int BLEManagerImpl::ble_init(void)
         {
             break;
         }
+        vTaskDelay(5);
         status = ble_cmd_phy_controller_init();
         if (status != BLE_ERR_OK)
         {
             break;
         }
 
-        status = ble_cmd_read_unique_code(&unique_code_param);
-        uint8_t invalid_ble_addr[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-        if (memcmp(unique_code_param.ble_addr, invalid_ble_addr, 6) && unique_code_param.addr_type <= RANDOM_RESOLVABLE_ADDR)
+        uint8_t  temp[256];
+        flash_read_sec_register((uint32_t)temp, 0x1100);
+        while (flash_check_busy());
+        memcpy(&unique_code_param, temp, sizeof(ble_unique_code_format_t));
+        uint8_t invalid_addr[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        uint8_t invalid_addr2[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+        //if (0)  //(memcmp(&unique_code_param.ble_addr, invalid_ble_addr, 6))
+        if (memcmp(invalid_addr, unique_code_param.ble_addr, 6) != 0 &&
+            memcmp(invalid_addr2, unique_code_param.ble_addr, 6) != 0 &&
+            unique_code_param.addr_type <= RANDOM_RESOLVABLE_ADDR)
         {
             device_addr_param.addr_type = unique_code_param.addr_type;
             memcpy(&device_addr_param.addr, &unique_code_param.ble_addr, 6);
@@ -805,18 +789,21 @@ int BLEManagerImpl::ble_init(void)
             }
         }
 
+        vTaskDelay(5);
         status = ble_cmd_resolvable_address_init();
         if (status != BLE_ERR_OK)
         {
             break;
         }
 
+        vTaskDelay(5);
         status = ble_cmd_suggest_data_len_set(BLE_GATT_DATA_LENGTH_MAX);
         if (status != BLE_ERR_OK)
         {
             break;
         }
 
+        vTaskDelay(5);
         status = server_profile_init(0);
         if (status != BLE_ERR_OK)
         {

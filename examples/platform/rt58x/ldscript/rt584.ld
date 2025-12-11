@@ -2,7 +2,7 @@
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 
-__STACK_SIZE = 0x0800;   /* 2 KB */
+__STACK_SIZE = 0x1800;   /* 2 KB */
 __HEAP_SIZE  = 0x0800;   /* 2 KB */
 __RAM_SIZE   = 192K;
 __DATA_SIZE  = __RAM_SIZE - __STACK_SIZE - __HEAP_SIZE - 8;
@@ -36,10 +36,10 @@ SECTIONS
     .text :
     {
         KEEP(*(.vectors))
+        KEEP(*(.vector_tail))
         __Vectors_End = .;
-        __Vectors_Size = __Vectors_End - __Vectors;
-        __end__ = .;
-
+        __Vectors_Size = __Vectors_End - __Vectors;        
+        __end__ = .;        
         *(.text*)
 
         KEEP(*(.init))
@@ -194,6 +194,7 @@ SECTIONS
         . = ALIGN(4);
         __bss_end__ = .;
     } > VMA_DATA  :rw
+    PROVIDE(end = .);
 
     bss_size = __bss_end__ - __bss_start__;
 

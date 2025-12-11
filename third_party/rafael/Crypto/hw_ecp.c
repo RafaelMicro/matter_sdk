@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include "hosal_crypto_ecc.h"
 #include "hosal_crypto_sha256.h"
 #include "hosal_status.h"
@@ -95,6 +96,28 @@ int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x
     /*change little endian format ECC point to big endian format... temp use result_le and result_be */
     //    buffer_endian_exchange((uint32_t *) R_x, (uint32_t *) &(R.x), 8);
     //    buffer_endian_exchange((uint32_t *) R_y, (uint32_t *) &(R.y), 8);
+
+    return 0;
+}
+
+int rt583_ecc_mul(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint8_t * P_y)
+{
+    hosal_crypto_ecc_p256_t ecc_p256;
+    ECPoint_P256 R, P;
+
+    memcpy(P.x, P_x, (secp256r1_op_num << 2));
+    memcpy(P.y, P_y, (secp256r1_op_num << 2));
+
+    hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
+    ecc_p256.crypto_operation = HOSAL_GFP_P256_MULTI;
+    ecc_p256.result = (ECPoint_P256*) &R;
+    ecc_p256.base =  (ECPoint_P256*) &P;
+    ecc_p256.p_key = (uint32_t *) m;
+
+    hosal_crypto_ecc_p256(&ecc_p256);
+
+    memcpy(R_x, R.x, (secp256r1_op_num << 2));
+    memcpy(R_y, R.y, (secp256r1_op_num << 2));
 
     return 0;
 }

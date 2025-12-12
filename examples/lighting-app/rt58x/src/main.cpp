@@ -40,7 +40,6 @@
 #include "matter_shell.h"
 #endif
 
-#define BLE_DEV_NAME "Rafael-Light"
 using namespace ::chip;
 using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;

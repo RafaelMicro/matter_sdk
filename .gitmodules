@@ -29,4 +29,4 @@
 	url = https://github.com/RafaelMicro/openthread
 [submodule "third_party/rafael/repo/components"]
 	path = third_party/rafael/repo/components
-	url = https://github.com/RafaelMicro/components
+	url = https://github.com/RafaelMicro/components.git

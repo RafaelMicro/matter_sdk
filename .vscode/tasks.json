@@ -81,7 +81,7 @@
             "type": "pickString",
             "id": "board",
             "description": "Rafael board type",
-            "options": ["RT583"],
+            "options": ["RT583", "RT584H", "RT584L"],
             "default": "RT583"
         },
         {

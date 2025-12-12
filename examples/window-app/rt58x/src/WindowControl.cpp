@@ -32,12 +32,10 @@ static constexpr uint32_t sMoveTimeoutMs{ 500 };
 
 WindowControl::WindowControl()
 {
-    // Init Light state
 }
 
 WindowControl::WindowControl(WindowManager::WindowCallback_fn aActionInitiated_CB, WindowManager::WindowCallback_fn aActionCompleted_CB)
 {
-    // Init Light state
     WindowMgr().Init();
     WindowMgr().SetCallbacks(aActionInitiated_CB, aActionCompleted_CB);
 }

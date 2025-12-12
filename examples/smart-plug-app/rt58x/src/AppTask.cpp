@@ -114,7 +114,7 @@ void IdentifyToggleOnOff(bool onoff)
     //turn on/off led indicator
     if(onoff)
     {
-        hosal_gpio_pin_clear(2201);
+        hosal_gpio_pin_clear(20);
     }
     else
     {

@@ -70,6 +70,8 @@ void UartTask::UartTaskMain(void * pvParameter)
         sUartTask.UartHandler();
 #if CONFIG_HOSAL_SOC_IDLE_SLEEP
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+#else
+        vTaskDelay(20);
 #endif
     }
 }
@@ -100,6 +102,13 @@ void UartTask::UartHandler()
     uint32_t pin_status;
     uint8_t uart_cache[UART_CACHE_SIZE] = {0};
     Staus_t staus = kStaus_DataInvalid;
+#if CONFIG_HOSAL_SOC_IDLE_SLEEP
+    if(!mUartInit)
+    {
+        hosal_uart_init(&uart1_dev);
+        mUartInit = 1;
+    }
+#endif
     do
     {
         len = hosal_uart_receive(&uart1_dev, uart_cache, UART_CACHE_SIZE);
@@ -115,6 +124,10 @@ void UartTask::UartHandler()
     if(pin_status == 0)
     {
         sUartTask.UartSignalPending();
+    }
+    else
+    {
+        mUartInit = 0;
     }
 #endif
 }
@@ -221,6 +234,9 @@ void UartTask::SendCommand(uint16_t cmd,uint8_t payload_len,uint8_t *pbuf)
 //| FF FC FC FF| 1 byte  |  2 bytes | n bytes |  1 byte  |
 //|------------------------------------------------------|
 //Len = len(Command)+len(Payload)
+#if CONFIG_HOSAL_SOC_IDLE_SLEEP
+    hosal_uart_init(&uart1_dev);
+#endif
     uint8_t len = payload_len+2;
     uint8_t total_len = 5+len+1;
     uint8_t temp_buf[total_len];

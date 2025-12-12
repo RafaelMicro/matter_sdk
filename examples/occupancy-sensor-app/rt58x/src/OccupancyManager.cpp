@@ -26,7 +26,6 @@
 #include "AppEvent.h"
 #include "AppTask.h"
 #include "semphr.h"
-
 /**********************************************************
  * Defines and Constants
  *********************************************************/
@@ -64,12 +63,12 @@ CHIP_ERROR OccupancyManager::ToggleOccupancy()
     if(mOccupancy & 0x1)
     {
       ChipLogProgress(NotSpecified, "Occupancied");
-      hosal_gpio_clear(21);
+      hosal_gpio_pin_clear(21);
     }
     else
     {
       ChipLogProgress(NotSpecified, "Unoccupancied");
-      hosal_gpio_set(21);
+      hosal_gpio_pin_set(21);
     }
     PlatformMgr().LockChipStack();
     OccupancyAttr::Occupancy::Set(kOccupancyEndpoint, mOccupancy);

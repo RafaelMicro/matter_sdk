@@ -43,8 +43,6 @@ struct AppEvent
     {
         kActionTypes_FactoryReset = 0,
         kActionTypes_Switch_1,
-        kActionTypes_Switch_2,
-        kActionTypes_Switch_3,
     };
 
     uint16_t Type;

@@ -28,6 +28,16 @@ extern "C" {
 #include "init_device_environment.h"
 #include "mcu.h"
 
+#ifdef CONFIG_RT583
+#define PWM_BLUE (21)
+#define PWM_RED (22)
+#define PWM_GREEN (23)
+#else
+#define PWM_BLUE (7)
+#define PWM_RED (8)
+#define PWM_GREEN (9)
+#endif
+
 static void init_lighting_pin_mux(void)
 {
     gpio_cfg_output(20);
@@ -41,16 +51,16 @@ void init_pwm(void)
 
     pwm_dev.config.id = HOSAL_PWM_ID_1;
     pwm_dev.config.frequency = 16000;//16K
-    pwm_dev.config.pin_out = 21;	
+    pwm_dev.config.pin_out = PWM_BLUE;
     pwm_dev.config.count_end_val = 3000;	
     hosal_pwm_init_fmt0(&pwm_dev);
 
     pwm_dev.config.id = HOSAL_PWM_ID_2;
-    pwm_dev.config.pin_out = 22;	
+    pwm_dev.config.pin_out = PWM_RED;
     hosal_pwm_init_fmt0(&pwm_dev);
 
     pwm_dev.config.id = HOSAL_PWM_ID_3;
-    pwm_dev.config.pin_out = 23;	
+    pwm_dev.config.pin_out = PWM_GREEN;
     hosal_pwm_init_fmt0(&pwm_dev);
 }
 uint8_t calc_duty(uint8_t level)

@@ -88,6 +88,7 @@ extern int rt583_spake2p_compute_L(uint8_t * L, uint8_t * w1);
 
 extern int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint8_t * P_y, uint8_t * n, uint8_t * Q_x,
                                uint8_t * Q_y);
+extern int rt583_ecc_mul(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint8_t * P_y);
 extern int rt583_spake2p_compute_Z(uint8_t * Z_x, uint8_t * Z_y, uint8_t * y, uint8_t * X_x, uint8_t * X_y, uint8_t * w0,
                                    uint8_t * M_x, uint8_t * M_y);
 extern int rt583_spake2p_verifier_V(uint8_t * V_x, uint8_t * V_y, uint8_t * y, uint8_t * L_x, uint8_t * L_y);
@@ -2651,6 +2652,24 @@ int mbedtls_ecp_mul_restartable(mbedtls_ecp_group * grp, mbedtls_ecp_point * R, 
     }
 
     ret = MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
+#if defined(RT583_HW_CRYPTO_ENGINE_ENABLE)
+    if (grp->id == MBEDTLS_ECP_DP_SECP256R1)
+    {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&R->Z, 1));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&R->X, 32));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_grow(&R->Y, 32));
+
+        if (rt583_ecc_mul((uint8_t *) R->X.p, (uint8_t *) R->Y.p, (uint8_t *) m->p, (uint8_t *) P->X.p,
+                          (uint8_t *) P->Y.p) != 0)
+        {
+            ret = MBEDTLS_ERR_ECP_HW_ACCEL_FAILED;
+            goto cleanup;
+        }
+
+        ret = 0;
+        goto cleanup;
+    }
+#endif
 #if defined(MBEDTLS_ECP_MONTGOMERY_ENABLED)
     if (mbedtls_ecp_get_type(grp) == MBEDTLS_ECP_TYPE_MONTGOMERY)
         MBEDTLS_MPI_CHK(ecp_mul_mxz(grp, R, m, P, f_rng, p_rng));

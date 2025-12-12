@@ -119,14 +119,11 @@ private:
 
     CHIPoBLEServiceMode mServiceMode;
     char mDeviceName[kMaxDeviceNameLength + 1];
-    char mDeviceNameLink1[kMaxDeviceNameLength + 1];
-
     void DriveBLEState(void);
     CHIP_ERROR MapBLEError(int bleErr);
     CHIP_ERROR ConfigureAdvertising(void);
     CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
-    CHIP_ERROR ConfigureAdvertisingData(void);
 
     static ble_err_t ble_app_event_cb(void *p_param);
     static ble_err_t ble_service_data_cb(void *p_param);
@@ -149,20 +146,14 @@ private:
     void CancelBleAdvTimeoutTimer(void);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);
 #if RAF_ENABLE_MULTI_CONTROL
-    CHIP_ERROR ConfigureAdvertisingData(uint8_t host_id);
-    static void BleLinkTimerHandler(TimerHandle_t xTimer);
-    static void StartLinkTimer(intptr_t arg);
-    void StartBleConnTimeoutTimer(void);
+    CHIP_ERROR ConfigureAdvertisingData(uint8_t matter_adv_enabled);
     static void ble_svcs_trsps_evt_handler(void *p_matter_evt_param);
-    static int server_profile_init_link1(uint8_t host_id);
     void HandleAppToBleEvent(const ChipDeviceEvent * event);
-    static void ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param);
     static void fota_timer_handler(TimerHandle_t timer);
     static bool fota_sw_timer_start(void);
+    static void ble_svcs_fota_evt_handler(ble_evt_att_param_t *p_param);
 #else
-//    CHIP_ERROR ConfigureAdvertising(void);
-//    CHIP_ERROR StartAdvertising(void);
-//    CHIP_ERROR ConfigureAdvertisingData(void);
+    CHIP_ERROR ConfigureAdvertisingData(void);
 #endif
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING

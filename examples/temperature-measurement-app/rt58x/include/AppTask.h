@@ -76,8 +76,6 @@ private:
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
     static void TimerEventHandler(chip::System::Layer * aLayer, void * aAppState);
-    static uint8_t _data_checksum_calc(uint8_t *p, uint8_t l);
-
     void StartTimer(uint32_t aTimeoutMs);
     void CancelTimer(void);
 

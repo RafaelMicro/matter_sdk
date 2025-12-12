@@ -100,8 +100,8 @@ private:
     void StartTimer(uint32_t aTimeoutMs);
 
     static void TimerEventHandler(TimerHandle_t xTimer);
-    static void AutoReLockTimerEventHandler(AppEvent * aEvent);
-    static void ActuatorMovementTimerEventHandler(AppEvent * aEvent);
+    static void AutoReLockTimerEventHandler(intptr_t arg);
+    static void ActuatorMovementTimerEventHandler(intptr_t arg);
 
     static BoltLockManager sLock;
 

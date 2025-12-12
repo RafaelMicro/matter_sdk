@@ -58,6 +58,13 @@
 #include <lib/core/CHIPError.h>
 #include <lib/core/CHIPError.h>
 
+#define APP_ENABLE_COMMISSIONING_TIMING 1
+
+#if APP_ENABLE_COMMISSIONING_TIMING
+#include <inttypes.h>
+#include <system/SystemClock.h>
+#include <transport/SecureSession.h>
+#endif
 #include "uart.h"
 #include "log.h"
 #include "mcu.h"
@@ -108,6 +115,22 @@ static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLe
                     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
 Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
+#if APP_ENABLE_COMMISSIONING_TIMING
+static chip::System::Clock::Timestamp sCommissioningStartTimestamp;
+static bool sCommissioningStartValid = false;
+static bool sPaseStageInProgress                     = false;
+static chip::System::Clock::Timestamp sPaseEndTimestamp;
+static bool sPaseTimingValid = false;
+static chip::System::Clock::Timestamp sCaseStartTimestamp;
+static bool sCaseStageInProgress = false;
+static chip::System::Clock::Timestamp sCaseEndTimestamp;
+static bool sCaseTimingValid = false;
+static chip::System::Clock::Timestamp sOperationalResumeStartTimestamp;
+static bool sOperationalResumeTimingValid = false;
+static chip::System::Clock::Timestamp sBootToServerReadyStartTimestamp;
+static bool sBootToServerReadyTimingValid = false;
+static bool sOperationalResumeIndicatorActive = false;
+#endif
 static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 /**********************************************************
  * Identify Callbacks
@@ -276,6 +299,11 @@ void AppTask::InitServer(intptr_t arg)
     {
         chip::app::DnssdServer::Instance().StartServer();   
         sCommissioned = true;
+		#if APP_ENABLE_COMMISSIONING_TIMING
+        sOperationalResumeStartTimestamp = chip::System::SystemClock().GetMonotonicTimestamp();
+        sOperationalResumeTimingValid    = true;
+        sOperationalResumeIndicatorActive = true;
+        #endif
     }
     err = PowerMgr().Init();
     if (err != CHIP_NO_ERROR)
@@ -325,19 +353,133 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
+#if APP_ENABLE_COMMISSIONING_TIMING
+    case DeviceEventType::kCHIPoBLEConnectionEstablished:
+        sHaveBLEConnections = true;
+        sCommissioningStartTimestamp = chip::System::SystemClock().GetMonotonicTimestamp();
+        sCommissioningStartValid     = true;
+        sPaseStageInProgress         = true;
+        sCaseStageInProgress         = false;
+        sPaseTimingValid             = false;
+        sCaseTimingValid             = false;
+        sPaseEndTimestamp            = chip::System::Clock::Timestamp();
+        sCaseStartTimestamp          = chip::System::Clock::Timestamp();
+        sCaseEndTimestamp            = chip::System::Clock::Timestamp();
+        ChipLogProgress(NotSpecified, "Commissioning BLE connection established(PASE stage started) (tick=%" PRIu64 " ms)",
+                        static_cast<uint64_t>(sCommissioningStartTimestamp.count()));
+        break;
+#else
     case DeviceEventType::kCHIPoBLEConnectionEstablished:
         sHaveBLEConnections = true;
         break;
+#endif
     case DeviceEventType::kServerReady:
         if(sCommissioned)
         {
             UpdateStatusLED();
+#if APP_ENABLE_COMMISSIONING_TIMING
+            if (sOperationalResumeTimingValid)
+            {
+                const auto now            = chip::System::SystemClock().GetMonotonicTimestamp();
+                const auto resumeDuration = now - sOperationalResumeStartTimestamp;
+                ChipLogProgress(NotSpecified,
+                                "Operational resume complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                                static_cast<uint64_t>(sOperationalResumeStartTimestamp.count()),
+                                static_cast<uint64_t>(now.count()), static_cast<uint64_t>(resumeDuration.count()));
+                sOperationalResumeTimingValid = false;
+                if (sOperationalResumeIndicatorActive)
+                {
+                    sOperationalResumeIndicatorActive = false;
+                }
+            }
+#endif
         }
+#if APP_ENABLE_COMMISSIONING_TIMING
+        if (sBootToServerReadyTimingValid)
+        {
+            const auto now           = chip::System::SystemClock().GetMonotonicTimestamp();
+            const auto bootDuration  = now - sBootToServerReadyStartTimestamp;
+            ChipLogProgress(NotSpecified,
+                            "Boot->ServerReady timing (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                            static_cast<uint64_t>(sBootToServerReadyStartTimestamp.count()), static_cast<uint64_t>(now.count()),
+                            static_cast<uint64_t>(bootDuration.count()));
+            sBootToServerReadyTimingValid = false;
+        }
+#endif
         break;
     case DeviceEventType::kCommissioningComplete:
         sCommissioned = true;
         UpdateStatusLED();
+#if APP_ENABLE_COMMISSIONING_TIMING
+        if (sCommissioningStartValid)
+        {
+            const auto completion = chip::System::SystemClock().GetMonotonicTimestamp();
+            const auto duration   = completion - sCommissioningStartTimestamp;
+            const auto paseDuration =
+                sPaseTimingValid ? (sPaseEndTimestamp - sCommissioningStartTimestamp) : chip::System::Clock::Milliseconds64(0);
+            const auto caseDuration =
+                sCaseTimingValid ? (sCaseEndTimestamp - sCaseStartTimestamp) : chip::System::Clock::Milliseconds64(0);
+            ChipLogProgress(NotSpecified, "===Commissioning Timestamp===");
+            ChipLogProgress(NotSpecified,
+                            "Commissioning completed (overall start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                            static_cast<uint64_t>(sCommissioningStartTimestamp.count()), static_cast<uint64_t>(completion.count()),
+                            static_cast<uint64_t>(duration.count()));
+            ChipLogProgress(NotSpecified, "PASE start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms",
+                            static_cast<uint64_t>(sCommissioningStartTimestamp.count()),
+                            static_cast<uint64_t>(sPaseTimingValid ? sPaseEndTimestamp.count() : completion.count()),
+                            static_cast<uint64_t>(paseDuration.count()));
+            ChipLogProgress(NotSpecified, "CASE start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms",
+                            static_cast<uint64_t>(sCaseTimingValid ? sCaseStartTimestamp.count() : completion.count()),
+                            static_cast<uint64_t>(sCaseTimingValid ? sCaseEndTimestamp.count() : completion.count()),
+                            static_cast<uint64_t>(caseDuration.count()));
+            ChipLogProgress(NotSpecified, "======");
+            sCommissioningStartValid = false;
+        }
+        sCaseStageInProgress = false;
+        sPaseStageInProgress = false;
+#endif
         break;
+#if APP_ENABLE_COMMISSIONING_TIMING
+    case DeviceEventType::kSecureSessionEstablished: {
+        const auto sessionType =
+            static_cast<chip::Transport::SecureSession::Type>(aEvent->SecureSessionEstablished.SecureSessionType);
+        const auto now = chip::System::SystemClock().GetMonotonicTimestamp();
+        if (sessionType == chip::Transport::SecureSession::Type::kPASE)
+        {
+            if (sCommissioningStartValid && sPaseStageInProgress)
+            {
+                const auto paseDuration = now - sCommissioningStartTimestamp;
+             ChipLogProgress(
+                     NotSpecified,
+                     "PASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                     static_cast<uint64_t>(sCommissioningStartTimestamp.count()), static_cast<uint64_t>(now.count()),
+                                static_cast<uint64_t>(paseDuration.count()));
+            }
+            sPaseEndTimestamp    = now;
+            sPaseTimingValid     = true;
+            sPaseStageInProgress = false;
+            sCaseStartTimestamp  = now;
+            sCaseStageInProgress = true;
+             ChipLogProgress(NotSpecified, "CASE stage started (tick=%" PRIu64 " ms)", static_cast<uint64_t>(now.count()));
+        }
+        else if (sessionType == chip::Transport::SecureSession::Type::kCASE)
+        {
+            if (sCaseStageInProgress)
+            {
+                const auto caseDuration = now - sCaseStartTimestamp;
+             ChipLogProgress(
+                     NotSpecified,
+                     "CASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                     static_cast<uint64_t>(sCaseStartTimestamp.count()), static_cast<uint64_t>(now.count()),
+                                static_cast<uint64_t>(caseDuration.count()));
+            }
+            sCaseEndTimestamp   = now;
+            sCaseTimingValid    = true;
+            sCaseStageInProgress = false;
+        }
+        break;
+    }
+#endif
     default:
         break;
     }
@@ -600,16 +742,6 @@ void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
         break;
     }
 }
-uint8_t AppTask::_data_checksum_calc(uint8_t *p, uint8_t l)
-{
-    uint8_t cs = 0;
-
-    for(int i=0; i<l; i++)
-        cs+=p[i];
-
-    return (~cs);
-}
-
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;

@@ -127,7 +127,6 @@ template("rt58x_sdk") {
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/ble-service/gatts/include/",
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/ble-service/trsps/include/",
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/ble-service/matter/include/",
-      "${rt58x_sdk_root}/components/network/bluetooth/ble-host/fota/include/",
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/hci/include/",
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/lib-host/include/",
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/uecc/",

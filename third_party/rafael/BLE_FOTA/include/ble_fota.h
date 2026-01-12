@@ -70,7 +70,7 @@ so that maximum total step number * FLASH_PROGRAM_SIZE for current definitions s
 
 #define OTA_DATA_STEP_STAMPED                   0x88    /**< Specific number use for stamped each steps */
 
-#define PREFIX_LEN                              7
+#define PREFIX_LEN_T                              7
 #define FW_INFO_LEN                             16
 #define FEATURE_LIST_LEN                        1
 
@@ -82,7 +82,7 @@ typedef enum
 
 typedef struct
 {
-    uint8_t prefix[PREFIX_LEN];
+    uint8_t prefix[PREFIX_LEN_T];
     uint8_t sysinfo[FW_INFO_LEN];
     uint8_t feature_list;
 } sys_information_t;

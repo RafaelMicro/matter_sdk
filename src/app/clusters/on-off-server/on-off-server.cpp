@@ -591,7 +591,7 @@ Status OnOffServer::getOnOffValueForStartUp(chip::EndpointId endpoint, bool & on
 bool OnOffServer::offCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath)
 {
     MATTER_TRACE_SCOPE("OffCommand", "OnOff");
-    Status status = setOnOffValue(commandPath.mEndpointId, Commands::Off::Id, true);
+    Status status = setOnOffValue(commandPath.mEndpointId, Commands::Off::Id, false);
 
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -600,7 +600,7 @@ bool OnOffServer::offCommand(app::CommandHandler * commandObj, const app::Concre
 bool OnOffServer::onCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath)
 {
     MATTER_TRACE_SCOPE("OnCommand", "OnOff");
-    Status status = setOnOffValue(commandPath.mEndpointId, Commands::On::Id, true);
+    Status status = setOnOffValue(commandPath.mEndpointId, Commands::On::Id, false);
 
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -609,7 +609,7 @@ bool OnOffServer::onCommand(app::CommandHandler * commandObj, const app::Concret
 bool OnOffServer::toggleCommand(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath)
 {
     MATTER_TRACE_SCOPE("ToggleCommand", "OnOff");
-    Status status = setOnOffValue(commandPath.mEndpointId, Commands::Toggle::Id, true);
+    Status status = setOnOffValue(commandPath.mEndpointId, Commands::Toggle::Id, false);
 
     commandObj->AddStatus(commandPath, status);
     return true;

@@ -186,12 +186,8 @@ CHIP_ERROR LayerImplSelect::ExtendTimerTo(Clock::Timeout delay, TimerCompleteCal
     Clock::Timeout remainingTime = mTimerList.GetRemainingTime(onComplete, appState);
     if (remainingTime.count() < delay.count())
     {
-        if (remainingTime == Clock::kZero)
-        {
-            // If remaining time is Clock::kZero, it might possible that our timer is in
-            // the mExpiredTimers list and about to be fired. Remove it from that list, since we are extending it.
-            mExpiredTimers.Remove(onComplete, appState);
-        }
+        // Just call StartTimer; it will invoke CancelTimer(), then start a new timer.  That handles
+        // all the various "timer was about to fire" edge cases correctly too.
         return StartTimer(delay, onComplete, appState);
     }
 
@@ -445,6 +441,8 @@ CHIP_ERROR LayerImplSelect::ClearCallbackOnPendingWrite(SocketWatchToken token)
 
 CHIP_ERROR LayerImplSelect::StopWatchingSocket(SocketWatchToken * tokenInOut)
 {
+    VerifyOrReturnError(tokenInOut != nullptr, CHIP_ERROR_INVALID_ARGUMENT);
+
     SocketWatch * watch = reinterpret_cast<SocketWatch *>(*tokenInOut);
     *tokenInOut         = InvalidSocketWatchToken();
 
@@ -591,6 +589,7 @@ void LayerImplSelect::HandleEvents()
 
     if (!IsSelectResultValid())
     {
+        VerifyOrReturn(errno != EINTR); // EINTR is not really an error (and we don't use it for signal handling)
         ChipLogError(DeviceLayer, "Select failed: %" CHIP_ERROR_FORMAT, CHIP_ERROR_POSIX(errno).Format());
         return;
     }

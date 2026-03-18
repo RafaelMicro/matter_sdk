@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import("rt58x_sdk.gni")
-assert((rafael_board == "RT583") || (rafael_board == "RT584H") || rafael_board == "RT584L")
+assert((rafael_board == "RT583") || (rafael_board == "RT584H") || rafael_board == "RT584L" || rafael_board == "RT584HA4")
 
 if (rafael_board == "RT583") {
     arm_arch = "armv7-m"

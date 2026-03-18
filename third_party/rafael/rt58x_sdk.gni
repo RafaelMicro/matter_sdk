@@ -145,7 +145,8 @@ template("rt58x_sdk") {
     # Get Git Hash
     git_hash = exec_script("${chip_root}/third_party/rafael/get_git_hash.py", [], "trim string")
     defines +=  [ "RAFAEL_SDK_VER=\"${git_hash}\"",
-                  "LIB_VER=0x${git_hash}", ]
+                  "LIB_VER=0x${git_hash}",
+                  "CONFIG_BUILD_PORJECT=\"matter-app\"" ]
 
     if (defined(invoker.enable_sleepy_device)) {
       if (invoker.enable_sleepy_device) {
@@ -157,38 +158,52 @@ template("rt58x_sdk") {
       defines += [ "CONFIG_CHIP=\"RT583\"",
                    "CHIP_NAME=\"RT583\"",
                    "CONFIG_RT583",
-                   "EFD_START_ADDR=0x1BA000",
-                   "ENV_AREA_SIZE=0x20000",
+                   "EFD_START_ADDR=0x1E0000",
+                   "ENV_AREA_SIZE=0x10000",
                    "EFD_GC_EMPTY_SEC_THRESHOLD=8",
+                   "CONFIG_RF_POWER_10DBM",
                 ]
     }
     else if (rafael_board == "RT584H") {
       defines += [ "CONFIG_CHIP=\"RT584H\"",
                    "CHIP_NAME=\"RT584H\"",
                    "CONFIG_RT584H",
-                   "EFD_START_ADDR=0x101BA000",
-                   "ENV_AREA_SIZE=0x20000",
+                   "CONFIG_RF_POWER_20DBM",
+                   "EFD_START_ADDR=0x101E0000",
+                   "ENV_AREA_SIZE=0x10000",
                    "EFD_GC_EMPTY_SEC_THRESHOLD=8",
+                   "CONFIG_RF_POWER_20DBM",
                 ]
     }
     else if (rafael_board == "RT584L") {
       defines += [ "CONFIG_CHIP=\"RT584L\"",
                    "CHIP_NAME=\"RT584L\"",
                    "CONFIG_RT584L",
-                   "EFD_START_ADDR=0x101BA000",
-                   "ENV_AREA_SIZE=0x20000",
+                   "CONFIG_RF_POWER_10DBM",
+                   "EFD_START_ADDR=0x101E0000",
+                   "ENV_AREA_SIZE=0x10000",
                    "EFD_GC_EMPTY_SEC_THRESHOLD=8",
+                   "CONFIG_RF_POWER_10DBM",
+                ]
+    }
+    else if (rafael_board == "RT584HA4") {
+      defines += [ "CONFIG_CHIP=\"RT584HA4\"",
+                   "CHIP_NAME=\"RT584HA4\"",
+                   "CONFIG_RT584HA4",
+                   "CONFIG_RF_POWER_20DBM",
+                   "EFD_START_ADDR=0x103E0000",
+                   "ENV_AREA_SIZE=0x10000",
+                   "EFD_GC_EMPTY_SEC_THRESHOLD=8",
+                   "CONFIG_RF_POWER_20DBM",
                 ]
     }
     defines += [ "CONFIG_BOARD=\"evb\"",
                   "CONFIG_LOG_MAX_LEVEL=3", # LOG_LEVEL_WARN=3, see log.h
                    "CONFIG_RCO32K_ENABLE",
-                   "CONFIG_HOSAL_SOC_MAIN_ENTRY_TASK_SIZE=2048",
                    "CONFIG_FREERTOS=1",
                    "SET_SYS_CLK=2",
                    "CONFIG_BUILD_COMPONENT_OPENTHREAD=1",
                    "CONFIG_RF_FW_INCLUDE_MULTI_2P4G=1",
-                   "CONFIG_RF_MCU_CONST_LOAD_SUPPORTED=1",
                    "__STARTUP_CLEAR_BSS",
                    "CONFIG_HOSAL_SOC_DISABLE_MP_SECTOR_INIT=0",
                    "CONFIG_CRYPTO_AES_ENABLE=1",
@@ -201,7 +216,7 @@ template("rt58x_sdk") {
                    "CONFIG_CRYPTO_SM2P256V1_ENABLE=1",
                    "CONFIG_CRYPTO_SM2_P192_ENABLE=1",
                    ]
-    if (rafael_board == "RT584H" || rafael_board == "RT584L") {
+    if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       defines += [ 
                   "CONFIG_AUX_COMP_SECURE_EN",
                   "CONFIG_BOD_COMP_SECURE_EN",
@@ -251,14 +266,23 @@ template("rt58x_sdk") {
     }
 
     cflags += [
-      "-Wno-unknown-pragmas",
       "-Wno-sign-compare",
       "-Wno-unused-function",
       "-Wno-unused-parameter",
-      "-Wno-empty-body",
-      "-w",
+      "-Wno-unused-variable",
+      "-Wno-unused-but-set-variable",
+      "-Wno-format",
+      "-Wno-format-nonliteral",
+      "-Wno-format-security",
+      "-Wno-stringop-overread",
+      "-Wno-address-of-packed-member",
+      "-Wno-array-bounds",
+      "-Wno-vla",
+      "-Wno-missing-braces",
+      "-Wno-comment",
+      #"-w",
     ]
-    if (rafael_board == "RT584H" || rafael_board == "RT584L") {
+    if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       cflags += [
         "-mcmse",
       ]
@@ -272,12 +296,6 @@ template("rt58x_sdk") {
     sources = []
     if (defined(invoker.sources)) {
       sources += invoker.sources
-    }
-    if (chip_build_libshell) {  # matter shell
-          sources += [
-            "${rt58x_sdk_root}/components/utility/cli/cli.c",
-            "${rt58x_sdk_root}/components/utility/cli/shell.c",
-          ]
     }
     # Chip-based source
     if (rafael_board == "RT583") {
@@ -427,6 +445,8 @@ template("rt58x_sdk") {
       # FreeRTOS Port Source
       "${rt58x_sdk_root}/components/common/rtos_port/Src/app_hooks.c",
       # Utility Source
+      "${rt58x_sdk_root}/components/utility/cli/cli.c",
+      "${rt58x_sdk_root}/components/utility/cli/shell.c",
       "${rt58x_sdk_root}/components/utility/EnhancedFlashDataset/Src/efd_iap.c",
       "${rt58x_sdk_root}/components/utility/EnhancedFlashDataset/Src/efd_kv.c",
       "${rt58x_sdk_root}/components/utility/EnhancedFlashDataset/Src/efd_log.c",

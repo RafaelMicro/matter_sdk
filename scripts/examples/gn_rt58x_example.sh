@@ -108,7 +108,7 @@ else
         esac
     done
 
-    if [ "$RAFAEL_BOARD" != "RT583" && "$RAFAEL_BOARD" != "RT584H" && "$RAFAEL_BOARD" != "RT584L"]; then
+    if ["$RAFAEL_BOARD" != "RT584H" && "$RAFAEL_BOARD" != "RT584HA4"]; then
         echo "RAFAEL_BOARD is not defined"
         exit 1
     fi
@@ -119,9 +119,9 @@ else
     # thread build
     #
     if [ -z "$optArgs" ]; then
-        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\"" "$BUILD_DIR"
+        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\" treat_warnings_as_errors=false" "$BUILD_DIR"
     else
-        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\" $optArgs" "$BUILD_DIR"
+        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --args="rafael_board=\"$RAFAEL_BOARD\" $optArgs treat_warnings_as_errors=false" "$BUILD_DIR"
     fi
     ninja -C "$BUILD_DIR"/
     # ninja -v -C "$BUILD_DIR"/

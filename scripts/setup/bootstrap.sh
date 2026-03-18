@@ -39,15 +39,15 @@ _install_additional_pip_requirements() {
             setopt local_options shwordsplit
         fi
 
-        for platform in ${_SETUP_PLATFORM}; do
-            # Allow none as an alias of nothing extra installed (like -p none)
-            if [ "$platform" != "none" -a -e "$_CHIP_ROOT/scripts/setup/requirements.$platform.txt" ]; then
-                echo "Installing pip requirements for $platform..."
-                pip install -q \
-                    -r "$_CHIP_ROOT/scripts/setup/requirements.$platform.txt" \
-                    -c "$_CHIP_ROOT/scripts/setup/constraints.txt"
-            fi
-        done
+        # for platform in ${_SETUP_PLATFORM}; do
+        #     # Allow none as an alias of nothing extra installed (like -p none)
+        #     if [ "$platform" != "none" -a -e "$_CHIP_ROOT/scripts/setup/requirements.$platform.txt" ]; then
+        #         echo "Installing pip requirements for $platform..."
+        #         pip install -q \
+        #             -r "$_CHIP_ROOT/scripts/setup/requirements.$platform.txt" \
+        #             -c "$_CHIP_ROOT/scripts/setup/constraints.txt"
+        #     fi
+        # done
         IFS=$_OLD_IFS
         unset _OLD_IFS
         unset _PLATFORMS

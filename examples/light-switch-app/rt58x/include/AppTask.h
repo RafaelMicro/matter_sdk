@@ -30,8 +30,6 @@
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
 #include "LightSwitchMgr.h"
-#include "BindingHandler.h"
-// #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
@@ -75,12 +73,6 @@ public:
 
     void PostLightActionRequest(int32_t aActor, AppTask::Action_t aAction);
     void PostEvent(const AppEvent * event);
-    void UpdateClusterState();
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
-
 private:
     friend AppTask & GetAppTask(void);
 
@@ -88,8 +80,6 @@ private:
     static void InitServer(intptr_t arg);
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent * event, intptr_t arg);
-    static void ActionInitiated(AppTask::Action_t aActio, int32_t aActor);
-    static void ActionCompleted(AppTask::Action_t aAction);
     void DispatchEvent(AppEvent * event);
     static void SwitchActionEventHandler(AppEvent * aEvent);
 

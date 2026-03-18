@@ -61,11 +61,7 @@ public:
 
     void PostLightActionRequest(int32_t aActor, LightingManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
-    void PostAppIdentify();
 
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
 private:
     friend AppTask & GetAppTask(void);
 
@@ -85,7 +81,6 @@ private:
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
 
-    static void FactoryResetEventHandler(chip::System::Layer * aLayer, void * aAppState);
     static void TimerEventHandler(chip::System::Layer * aLayer, void * aAppState);
 
     void StartTimer(uint32_t aTimeoutMs);

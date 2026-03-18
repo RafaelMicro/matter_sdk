@@ -58,11 +58,6 @@ public:
     static void AppTaskMain(void * pvParameter);
 
     void PostEvent(const AppEvent * event);
-
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
 private:
     friend AppTask & GetAppTask(void);
 

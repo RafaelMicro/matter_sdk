@@ -18,7 +18,6 @@
  */
 
 #include "LightSwitchMgr.h"
-#include "BindingHandler.h"
 
 #include "AppConfig.h"
 #include "AppEvent.h"
@@ -41,22 +40,12 @@ LightSwitchMgr LightSwitchMgr::sSwitch;
  * @param lightSwitchEndpoint endpoint for the light switch device type
  * @param genericSwitchEndpoint endpoint for the generic switch device type
  */
-CHIP_ERROR LightSwitchMgr::Init(EndpointId lightSwitchEndpoint, chip::EndpointId genericSwitchEndpoint)
+CHIP_ERROR LightSwitchMgr::Init(chip::EndpointId genericSwitchEndpoint)
 {
-    VerifyOrReturnError(lightSwitchEndpoint != kInvalidEndpointId, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(genericSwitchEndpoint != kInvalidEndpointId, CHIP_ERROR_INVALID_ARGUMENT);
 
-    mLightSwitchEndpoint   = lightSwitchEndpoint;
     mGenericSwitchEndpoint = genericSwitchEndpoint;
-
-    // Configure Bindings
-    CHIP_ERROR error = InitBindingHandler();
-    if (error != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "InitBindingHandler() failed!");
-    }
-
-    return error;
+    return CHIP_NO_ERROR;
 }
 
 /**
@@ -85,36 +74,6 @@ void LightSwitchMgr::GenericSwitchOnShortRelease()
     DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
 }
 
-void LightSwitchMgr::TriggerLightSwitchAction(LightSwitchAction action, bool isGroupCommand)
-{
-    BindingCommandData * data = Platform::New<BindingCommandData>();
-
-    data->clusterId = chip::app::Clusters::OnOff::Id;
-    data->isGroup   = isGroupCommand;
-
-    switch (action)
-    {
-    case LightSwitchAction::Toggle:
-        data->commandId = OnOff::Commands::Toggle::Id;
-
-        break;
-
-    case LightSwitchAction::On:
-        data->commandId = OnOff::Commands::On::Id;
-        break;
-
-    case LightSwitchAction::Off:
-        data->commandId = OnOff::Commands::Off::Id;
-        break;
-
-    default:
-        Platform::Delete(data);
-        return;
-        break;
-    }
-
-    DeviceLayer::PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
-}
 
 void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 {

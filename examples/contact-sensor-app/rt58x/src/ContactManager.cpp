@@ -25,7 +25,6 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
-#include "semphr.h"
 
 /**********************************************************
  * Defines and Constants
@@ -36,8 +35,7 @@ using namespace ::chip::DeviceLayer;
 
 constexpr EndpointId kContactEndpoint = 1;
 
-//namespace ThermAttr = chip::app::Clusters::Thermostat::Attributes;
-namespace ContactAttr = chip::app::Clusters::BooleanState::Attributes;
+using namespace chip::app::Clusters;
 /**********************************************************
  * Variable declarations
  *********************************************************/
@@ -46,38 +44,36 @@ ContactManager ContactManager::sContMgr;
 
 CHIP_ERROR ContactManager::Init()
 {
-    bool temp;
-
-    ContactAttr::StateValue::Get(kContactEndpoint, &temp);
-
-    mStateValue =  temp;
+    auto booleanState = BooleanState::FindClusterOnEndpoint(kContactEndpoint);
+    ChipLogProgress(NotSpecified, "Contact Sensor State: Contact");
+    booleanState->SetStateValue(true);
+    hosal_gpio_pin_set(21);
     return CHIP_NO_ERROR;
 }
 
 void ContactManager::AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size)
 {
-
 }
 
-CHIP_ERROR ContactManager::ToggleStateValue()
+void ContactManager::ToggleStateValue(bool val)
 {
-    if(mStateValue == true)
+    auto booleanState = BooleanState::FindClusterOnEndpoint(kContactEndpoint);
+    if(booleanState != nullptr)
     {
-      mStateValue = false;
-      ChipLogProgress(NotSpecified, "Not contact");
-      hosal_gpio_pin_clear(21);
+      if(val == true)
+      {
+        ChipLogProgress(NotSpecified, "Contact Sensor State: Contact");
+        hosal_gpio_pin_set(21);
+      }
+      else
+      {
+        ChipLogProgress(NotSpecified, "Contact Sensor State: Not contact");
+        hosal_gpio_pin_clear(21);
+      }
+      PlatformMgr().LockChipStack();
+      booleanState->SetStateValue(val);
+      PlatformMgr().UnlockChipStack();
     }
-    else
-    {
-      mStateValue = true;
-      ChipLogProgress(NotSpecified, "Contact");
-      hosal_gpio_pin_set(21);
-    }
 
-    PlatformMgr().LockChipStack();
-    ContactAttr::StateValue::Set(kContactEndpoint, mStateValue);
-    PlatformMgr().UnlockChipStack();
-
-
-    return CHIP_NO_ERROR;
+    return;
 }

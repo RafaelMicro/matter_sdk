@@ -39,11 +39,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     AttributeId attributeId = attributePath.mAttributeId;
     // ChipLogProgress(Zcl, "Cluster callback: " ChipLogFormatMEI, ChipLogValueMEI(clusterId));
 
-    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-    {
-        GetAppTask().PostAppIdentify();
-    }
-    else if (clusterId == SmokeCoAlarm::Id && attributeId == SmokeCoAlarm::Attributes::SmokeState::Id)
+    if (clusterId == SmokeCoAlarm::Id && attributeId == SmokeCoAlarm::Attributes::SmokeState::Id)
     {
         SmokeMgr().HandleSmokeState(*value);
     }

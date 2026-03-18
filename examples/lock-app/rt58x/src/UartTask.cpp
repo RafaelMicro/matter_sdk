@@ -61,6 +61,7 @@ CHIP_ERROR UartTask::Init()
     {
         return CHIP_ERROR_NO_MEMORY;
     }
+    return CHIP_NO_ERROR;
 }
 
 void UartTask::UartTaskMain(void * pvParameter)
@@ -144,7 +145,7 @@ void UartTask::UartBufferPreCheck(uint8_t *cache,int len)
         }
         else
         {
-            uint8_t temp_buf[mTotalLen-mOffset];
+            uint8_t temp_buf[UART_BUF_SIZE];
             memcpy(temp_buf,mDataBuf+mOffset,mTotalLen-mOffset);
             memset(mDataBuf, 0, UART_BUF_SIZE);
             memcpy(mDataBuf,temp_buf,mTotalLen-mOffset);
@@ -238,8 +239,13 @@ void UartTask::SendCommand(uint16_t cmd,uint8_t payload_len,uint8_t *pbuf)
     hosal_uart_init(&uart1_dev);
 #endif
     uint8_t len = payload_len+2;
-    uint8_t total_len = 5+len+1;
-    uint8_t temp_buf[total_len];
+    uint16_t total_len = 5+len+1;
+    uint8_t temp_buf[UART_BUF_SIZE];
+    if (total_len > UART_BUF_SIZE)
+    {
+        // Message too large for buffer, do not send
+        return;
+    }
     temp_buf[0] = 0xFF;
     temp_buf[1] = 0xFC;
     temp_buf[2] = 0xFC;
@@ -254,7 +260,6 @@ void UartTask::SendCommand(uint16_t cmd,uint8_t payload_len,uint8_t *pbuf)
     temp_buf[5+len] = sUartTask.CRC_Calc(&temp_buf[4],len+1);
     hosal_uart_send(&uart1_dev, temp_buf, total_len);
     log_hexdump_out("", 16, temp_buf, total_len);
-
 }
 
 uint8_t UartTask::CRC_Calc(uint8_t *buf, uint8_t len)

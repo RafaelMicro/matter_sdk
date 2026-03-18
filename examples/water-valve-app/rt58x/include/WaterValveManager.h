@@ -29,7 +29,7 @@
 
 #include <app/data-model/Nullable.h>
 #include <app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-delegate.h>
-#include <app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-server.h>
+#include <src/app/clusters/valve-configuration-and-control-server/valve-configuration-and-control-cluster.h>
 
 #include "init_rt58x_platform.h"
 #include "init_device_environment.h"  

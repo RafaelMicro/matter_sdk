@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include "hosal_crypto_ecc.h"
 #include "hosal_crypto_sha256.h"
 #include "hosal_status.h"

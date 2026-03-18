@@ -125,6 +125,8 @@ void SmokeManager::ToggleSmokeState(AlarmStateEnum  AlarmState)
             ChipLogProgress(NotSpecified,"Smoke State: Critical");
         }
         break;
+        default:
+        break;
     }
     PlatformMgr().LockChipStack();
     SmokeCoAlarmServer::Instance().SetSmokeState(1, mSmokeAlarmState);

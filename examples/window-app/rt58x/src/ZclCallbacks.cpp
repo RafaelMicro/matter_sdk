@@ -55,12 +55,6 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     AttributeId attributeId = attributePath.mAttributeId;
     switch (clusterId)
     {
-    case Identify::Id:
-        if (attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-        {
-            GetAppTask().PostAppIdentify();
-        }
-        break;
     case WindowCovering::Id:
         ChipLogProgress(Zcl, "Window covering cluster ID: " ChipLogFormatMEI " Type: %u Value: %u, length: %u",
                         ChipLogValueMEI(attributeId), type, *value, size);

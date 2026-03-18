@@ -58,7 +58,7 @@ int main(void)
     }
 
     ChipLogProgress(NotSpecified, "=============================================================================");
-    ChipLogProgress(NotSpecified, "Rafael-Smoke-Alarm-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "Rafael-Smoke-Alarm-example(Matter 1.5) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     ChipLogProgress(NotSpecified, "=============================================================================");
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)

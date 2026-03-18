@@ -60,6 +60,7 @@ CHIP_ERROR HumidityManager::Init()
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
     xTimerStart(sHumiTimer, 10);
+    HumidityAttr::MeasuredValue::Set(kHumidityMeasurementEndpoint, 5800);
 
     ChipLogProgress(NotSpecified, "HumiManager::Init");
 
@@ -78,6 +79,7 @@ void HumidityManager::HumiTimerEventHandler(TimerHandle_t xTimer)
         simulatedIndex = 0;
     }
     humidity = mSimulatedHumi[simulatedIndex];
+    simulatedIndex++;
     ChipLogProgress(NotSpecified, "Humidity is : %d", humidity);
 
     

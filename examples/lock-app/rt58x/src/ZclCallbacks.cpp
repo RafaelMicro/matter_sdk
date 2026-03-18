@@ -39,11 +39,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     AttributeId attributeId = path.mAttributeId;
     ChipLogProgress(NotSpecified,"Cluster 0x%x Ep %x Attr %x", clusterId, endpoint, attributeId);
 
-    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-    {
-        GetAppTask().PostAppIdentify();
-    }
-    else if(clusterId == DoorLock::Id)
+    if(clusterId == DoorLock::Id)
     {
         switch (*value)
         {

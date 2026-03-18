@@ -265,9 +265,9 @@ uint8_t RafMultiControlManager::HandleCustomCommand(const ChipDeviceEvent * aEve
     uint8_t cmd_type = aEvent->Platform.TRSPData.data[0];
     uint8_t len = aEvent->Platform.TRSPData.data[1];
     uint8_t* value = &aEvent->Platform.TRSPData.data[2];
-    uint8_t command[len+1];
+    uint8_t command[64];
     uint8_t buf_len = 0;
-    if(len > 0)
+    if(len > 0 && len <= 64)
     {
         memcpy(command, value, len);
         command[len] = '\0';

@@ -41,7 +41,7 @@ using namespace chip::Credentials;
 using Protocols::InteractionModel::Status;
 
 // Is the device identifying?
-static bool emberAfIsDeviceIdentifying(EndpointId endpoint)
+bool  __attribute__((weak)) emberAfIsDeviceIdentifying(EndpointId endpoint)
 {
 #ifdef ZCL_USING_IDENTIFY_CLUSTER_SERVER
     auto cluster = FindIdentifyClusterOnEndpoint(endpoint);

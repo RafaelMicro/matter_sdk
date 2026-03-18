@@ -33,50 +33,25 @@
 #include "fota_define.h"
 #include "flashctl.h"
 
-/// No error, operation OK
-#define SL_BOOTLOADER_OK 0L
 
 using namespace ::chip::DeviceLayer::Internal;
 
 uint32_t GetCRC32(uint32_t flash_addr, uint32_t data_len)
 {
-    uint8_t RemainLen = (data_len & (0x3));
     uint32_t i;
     uint16_t j, k;
     uint32_t ChkSum = ~0;
-    uint32_t Len = (data_len >> 2), Read;
-    uint32_t *FlashPtr = (uint32_t *)flash_addr;
+    uint8_t Read;
 
-    for (i = 0; i < Len; i ++)
-    {
-        //get 32 bits at one time
-        Read = FlashPtr[i];
-        //get the CRC of 32 bits
-        for (j = 0; j < 32; j += 8)
-        {
-            //get the CRC of 8 bits
-            ChkSum ^= ((Read >> j) & 0xFF);
-            for (k = 0; k < 8; k ++)
-            {
-                ChkSum = (ChkSum & 1) ? (ChkSum >> 1) ^ 0xedb88320 : ChkSum >> 1;
-            }
-        }
-    }
-
-    /*if data_len not align 4 bytes*/
-    if (RemainLen > 0)
-    {
-        Read = FlashPtr[i];
-
-        //get the CRC of 32 bits
-        for (j = 0; j < (RemainLen << 3); j += 8)
-        {
-            //get the CRC of 8 bits
-            ChkSum ^= ((Read >> j) & 0xFF);
-            for (k = 0; k < 8; k ++)
-            {
-                ChkSum = (ChkSum & 1) ? (ChkSum >> 1) ^ 0xedb88320 : ChkSum >> 1;
-            }
+    for (i = 0; i < data_len; i++) {
+        //get 8 bits at one time
+        Read = flash_read_byte((flash_addr + i));
+        while (flash_check_busy()) {}
+        //get the CRC of 8 bits
+        ChkSum ^= Read;
+        for (k = 0; k < 8; k++) {
+            ChkSum = (ChkSum & 1) ? (ChkSum >> 1) ^ 0xedb88320
+                                    : ChkSum >> 1;
         }
     }
     ChkSum = ~ChkSum;
@@ -169,9 +144,9 @@ CHIP_ERROR OTAImageProcessorImpl::ConfirmCurrentImage()
 
 void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 {
-    int32_t err           = SL_BOOTLOADER_OK;
-    uint32_t otaBankStart = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
-    uint32_t otaBankSize  = SIZE_OF_FOTA_BANK_2MB;
+    int32_t err           = STATUS_SUCCESS;
+    uint32_t otaBankStart = FOTA_UPDATE_BUFFER_FW_ADDRESS;
+    uint32_t otaBankSize  = SIZE_OF_FOTA_BANK;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
     if (imageProcessor == nullptr)
@@ -188,7 +163,7 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
     // ChipLogProgress(SoftwareUpdate, "HandlePrepareDownload");
 
     taskENTER_CRITICAL();
-    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB; sector < otaBankStart + otaBankSize; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
+    for (uint32_t sector = FOTA_UPDATE_BUFFER_FW_ADDRESS; sector < otaBankStart + otaBankSize; sector += SIZE_OF_FLASH_SECTOR_ERASE) 
     {
         while (flash_check_busy()) {}
         flash_erase(FLASH_ERASE_SECTOR, sector);
@@ -206,12 +181,12 @@ void OTAImageProcessorImpl::HandlePrepareDownload(intptr_t context)
 
     // Not calling bootloader_eraseStorageSlot(mSlotId) here because we erase during each write
 
-    imageProcessor->mDownloader->OnPreparedForDownload(err == SL_BOOTLOADER_OK ? CHIP_NO_ERROR : CHIP_ERROR_INTERNAL);
+    imageProcessor->mDownloader->OnPreparedForDownload(err == STATUS_SUCCESS ? CHIP_NO_ERROR : CHIP_ERROR_INTERNAL);
 }
 
 void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 {
-    uint32_t err          = SL_BOOTLOADER_OK;
+    uint32_t err          = STATUS_SUCCESS;
     uint8_t *ptr          = NULL;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
     if (imageProcessor == nullptr)
@@ -233,15 +208,15 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 
         while (flash_check_busy());
         taskENTER_CRITICAL();
-        err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
-        // info("===> write last page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+        err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
+        // info("===> write last page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
         taskEXIT_CRITICAL();
 
         // CORE_CRITICAL_SECTION(err = bootloader_eraseWriteStorage(mPageNo, mWriteOffset, writeBuffer, kAlignmentBytes);)
         if (err != STATUS_SUCCESS)
         {
         //     ChipLogError(SoftwareUpdate, "ERROR: In HandleFinalize bootloader_eraseWriteStorage() error %ld", err);
-            ChipLogError(SoftwareUpdate, "ERROR: In page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+            ChipLogError(SoftwareUpdate, "ERROR: In page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
             imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
             return;
         }
@@ -254,7 +229,7 @@ void OTAImageProcessorImpl::HandleFinalize(intptr_t context)
 
 void OTAImageProcessorImpl::HandleApply(intptr_t context)
 {
-    uint32_t err = SL_BOOTLOADER_OK;
+    uint32_t err = STATUS_SUCCESS;
     uint32_t reboot_cnt = 0;
     fota_information_t t_bootloader_ota_info = {0};
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
@@ -269,7 +244,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     // chip::DeviceLayer::ConfigurationMgr().StoreSoftwareVersion(otaNewVersion);
 
     // CORE_CRITICAL_SECTION(err = bootloader_verifyImage(mSlotId, NULL);)
-    if (err != SL_BOOTLOADER_OK)
+    if (err != STATUS_SUCCESS)
     {
         ChipLogError(SoftwareUpdate, "ERROR: bootloader_verifyImage() error %ld", err);
 
@@ -277,7 +252,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     }
 
     // CORE_CRITICAL_SECTION(err = bootloader_setImageToBootload(mSlotId);)
-    if (err != SL_BOOTLOADER_OK)
+    if (err != STATUS_SUCCESS)
     {
         ChipLogError(SoftwareUpdate, "ERROR: bootloader_setImageToBootload() error %ld", err);
 
@@ -287,7 +262,7 @@ void OTAImageProcessorImpl::HandleApply(intptr_t context)
     memcpy(&t_bootloader_ota_info, (uint8_t *)FOTA_UPDATE_BANK_INFO_ADDRESS, sizeof(t_bootloader_ota_info));
 
     t_bootloader_ota_info.fotabank_ready = FOTA_IMAGE_READY;
-    t_bootloader_ota_info.fotabank_startaddr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
+    t_bootloader_ota_info.fotabank_startaddr = FOTA_UPDATE_BUFFER_FW_ADDRESS;
     t_bootloader_ota_info.fota_image_info = FOTA_IMAGE_INFO_COMPRESSED;
     t_bootloader_ota_info.signature_len = 0;
     t_bootloader_ota_info.target_startaddr = APP_START_ADDRESS;
@@ -331,7 +306,7 @@ void OTAImageProcessorImpl::HandleAbort(intptr_t context)
 
 void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
 {
-    uint32_t err          = SL_BOOTLOADER_OK;
+    uint32_t err          = STATUS_SUCCESS;
     auto * imageProcessor = reinterpret_cast<OTAImageProcessorImpl *>(context);
 
     if (imageProcessor == nullptr)
@@ -370,8 +345,8 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
             writeBufOffset = 0;
             while (flash_check_busy()) {}
             taskENTER_CRITICAL();
-            err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
-            // info("===> write page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+            err = flash_write_page((uint32_t)writeBuffer, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
+            // info("===> write page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
             taskEXIT_CRITICAL();
             mPageNo++;
 
@@ -379,7 +354,7 @@ void OTAImageProcessorImpl::HandleProcessBlock(intptr_t context)
             if (err != STATUS_SUCCESS)
             {
             //     ChipLogError(SoftwareUpdate, "ERROR: In HandleProcessBlock bootloader_eraseWriteStorage() error %ld", err);
-                ChipLogError(SoftwareUpdate, "ERROR: In page: %d, address: %08x\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB + mPageNo * kAlignmentBytes);
+                ChipLogError(SoftwareUpdate, "ERROR: In page: %ld, address: %08lx\r\n", mPageNo, FOTA_UPDATE_BUFFER_FW_ADDRESS + mPageNo * kAlignmentBytes);
                 imageProcessor->mDownloader->EndDownload(CHIP_ERROR_WRITE_FAILED);
                 return;
             }
@@ -401,8 +376,6 @@ CHIP_ERROR OTAImageProcessorImpl::ProcessHeader(ByteSpan & block)
         // Needs more data to decode the header
         VerifyOrReturnError(error != CHIP_ERROR_BUFFER_TOO_SMALL, CHIP_NO_ERROR);
         ReturnErrorOnFailure(error);
-
-        // SL TODO -- store version somewhere
         // ChipLogProgress(SoftwareUpdate, "Image Header software version: %ld payload size: %lu", header.mSoftwareVersion,
         //                 (long unsigned int) header.mPayloadSize);
         chip::OTAImageProcessorImpl::otaNewVersion = header.mSoftwareVersion;

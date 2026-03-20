@@ -3,6 +3,7 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
+    
     "configurations": [
         {
             "name": "Attach to running process",
@@ -21,6 +22,7 @@
             "showDevDebugOutput": "raw",
             "console": "integratedTerminal",
             "postAttachCommands": [
+                "set substitute-path /var/chip ${workspaceFolder}",
                 "set breakpoint pending on",
                 "monitor reset halt",
                 "tbreak main",
@@ -33,8 +35,28 @@
             "type": "pickString",
             "id": "board",
             "description": "Rafael board type",
-            "options": ["RT583", "RT584H", "RT584L"],
+            "options": ["RT583", "RT584H", "RT584L", "RT584HA4"],
             "default": "RT583"
-        }
+        },
+        {
+            "type": "pickString",
+            "id": "exampleproject",
+            "description": "Which example do you want to create?",
+            "options": [
+                "contact-sensor-app",
+                "humidity-sensor-app",
+                "light-switch-app",
+                "lighting-app",
+                "lock-app",
+                "occupancy-sensor-app",
+                "smart-plug-app",
+                "smoke-alarm-app",
+                "temperature-measurement-app",
+                "thermostat",
+                "water-valve-app",
+                "window-app"
+            ],
+            "default": ""
+        },
     ]
 }

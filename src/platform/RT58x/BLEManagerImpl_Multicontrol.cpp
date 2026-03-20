@@ -597,6 +597,7 @@ void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
 
 void BLEManagerImpl::ble_svcs_trsps_evt_handler(void *p_matter_evt_param)
 {
+    CHIP_ERROR err;
     ble_evt_att_param_t *p_param = (ble_evt_att_param_t *)p_matter_evt_param;
     if (p_param->gatt_role == BLE_GATT_ROLE_SERVER)
     {
@@ -615,7 +616,11 @@ void BLEManagerImpl::ble_svcs_trsps_evt_handler(void *p_matter_evt_param)
                 memcpy(p_data, p_param->data, p_param->length);
                 BleToAppEvent.Platform.TRSPData.len = p_param->length;
                 BleToAppEvent.Platform.TRSPData.data = p_data;
-                PlatformMgr().PostEvent(&BleToAppEvent);
+                err = PlatformMgr().PostEvent(&BleToAppEvent);
+                if (err != CHIP_NO_ERROR)
+                {
+                    ChipLogError(DeviceLayer, "Failed to post BleToAppEvent");
+                }
             }
         }
         break;

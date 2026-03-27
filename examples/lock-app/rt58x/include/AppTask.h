@@ -32,7 +32,6 @@
 
 #include "BoltLockManager.h"
 #include "PowerManager.h"
-// #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
@@ -66,13 +65,13 @@ private:
     CHIP_ERROR Init();
     static void InitServer(intptr_t arg);
     static void ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor);
-    static void ActionCompleted(BoltLockManager::Action_t aAction);    
+    static void ActionCompleted(BoltLockManager::Action_t aAction);
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent *, intptr_t);
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);
 
-    static void ButtonEventHandler(uint32_t pin, void* isr_param) ;
+    static void ButtonEventHandler(uint32_t pin, void * isr_param);
 
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
@@ -84,8 +83,8 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset   = 1,
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset = 1,
 
         kFunction_Invalid
     } Function;
@@ -93,12 +92,13 @@ private:
     Function_t mFunction;
     bool mFunctionTimerActive;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
 #endif
 };
+
 inline AppTask & GetAppTask(void)
 {
     return AppTask::sAppTask;

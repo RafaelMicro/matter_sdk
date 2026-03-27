@@ -60,15 +60,15 @@ CHIP_ERROR PowerManager::Init()
 void PowerManager::PowerTimerEventHandler(TimerHandle_t xTimer)
 {
     static uint8_t BatteryPercentRemaining = 200;
-    if(BatteryPercentRemaining > 10)
+    if (BatteryPercentRemaining > 10)
     {
-        BatteryPercentRemaining -=10;
+        BatteryPercentRemaining -= 10;
     }
     else
     {
         BatteryPercentRemaining = 200;
     }
-    ChipLogProgress(NotSpecified, "Battery power Remaining: %d%%", BatteryPercentRemaining/2);
+    ChipLogProgress(NotSpecified, "Battery power Remaining: %d%%", BatteryPercentRemaining / 2);
     PlatformMgr().LockChipStack();
     PowerSource::Attributes::BatPercentRemaining::Set(kContactEndpoint, BatteryPercentRemaining);
     PlatformMgr().UnlockChipStack();

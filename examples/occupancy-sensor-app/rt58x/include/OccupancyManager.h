@@ -29,13 +29,11 @@
 
 #include <lib/core/CHIPError.h>
 
-using namespace chip;
-
 class OccupancyManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
+    void AttributeChangeHandler(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value, uint16_t size);
     int16_t GetCurrentTemp();
     CHIP_ERROR ToggleOccupancy();
 

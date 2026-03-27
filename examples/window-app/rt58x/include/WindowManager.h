@@ -25,10 +25,8 @@
 
 #include "AppEvent.h"
 #include "FreeRTOS.h"
-#include "timers.h" // provides FreeRTOS timer support
+#include "timers.h"
 
-#include "init_rt58x_platform.h"
-#include "init_device_environment.h"  
 #include <lib/core/CHIPError.h>
 
 class WindowManager

@@ -65,7 +65,7 @@ public:
         INVALID_ACTION
     };
 
-    enum ButtonEvent: uint8_t
+    enum ButtonEvent : uint8_t
     {
         kButtonReleaseEvent = 0,
         kButtonPushEvent,
@@ -73,6 +73,7 @@ public:
 
     void PostLightActionRequest(int32_t aActor, AppTask::Action_t aAction);
     void PostEvent(const AppEvent * event);
+
 private:
     friend AppTask & GetAppTask(void);
 
@@ -83,7 +84,7 @@ private:
     void DispatchEvent(AppEvent * event);
     static void SwitchActionEventHandler(AppEvent * aEvent);
 
-    static void ButtonEventHandler(uint32_t pin, void* isr_param) ;
+    static void ButtonEventHandler(uint32_t pin, void * isr_param);
 
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
@@ -96,24 +97,23 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset   = 1,
-        kFunction_Switch_1       = 2,
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset = 1,
+        kFunction_Switch_1     = 2,
 
         kFunction_Invalid
     } Function;
 
     Function_t mFunction;
-    bool mFunctionTimerActive;
-    bool mFunctionSwitchActive;
-    bool mSyncClusterToButtonAction;
+    bool       mFunctionTimerActive;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
 #endif
 };
+
 inline AppTask & GetAppTask(void)
 {
     return AppTask::sAppTask;

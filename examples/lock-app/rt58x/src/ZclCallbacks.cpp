@@ -33,13 +33,13 @@ using namespace ::chip::app::Clusters::DoorLock;
 using chip::Protocols::InteractionModel::Status;
 
 void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & path, uint8_t type, uint16_t size, uint8_t * value)
-{    
-    EndpointId endpoint     = path.mEndpointId;
-    ClusterId clusterId     = path.mClusterId;
+{
+    EndpointId  endpoint    = path.mEndpointId;
+    ClusterId   clusterId   = path.mClusterId;
     AttributeId attributeId = path.mAttributeId;
-    ChipLogProgress(NotSpecified,"Cluster 0x%x Ep %x Attr %x", clusterId, endpoint, attributeId);
+    ChipLogProgress(NotSpecified, "Cluster 0x%x Ep %x Attr %x", clusterId, endpoint, attributeId);
 
-    if(clusterId == DoorLock::Id)
+    if (clusterId == DoorLock::Id)
     {
         switch (*value)
         {
@@ -82,28 +82,28 @@ bool emberAfPluginDoorLockSetCredential(EndpointId endpointId, uint16_t credenti
 }
 
 bool emberAfPluginDoorLockOnDoorLockCommand(chip::EndpointId endpointId, const Nullable<chip::FabricIndex> & fabricIdx,
-                                       const Nullable<chip::NodeId> & nodeId, const Optional<ByteSpan> & pinCode,
-                                       OperationErrorEnum & err)
+                                            const Nullable<chip::NodeId> & nodeId, const Optional<ByteSpan> & pinCode,
+                                            OperationErrorEnum & err)
 {
     bool returnValue = false;
 
     if (BoltLockMgr().ValidatePIN(pinCode, err))
     {
-        returnValue = (DoorLock::Attributes::LockState::Set(1,DlLockState::kLocked) == Status::Success) ? 1 : 0;
+        returnValue = (DoorLock::Attributes::LockState::Set(1, DlLockState::kLocked) == Status::Success) ? 1 : 0;
     }
 
     return returnValue;
 }
 
 bool emberAfPluginDoorLockOnDoorUnlockCommand(chip::EndpointId endpointId, const Nullable<chip::FabricIndex> & fabricIdx,
-                                         const Nullable<chip::NodeId> & nodeId, const Optional<ByteSpan> & pinCode,
-                                         OperationErrorEnum & err)
+                                              const Nullable<chip::NodeId> & nodeId, const Optional<ByteSpan> & pinCode,
+                                              OperationErrorEnum & err)
 {
     bool returnValue = false;
 
     if (BoltLockMgr().ValidatePIN(pinCode, err))
     {
-        returnValue =  (DoorLock::Attributes::LockState::Set(1,DlLockState::kUnlocked) == Status::Success) ? 1 : 0;
+        returnValue = (DoorLock::Attributes::LockState::Set(1, DlLockState::kUnlocked) == Status::Success) ? 1 : 0;
     }
 
     return returnValue;
@@ -112,12 +112,12 @@ bool emberAfPluginDoorLockOnDoorUnlockCommand(chip::EndpointId endpointId, const
 void emberAfDoorLockClusterInitCallback(EndpointId endpoint)
 {
     DataModel::Nullable<chip::app::Clusters::DoorLock::DlLockState> lockstate;
-    DoorLock::Attributes::LockState::Get(1,lockstate);
+    DoorLock::Attributes::LockState::Get(1, lockstate);
 
     DoorLockServer::Instance().InitServer(endpoint);
     if (!lockstate.IsNull())
     {
-        DoorLock::Attributes::LockState::Set(1,lockstate);
+        DoorLock::Attributes::LockState::Set(1, lockstate);
     }
     const auto logOnFailure = [](Status status, const char * attributeName) {
         if (status != Status::Success)

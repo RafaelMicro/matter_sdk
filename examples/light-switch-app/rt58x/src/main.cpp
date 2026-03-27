@@ -65,7 +65,7 @@ int main(void)
 
     init_rt58x_platform();
     init_device_environment();
-    
+
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)
     {
@@ -87,13 +87,13 @@ int main(void)
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

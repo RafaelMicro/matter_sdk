@@ -35,7 +35,7 @@ struct AppEvent
         kEventType_Identify_Identify,
         kEventType_Identify_Stop,
     };
-    
+
     enum AppActionTypes
     {
         kActionTypes_FactoryReset = 0,

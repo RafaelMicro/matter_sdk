@@ -23,16 +23,10 @@
 #include "AppConfig.h"
 #include "AppTask.h"
 #include "SmartPlugManager.h"
-#include "init_rt58x_platform.h"
-#include "init_device_environment.h"
 
-#include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/ConcreteAttributePath.h>
-#include <app/util/af-types.h>
-#include <assert.h>
-#include <lib/support/logging/CHIPLogging.h>
 
 using namespace ::chip;
 using namespace ::chip::app::Clusters;
@@ -40,7 +34,6 @@ using namespace ::chip::app::Clusters;
 void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & attributePath, uint8_t type, uint16_t size,
                                        uint8_t * value)
 {
-    EndpointId endpoint     = attributePath.mEndpointId;
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
 
@@ -49,22 +42,5 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
         PlugMgr().InitiateAction(*value ? SmartPlugManager::ON_ACTION : SmartPlugManager::OFF_ACTION, 0, size, value);
     }
 }
-/** @brief OnOff Cluster Init
- *
- * This function is called when a specific cluster is initialized. It gives the
- * application an opportunity to take care of cluster initialization procedures.
- * It is called exactly once for each endpoint where cluster is present.
- *
- * @param endpoint   Ver.: always
- *
- * TODO Issue #3841
- * emberAfOnOffClusterInitCallback happens before the stack initialize the cluster
- * attributes to the default value.
- * The logic here expects something similar to the deprecated Plugins callback
- * emberAfPluginOnOffClusterServerPostInitCallback.
- *
- */
-void emberAfOnOffClusterInitCallback(EndpointId endpoint)
-{
-    // TODO: implement any additional Cluster Server init actions
-}
+
+void emberAfOnOffClusterInitCallback(EndpointId endpoint) {}

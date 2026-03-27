@@ -50,7 +50,6 @@ CHIP_ERROR BoltLockManager::Init()
                                     (void *) this,     // init timer id = ble obj context
                                     TimerEventHandler, // timer callback handler
                                     &sLockTimerBuffer  // static buffer for timer
-
     );
 #else
     // Create FreeRTOS sw timer for lock timer.
@@ -66,10 +65,10 @@ CHIP_ERROR BoltLockManager::Init()
         ChipLogProgress(NotSpecified, "sLockTimer timer create failed");
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
-    status = DoorLock::Attributes::LockState::Get(1,lockstate);
+    status = DoorLock::Attributes::LockState::Get(1, lockstate);
     if (status == Status::Success && !lockstate.IsNull())
     {
-        if(lockstate.Value() == DlLockState::kLocked)
+        if (lockstate.Value() == DlLockState::kLocked)
         {
             mState = kState_LockingCompleted;
         }
@@ -128,10 +127,6 @@ void BoltLockManager::SetAutoLockDuration(uint32_t aDurationInSecs)
 bool BoltLockManager::GetUser(uint16_t userIndex, EmberAfPluginDoorLockUserInfo & user) const
 {
     user = mUsers[userIndex - 1];
-
-    // ChipLogProgress(Zcl, "Getting lock user %u: %s", static_cast<unsigned>(userIndex),
-    //                 user.userStatus == UserStatusEnum::kAvailable ? "available" : "occupied");
-
     return true;
 }
 
@@ -171,9 +166,6 @@ bool BoltLockManager::GetCredential(uint16_t credentialIndex, CredentialTypeEnum
     VerifyOrReturnError(credentialIndex > 0 && credentialIndex <= CONFIG_LOCK_NUM_CREDENTIALS, false);
 
     credential = mCredentials[credentialIndex - 1];
-
-    // ChipLogProgress(Zcl, "Getting lock credential %u: %s", static_cast<unsigned>(credentialIndex),
-    //                 credential.status == DlCredentialStatus::kAvailable ? "available" : "occupied");
 
     return true;
 }
@@ -295,7 +287,6 @@ void BoltLockManager::StartTimer(uint32_t aTimeoutMs)
     if (xTimerChangePeriod(sLockTimer, (aTimeoutMs / portTICK_PERIOD_MS), 100) != pdPASS)
     {
         ChipLogError(NotSpecified, "sLockTimer timer start() failed");
-        // appError(APP_ERROR_START_TIMER_FAILED);
     }
 }
 
@@ -304,7 +295,6 @@ void BoltLockManager::CancelTimer(void)
     if (xTimerStop(sLockTimer, 0) == pdFAIL)
     {
         ChipLogError(NotSpecified, "Lock timer timer stop() failed");
-        // appError(APP_ERROR_STOP_TIMER_FAILED);
     }
 }
 

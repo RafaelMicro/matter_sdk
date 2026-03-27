@@ -21,13 +21,13 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "WindowControl.h"
+
 #include <OTAConfig.h>
 
-#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/attribute-type.h>
+#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/clusters/identify-server/identify-server.h>
-// #include <app/clusters/on-off-server/on-off-server.h>
 #include <app/clusters/window-covering-server/window-covering-server.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
@@ -51,7 +51,6 @@
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
-#include <lib/core/CHIPError.h>
 #include <lib/core/CHIPError.h>
 
 #define APP_ENABLE_COMMISSIONING_TIMING 1
@@ -129,8 +128,6 @@ static bool sOperationalResumeIndicatorActive = false;
 } // namespace
 
 constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;
-using namespace chip::TLV;
-using namespace ::chip::DeviceLayer;
 AppTask AppTask::sAppTask;
 
 void LockOpenThreadTask(void)
@@ -166,22 +163,9 @@ void AppTask::OpenCommissioning(intptr_t arg)
     ChipLogProgress(NotSpecified, "BLE advertising started. Waiting for Pairing.");
 }
 
-/**
- * Update cluster status after application level changes
- */
 void AppTask::UpdateClusterState(intptr_t arg)
 {
     ChipLogProgress(NotSpecified, "UpdateClusterState");
-
-    // if(WindowMgr().IsTurnedOn())
-    // {
-    //     // write the new on/off value
-    //     EmberAfStatus status = OnOffServer::Instance().setOnOffValue(1, WindowMgr().IsTurnedOn(), false);
-    //     if (status != EMBER_ZCL_STATUS_SUCCESS)
-    //     {
-    //         ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
-    //     }
-    // }
 }
 
 void AppTask::ActionInitiated(WindowManager::Action_t aAction)
@@ -217,17 +201,8 @@ void AppTask::ActionCompleted(WindowManager::Action_t aAction)
 }
 void AppTask::ActionEventHandler(AppEvent * aEvent)
 {
-    bool initiated = false;
-    WindowManager::Action_t action;
-    int32_t actor;
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
     switch (aEvent->Type)
     {
-    case AppEvent::AppEventTypes::kEventType_Light:
-        break;
-    case AppEvent::AppEventTypes::kEventType_Button:
-        break;
     case AppEvent::AppEventTypes::kEventType_MovingUpOrOpen:
         ChipLogProgress(NotSpecified, "Window covering move: up");
         chip::DeviceLayer::PlatformMgr().LockChipStack();
@@ -243,10 +218,8 @@ void AppTask::ActionEventHandler(AppEvent * aEvent)
         chip::DeviceLayer::PlatformMgr().UnlockChipStack();
         break;
     default:
-        err = APP_ERROR_UNHANDLED_EVENT;
         break;
     }
-
 }
 
 void AppTask::InitServer(intptr_t arg)
@@ -259,7 +232,6 @@ void AppTask::InitServer(intptr_t arg)
     gExampleDeviceInfoProvider.SetStorageDelegate(initParams.persistentStorageDelegate);
     SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
 
-
     chip::Inet::EndPointStateOpenThread::OpenThreadEndpointInitParam nativeParams;
     nativeParams.lockCb                = LockOpenThreadTask;
     nativeParams.unlockCb              = UnlockOpenThreadTask;
@@ -267,9 +239,9 @@ void AppTask::InitServer(intptr_t arg)
     initParams.endpointNativeParams    = static_cast<void *>(&nativeParams);
 
     err = chip::Server::GetInstance().Init(initParams);
-    if(err != CHIP_NO_ERROR)
+    if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "chip::Server::init failed %s", ErrorStr(err));
     }
 
 #ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
@@ -322,7 +294,6 @@ void AppTask::UpdateStatusLED()
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
 {
-    //ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
     switch (aEvent->Type)
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
@@ -501,7 +472,7 @@ CHIP_ERROR AppTask::Init()
     err = ThreadStackMgr().StartThreadTask();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+        ChipLogError(NotSpecified, "ThreadStackMgr().StartThreadTask() failed");
     }
 
     if (PlatformMgr().StartEventLoopTask() != CHIP_NO_ERROR)
@@ -583,7 +554,6 @@ void AppTask::StartTimer(uint32_t aTimeoutInMs)
 {
     CHIP_ERROR err;
 
-    // chip::DeviceLayer::SystemLayer().CancelTimer(TimerEventHandler, this);
     PlatformMgr().LockChipStack();
     err = chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(aTimeoutInMs), TimerEventHandler, this);
     PlatformMgr().UnlockChipStack();
@@ -603,6 +573,7 @@ void AppTask::PostEvent(const AppEvent * aEvent)
     {
         if (!xQueueSend(sAppEventQueue, aEvent, 1))
         {
+            ChipLogError(NotSpecified, "Failed to post event to app task event queue");
         }
     }
 }
@@ -628,7 +599,7 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
 
     // If we reached here, the button was held past FACTORY_RESET_TRIGGER_TIMEOUT,
     // initiate factory reset
-    else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+    if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
     {
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
@@ -752,7 +723,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
     }
 }
 
-void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param) 
+void AppTask::ButtonEventHandler(uint32_t pin, void * isr_param)
 {
     uint32_t pin_status;
     hosal_gpio_pin_get(pin, &pin_status);
@@ -805,22 +776,20 @@ void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
     }
 }
 
-
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;
-    // QueueHandle_t sAppEventQueue = *(static_cast<QueueHandle_t *>(pvParameter));
 
     CHIP_ERROR err = sAppTask.Init();
     if (err != CHIP_NO_ERROR)
     {
-        return ;
+        return;
     }
 
     while (true)
-    {       
+    {
         BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
-       
+
         while (eventReceived == pdTRUE)
         {
             sAppTask.DispatchEvent(&event);

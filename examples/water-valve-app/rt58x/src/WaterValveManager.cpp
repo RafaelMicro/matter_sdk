@@ -30,6 +30,7 @@ using namespace chip;
 using namespace chip::app;
 using namespace chip::app::Clusters;
 using namespace chip::DeviceLayer;
+
 WaterValveManager WaterValveManager::sValve;
 
 CHIP_ERROR WaterValveManager::Init(uint8_t ep)
@@ -39,19 +40,21 @@ CHIP_ERROR WaterValveManager::Init(uint8_t ep)
 
     return CHIP_NO_ERROR;
 }
+
 DataModel::Nullable<chip::Percent> WaterValveManager::HandleOpenValve(DataModel::Nullable<chip::Percent> level)
 {
     ChipLogProgress(Zcl, "Valve open at level %d%%", level.Value());
 
     mCurrentLevelPercent = level.Value();
-    if(mCurrentLevelPercent > 0)
+    if (mCurrentLevelPercent > 0)
     {
         hosal_gpio_pin_clear(21);
     }
-    
+
     ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kOpen);
     return level;
 }
+
 CHIP_ERROR WaterValveManager::HandleCloseValve()
 {
     ChipLogProgress(Zcl, "Valve closed");
@@ -62,10 +65,12 @@ CHIP_ERROR WaterValveManager::HandleCloseValve()
     ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kClosed);
     return CHIP_NO_ERROR;
 }
+
 void WaterValveManager::HandleRemainingDurationTick(uint32_t duration)
 {
     ChipLogProgress(Zcl, "Valve will close in %ds", duration);
 }
+
 void WaterValveManager::OpenValve(void)
 {
     ChipLogProgress(Zcl, "OpenValve");
@@ -77,6 +82,7 @@ void WaterValveManager::OpenValve(void)
     ValveConfigurationAndControl::SetValveLevel(mEndpoint, openLevel, duration);
     PlatformMgr().UnlockChipStack();
 }
+
 void WaterValveManager::CloseValve(void)
 {
     ChipLogProgress(Zcl, "CloseValve");

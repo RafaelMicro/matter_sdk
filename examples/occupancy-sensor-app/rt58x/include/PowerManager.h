@@ -36,7 +36,6 @@ public:
 private:
     friend PowerManager & PowerMgr();
 
-    // Reads new generated sensor value, stores it, and updates local temperature attribute
     static void PowerTimerEventHandler(TimerHandle_t xTimer);
     static PowerManager sPowerManager;
 };

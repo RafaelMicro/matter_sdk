@@ -36,7 +36,7 @@ public:
     struct GenericSwitchEventData
     {
         chip::EndpointId endpoint;
-        chip::EventId event;
+        chip::EventId    event;
     };
 
     CHIP_ERROR Init(chip::EndpointId genericSwitchEndpoint);

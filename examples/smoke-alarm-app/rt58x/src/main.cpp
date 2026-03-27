@@ -54,7 +54,7 @@ int main(void)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "Platform::MemoryInit() failed");
-        return 0; 
+        return 0;
     }
 
     ChipLogProgress(NotSpecified, "=============================================================================");
@@ -70,13 +70,13 @@ int main(void)
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

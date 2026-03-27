@@ -17,19 +17,11 @@
  *    limitations under the License.
  */
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include "TemperatureManager.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
 #include "semphr.h"
-
-/**********************************************************
- * Defines and Constants
- *********************************************************/
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
@@ -38,10 +30,6 @@ constexpr EndpointId kThermostatEndpoint = 1;
 
 using namespace ::chip::app::Clusters::Thermostat;
 namespace ThermAttr = chip::app::Clusters::Thermostat::Attributes;
-/**********************************************************
- * Variable declarations
- *********************************************************/
-
 TemperatureManager TemperatureManager::sTempMgr;
 
 CHIP_ERROR TemperatureManager::Init()
@@ -50,12 +38,10 @@ CHIP_ERROR TemperatureManager::Init()
     int16_t heatingSetpoint, coolingSetpoint;
     SystemModeEnum systemMode;
 
-    //PlatformMgr().LockChipStack();
     ThermAttr::LocalTemperature::Get(kThermostatEndpoint, temp);
     ThermAttr::OccupiedCoolingSetpoint::Get(kThermostatEndpoint, &coolingSetpoint);
     ThermAttr::OccupiedHeatingSetpoint::Get(kThermostatEndpoint, &heatingSetpoint);
     ThermAttr::SystemMode::Get(kThermostatEndpoint, &systemMode);
-    //PlatformMgr().UnlockChipStack();
 
     mCurrentTempCelsius     = ConvertToPrintableTemp(temp.Value());
     mHeatingCelsiusSetPoint = ConvertToPrintableTemp(coolingSetpoint);
@@ -92,7 +78,7 @@ CHIP_ERROR TemperatureManager::Init()
         break;
     default:
         mThermMode = 2;
-        break; // unknown value;
+        break;
     }
 
 

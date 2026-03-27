@@ -60,9 +60,9 @@ CHIP_ERROR PowerManager::Init()
 void PowerManager::PowerTimerEventHandler(TimerHandle_t xTimer)
 {
     static uint8_t BatteryPercentRemaining = 200;
-    if(BatteryPercentRemaining > 10)
+    if (BatteryPercentRemaining > 10)
     {
-        BatteryPercentRemaining -=10;
+        BatteryPercentRemaining -= 10;
     }
     else
     {

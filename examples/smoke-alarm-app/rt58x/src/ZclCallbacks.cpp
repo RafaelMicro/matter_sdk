@@ -37,7 +37,6 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
 {
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
-    // ChipLogProgress(Zcl, "Cluster callback: " ChipLogFormatMEI, ChipLogValueMEI(clusterId));
 
     if (clusterId == SmokeCoAlarm::Id && attributeId == SmokeCoAlarm::Attributes::SmokeState::Id)
     {

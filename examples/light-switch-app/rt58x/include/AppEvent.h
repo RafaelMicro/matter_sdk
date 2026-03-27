@@ -51,7 +51,6 @@ struct AppEvent
         {
             uint8_t Action;
             uint8_t ButtonIdx;
-
         } ButtonEvent;
         struct
         {

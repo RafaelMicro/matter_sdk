@@ -29,9 +29,8 @@
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/on-off-server/on-off-server.h>
 
-
 #include "init_rt58x_platform.h"
-#include "init_device_environment.h"  
+#include "init_device_environment.h"
 #include <lib/core/CHIPError.h>
 
 class LightingManager
@@ -70,7 +69,6 @@ private:
     HsvColor_t mHSV;
     RgbColor_t mRGB;
     CtColor_t mCT;
-    //uint8_t mColorMode;
     chip::app::Clusters::ColorControl::ColorModeEnum mColorMode =
         chip::app::Clusters::ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
 

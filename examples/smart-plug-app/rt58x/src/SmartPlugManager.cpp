@@ -66,7 +66,7 @@ bool SmartPlugManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t
         break;
     case OFF_ACTION:
         ChipLogProgress(NotSpecified, "PlugMgr:OFF: %s->OFF", mState == kState_On ? "ON" : "OFF");
-        break;    
+        break;
     default:
         ChipLogProgress(NotSpecified, "PlugMgr:Unknown");
         break;
@@ -86,7 +86,7 @@ bool SmartPlugManager::InitiateAction(Action_t aAction, int32_t aActor, uint16_t
         mState = kState_Off;
     }
     if (action_initiated)
-    {        
+    {
         if (mActionInitiated_CB)
         {
             mActionInitiated_CB(aAction);

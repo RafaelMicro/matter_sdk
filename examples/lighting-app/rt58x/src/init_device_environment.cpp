@@ -42,41 +42,43 @@ static void init_lighting_pin_mux(void)
 {
     gpio_cfg_output(20);
     hosal_gpio_pin_set(20);
-    return;
 }
 
 void init_pwm(void)
 {
     hosal_pwm_dev_t pwm_dev;
 
-    pwm_dev.config.id = HOSAL_PWM_ID_1;
-    pwm_dev.config.frequency = 16000;//16K
-    pwm_dev.config.pin_out = PWM_BLUE;
-    pwm_dev.config.count_end_val = 3000;	
+    pwm_dev.config.id            = HOSAL_PWM_ID_1;
+    pwm_dev.config.frequency     = 16000; //16K
+    pwm_dev.config.pin_out       = PWM_BLUE;
+    pwm_dev.config.count_end_val = 3000;
     hosal_pwm_init_fmt0(&pwm_dev);
 
-    pwm_dev.config.id = HOSAL_PWM_ID_2;
+    pwm_dev.config.id      = HOSAL_PWM_ID_2;
     pwm_dev.config.pin_out = PWM_RED;
     hosal_pwm_init_fmt0(&pwm_dev);
 
-    pwm_dev.config.id = HOSAL_PWM_ID_3;
+    pwm_dev.config.id      = HOSAL_PWM_ID_3;
     pwm_dev.config.pin_out = PWM_GREEN;
     hosal_pwm_init_fmt0(&pwm_dev);
 }
+
 uint8_t calc_duty(uint8_t level)
 {
     uint8_t duty;
     duty = level * 100 / 254;
-    if(level > 0 && duty == 0) {
+    if (level > 0 && duty == 0)
+    {
         duty = 1;
     }
     /* Inverted for rt58x evk */
     duty = 100 - duty;
     return duty;
 }
+
 void pwm_set_color(uint8_t r, uint8_t g, uint8_t b)
 {
-    uint8_t duty_r,duty_g,duty_b;
+    uint8_t duty_r, duty_g, duty_b;
     duty_r = calc_duty(r);
     duty_g = calc_duty(g);
     duty_b = calc_duty(b);

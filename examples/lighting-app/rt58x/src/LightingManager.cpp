@@ -55,7 +55,7 @@ CHIP_ERROR LightingManager::Init()
     uint8_t currentLedSaturation;
     uint16_t currentLedColorTemperature;
     app::DataModel::Nullable<uint8_t> nullableCurrentLevel;
-    
+
     Status status;
 
     OnOffServer::Instance().getOnOffValue(1, &currentLedState);
@@ -106,13 +106,13 @@ CHIP_ERROR LightingManager::Init()
     if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
         mRGB = HsvToRgb(mHSV);
     else if (mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
-        mRGB = XYToRgb(mLevel, mXY.x, mXY.y); 
+        mRGB = XYToRgb(mLevel, mXY.x, mXY.y);
     else if (mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)
-        mRGB = CTToRgb(mCT); 
+        mRGB = CTToRgb(mCT);
     mState = currentLedState ? kState_On : kState_Off;
 
     mTimer = xTimerCreate("LightTimer", pdMS_TO_TICKS(100), pdFALSE, nullptr, TimerEventHandler);
-    if(mTimer == nullptr)
+    if (mTimer == nullptr)
     {
         ChipLogError(NotSpecified, "Failed to create timer");
         return CHIP_ERROR_NO_MEMORY;
@@ -121,6 +121,7 @@ CHIP_ERROR LightingManager::Init()
 
     return CHIP_NO_ERROR;
 }
+
 bool LightingManager::IsTurnedOn()
 {
     return mState == kState_On;
@@ -166,7 +167,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
     case COLOR_ACTION_CT:
         ct.ctMireds = *reinterpret_cast<uint16_t *>(value);
         ChipLogProgress(NotSpecified, "LightMgr:COLOR: ct:%u->%u", mCT.ctMireds, ct.ctMireds);
-        break;        
+        break;
     default:
         ChipLogProgress(NotSpecified, "LightMgr:Unknown");
         break;
@@ -218,7 +219,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
         }
         else
         {
-           new_state = kState_On;
+            new_state = kState_On;
         }
     }
     else if (aAction == COLOR_ACTION_CT)
@@ -230,7 +231,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
         }
         else
         {
-           new_state = kState_On;
+            new_state = kState_On;
         }
     }
     if (action_initiated)
@@ -260,17 +261,18 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
 
     return action_initiated;
 }
+
 void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
     mHSV.v = mLevel;
-    if(mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
+    if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
     {
-        mRGB   = HsvToRgb(mHSV);
+        mRGB = HsvToRgb(mHSV);
     }
-    else if(mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
+    else if (mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
     {
-        mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+        mRGB = XYToRgb(mLevel, mXY.x, mXY.y);
     }
 }
 
@@ -287,12 +289,7 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
     mHSV.s = saturation;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
 
-    // ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
-
     mRGB = HsvToRgb(mHSV);
-
-    // ChipLogProgress(NotSpecified, "===> H: %d, S: %d\r\n", hue, saturation);
-    // ChipLogProgress(NotSpecified, "===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
@@ -335,19 +332,19 @@ void LightingManager::Set(bool aOn)
 
 void LightingManager::UpdateLight()
 {
-    //ChipLogProgress(NotSpecified, "UpdateLight: %d Mode: %d L:%d R:%d G:%d B:%d", mState, mColorMode, mLevel, mRGB.r, mRGB.g, mRGB.b);
     if (mTimer)
     {
         xTimerChangePeriod(mTimer, pdMS_TO_TICKS(500), 0);
     }
 }
+
 void LightingManager::TimerEventHandler(TimerHandle_t xTimer)
 {
     ChipLogProgress(NotSpecified, "R: %d, G: %d, B: %d\r\n", sLight.mRGB.r, sLight.mRGB.g, sLight.mRGB.b);
 
     if (sLight.mState == kState_On && sLight.mLevel > 1)
     {
-        if(sLight.mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)//using color temperature
+        if (sLight.mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds) //using color temperature
         {
             pwm_set_color(CorrectRGB(sLight.mRGB.r,sLight.mLevel), CorrectRGB(sLight.mRGB.g,sLight.mLevel), CorrectRGB(sLight.mRGB.b,sLight.mLevel));
         }
@@ -358,6 +355,6 @@ void LightingManager::TimerEventHandler(TimerHandle_t xTimer)
     }
     else
     {
-            pwm_set_color(0, 0, 0);
+        pwm_set_color(0, 0, 0);
     }
 }

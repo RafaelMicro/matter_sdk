@@ -29,13 +29,12 @@
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <lib/core/CHIPError.h>
-using namespace ::chip::app::Clusters::SmokeCoAlarm;
 
 class SmokeManager
 {
 public:
     CHIP_ERROR Init();
-    void ToggleSmokeState(AlarmStateEnum  AlarmState);
+    void ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum AlarmState);
     void HandleSmokeState(uint8_t SmokeAlarmState);
     void HandleOnoffValue(uint8_t onoff);
 
@@ -49,8 +48,8 @@ public:
     };
 private:
     bool mStartSelfTesting;
-    AlarmStateEnum mSmokeAlarmState;
-    AlarmStateEnum mCOAlarmState;
+    chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum mSmokeAlarmState;
+    chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum mCOAlarmState;
     friend SmokeManager & SmokeMgr();
     static void SelfTestTimerEventHandler(TimerHandle_t xTimer);
     static void AlarmLedTimerHandler(TimerHandle_t xTimer);

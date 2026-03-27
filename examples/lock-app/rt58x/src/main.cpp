@@ -67,17 +67,17 @@ int main(void)
         ChipLogError(NotSpecified, "PlatformMgr().InitChipStack() failed");
         goto exit;
     }
-    
+
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

@@ -17,18 +17,10 @@
  *    limitations under the License.
  */
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include "SensorManager.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
-
-/**********************************************************
- * Defines and Constants
- *********************************************************/
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
@@ -36,10 +28,6 @@ using namespace ::chip::DeviceLayer;
 constexpr EndpointId kThermostatEndpoint = 1;
 constexpr uint16_t kSensorTImerPeriodMs  = 30000; // 30s timer period
 constexpr uint16_t kMinTemperatureDelta  = 50;    // 0.5 degree Celcius
-
-/**********************************************************
- * Variable declarations
- *********************************************************/
 
 TimerHandle_t sSensorTimer;
 StaticTimer_t sPowerTimerStruct;
@@ -61,10 +49,6 @@ CHIP_ERROR SensorManager::Init()
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
 
-    // Update Temp immediatly at bootup
-    //SensorTimerEventHandler(sSensorTimer);
-
-    // Trigger periodic update
     xTimerStart(sSensorTimer, 10);
 
     ChipLogProgress(NotSpecified, "SensorManager::Init");
@@ -97,9 +81,6 @@ void SensorManager::SensorTimerEventHandler(TimerHandle_t xTimer)
     {
         lastTemperature = temperature;
         PlatformMgr().LockChipStack();
-        // The SensorMagager shouldn't be aware of the Endpoint ID TODO Fix this.
-        // TODO Per Spec we should also apply the Offset stored in the same cluster before saving the temp
-
         app::Clusters::Thermostat::Attributes::LocalTemperature::Set(kThermostatEndpoint, temperature);
         PlatformMgr().UnlockChipStack();
     }

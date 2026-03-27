@@ -19,42 +19,27 @@
 
 #pragma once
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "AppEvent.h"
 #include "BaseApplication.h"
+#include "EnhancedFlashDataset.h"
+#include "FactoryDataProvider.h"
 #include "FreeRTOS.h"
 #include "SensorManager.h"
 #include "TemperatureManager.h"
+#include "hosal_gpio.h"
+#include "hosal_sysctrl.h"
+#include "timers.h"
 
-// #include "sl_simple_button_instances.h"
-#include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
-#include "EnhancedFlashDataset.h"
-#include "hosal_gpio.h"
-#include "hosal_sysctrl.h"
-
-#include "FactoryDataProvider.h"
-
-/**********************************************************
- * Defines
- *********************************************************/
-
-/**********************************************************
- * AppTask Declaration
- *********************************************************/
 
 class AppTask
 {
-
 public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
@@ -81,11 +66,10 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset   = 1,
-
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset = 1,
         kFunction_Invalid
-    } Function;
+    };
 
     Function_t mFunction;
     bool mFunctionTimerActive;

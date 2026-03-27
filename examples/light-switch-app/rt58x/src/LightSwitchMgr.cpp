@@ -74,10 +74,8 @@ void LightSwitchMgr::GenericSwitchOnShortRelease()
     DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
 }
 
-
 void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 {
-
     GenericSwitchEventData * data = reinterpret_cast<GenericSwitchEventData *>(context);
 
     switch (data->event)

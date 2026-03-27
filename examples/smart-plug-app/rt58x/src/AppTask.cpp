@@ -49,7 +49,6 @@
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
 #include <lib/core/CHIPError.h>
-#include <lib/core/CHIPError.h>
 
 #include "uart.h"
 #include "log.h"
@@ -97,9 +96,6 @@ static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 
 } //namespace
 
-constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;
-using namespace chip::TLV;
-using namespace ::chip::DeviceLayer;
 AppTask AppTask::sAppTask;
 
 void LockOpenThreadTask(void)
@@ -115,7 +111,7 @@ void UnlockOpenThreadTask(void)
 static void IdentifyToggleOnOff(uint8_t onoff)
 {
     //turn on/off led indicator
-    if(onoff)
+    if (onoff)
     {
         hosal_gpio_pin_clear(20);
     }
@@ -156,12 +152,6 @@ void AppTask::ActionInitiated(SmartPlugManager::Action_t aAction)
     {
         ChipLogProgress(NotSpecified, "Plug goes off ");
     }
-
-    // if (sAppTask.mSyncClusterToButtonAction)
-    // {
-    //     PlatformMgr().ScheduleWork(UpdateClusterState, 0);
-    //     sAppTask.mSyncClusterToButtonAction = false;
-    // }
 }
 
 void AppTask::ActionCompleted(SmartPlugManager::Action_t aAction)
@@ -215,7 +205,7 @@ void AppTask::InitServer(intptr_t arg)
     err = chip::Server::GetInstance().Init(initParams);
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "chip::Server::init failed %s", ErrorStr(err));
     }
 
 #ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
@@ -231,7 +221,7 @@ void AppTask::InitServer(intptr_t arg)
     }
     else
     {
-        chip::app::DnssdServer::Instance().StartServer();   
+        chip::app::DnssdServer::Instance().StartServer();
         sCommissioned = true;
     }
 
@@ -245,10 +235,8 @@ void AppTask::InitServer(intptr_t arg)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "PlugMgr().Init() failed");
-        //return err;
     }
     PlugMgr().SetCallbacks(ActionInitiated, ActionCompleted);
-
 
     smart_plug_trigger(PlugMgr().IsTurnedOn());
 #if RT58x_OTA_ENABLED
@@ -270,12 +258,11 @@ void AppTask::UpdateStatusLED()
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
 {
-    //ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
     switch (aEvent->Type)
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
         sIsThreadBLEAdvertising = true;
-        UpdateStatusLED();   
+        UpdateStatusLED();
         break;
     case DeviceEventType::kCHIPoBLEConnectionClosed:
     case DeviceEventType::kFailSafeTimerExpired:
@@ -285,14 +272,14 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
     case DeviceEventType::kThreadStateChange:
         sIsThreadProvisioned = ConnectivityMgr().IsThreadProvisioned();
         sIsThreadEnabled     = ConnectivityMgr().IsThreadEnabled();
-        UpdateStatusLED();    
+        UpdateStatusLED();
         break;
     case DeviceEventType::kThreadConnectivityChange:
         break;
 
     case DeviceEventType::kCHIPoBLEConnectionEstablished:
         sHaveBLEConnections = true;
-        UpdateStatusLED(); 
+        UpdateStatusLED();
         break;
 
     case DeviceEventType::kCommissioningComplete:
@@ -317,7 +304,7 @@ CHIP_ERROR AppTask::Init()
         ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
     }
 
-    ChipLogError(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
+    ChipLogProgress(NotSpecified, "Device Type : 0x%04X", CHIP_DEVICE_CONFIG_DEVICE_TYPE);
 
 #if CONFIG_HOSAL_SOC_IDLE_SLEEP
     err = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
@@ -333,12 +320,12 @@ CHIP_ERROR AppTask::Init()
     err = ThreadStackMgr().StartThreadTask();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+        ChipLogError(NotSpecified, "ThreadStackMgr().StartThreadTask() failed");
     }
 
     if (PlatformMgr().StartEventLoopTask() != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
+        ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
     }
     PlatformMgr().ScheduleWork(InitServer, 0);
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
@@ -366,7 +353,7 @@ CHIP_ERROR AppTask::StartAppTask()
         hosal_gpio_debounce_enable(i);
         hosal_gpio_int_enable(i);
     }
-    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
+    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent),
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
     if (sAppEventQueue == nullptr)
     {
@@ -375,7 +362,7 @@ CHIP_ERROR AppTask::StartAppTask()
     }
 
     // Start App task.
-    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
+    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME,
                                     MATTER_ARRAY_SIZE(appStack), nullptr, 1, appStack, &appTaskStruct);
     if (sAppTaskHandle == nullptr)
     {
@@ -386,7 +373,7 @@ CHIP_ERROR AppTask::StartAppTask()
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
     SetCommissionableDataProvider(&mFactoryDataProvider);
-    SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
+    SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
@@ -403,7 +390,6 @@ void AppTask::TimerEventHandler(chip::System::Layer * aLayer, void * aAppState)
     sAppTask.PostEvent(&event);
 }
 
-
 void AppTask::CancelTimer()
 {
     PlatformMgr().LockChipStack();
@@ -416,7 +402,6 @@ void AppTask::StartTimer(uint32_t aTimeoutInMs)
 {
     CHIP_ERROR err;
 
-    //chip::DeviceLayer::SystemLayer().CancelTimer(TimerEventHandler, this);
     PlatformMgr().LockChipStack();
     err = chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(aTimeoutInMs), TimerEventHandler, this);
     PlatformMgr().UnlockChipStack();
@@ -436,6 +421,7 @@ void AppTask::PostEvent(const AppEvent * aEvent)
     {
         if (!xQueueSend(sAppEventQueue, aEvent, 1))
         {
+            ChipLogError(NotSpecified, "Failed to post event to app event queue");
         }
     }
 }
@@ -461,7 +447,7 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
 
     // If we reached here, the button was held past FACTORY_RESET_TRIGGER_TIMEOUT,
     // initiate factory reset
-    else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+    if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
     {
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
@@ -504,7 +490,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;
-    
+
     case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
         if (aEvent->ButtonEvent.Action == true)
         {
@@ -529,13 +515,13 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;
-    
+
     default:
         break;
     }
 }
 
-void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param) 
+void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
 {
     uint32_t pin_status;
     hosal_gpio_pin_get(pin, &pin_status);
@@ -552,7 +538,7 @@ void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
-        break;    
+        break;
     case (1):
         {
             AppEvent button_event              = {};
@@ -575,15 +561,15 @@ void AppTask::AppTaskMain(void * pvParameter)
     CHIP_ERROR err = sAppTask.Init();
     if (err != CHIP_NO_ERROR)
     {
-        return ;
+        return;
     }
 
     while (true)
-    {       
+    {
         BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
-       
+
         while (eventReceived == pdTRUE)
-        {;
+        {
             sAppTask.DispatchEvent(&event);
             eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
         }

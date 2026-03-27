@@ -22,7 +22,6 @@
 #include <stdint.h>
 
 #include "AppEvent.h"
-
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app-common/zap-generated/attributes/Accessors.h>

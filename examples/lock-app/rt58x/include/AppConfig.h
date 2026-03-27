@@ -19,8 +19,6 @@
 
 #pragma once
 
-// #include "efr32_utils.h"
-
 // ---- Lighting Example App Config ----
 
 #define APP_TASK_NAME "APP"
@@ -28,8 +26,6 @@
 // Time it takes in ms for the simulated actuator to move from one
 // state to another.
 #define ACTUATOR_MOVEMENT_PERIOS_MS 10
-
-
 
 // Maximum number of users supported by lock
 #define CONFIG_LOCK_NUM_USERS (4)

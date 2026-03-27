@@ -17,28 +17,16 @@
  *    limitations under the License.
  */
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include "ContactManager.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
 
-/**********************************************************
- * Defines and Constants
- *********************************************************/
-
 using namespace chip;
-using namespace ::chip::DeviceLayer;
+using namespace chip::DeviceLayer;
+using namespace chip::app::Clusters;
 
 constexpr EndpointId kContactEndpoint = 1;
-
-using namespace chip::app::Clusters;
-/**********************************************************
- * Variable declarations
- *********************************************************/
 
 ContactManager ContactManager::sContMgr;
 
@@ -58,22 +46,20 @@ void ContactManager::AttributeChangeHandler(EndpointId endpointId, AttributeId a
 void ContactManager::ToggleStateValue(bool val)
 {
     auto booleanState = BooleanState::FindClusterOnEndpoint(kContactEndpoint);
-    if(booleanState != nullptr)
+    if (booleanState != nullptr)
     {
-      if(val == true)
-      {
-        ChipLogProgress(NotSpecified, "Contact Sensor State: Contact");
-        hosal_gpio_pin_set(21);
-      }
-      else
-      {
-        ChipLogProgress(NotSpecified, "Contact Sensor State: Not contact");
-        hosal_gpio_pin_clear(21);
-      }
-      PlatformMgr().LockChipStack();
-      booleanState->SetStateValue(val);
-      PlatformMgr().UnlockChipStack();
+        if (val)
+        {
+            ChipLogProgress(NotSpecified, "Contact Sensor State: Contact");
+            hosal_gpio_pin_set(21);
+        }
+        else
+        {
+            ChipLogProgress(NotSpecified, "Contact Sensor State: Not contact");
+            hosal_gpio_pin_clear(21);
+        }
+        PlatformMgr().LockChipStack();
+        booleanState->SetStateValue(val);
+        PlatformMgr().UnlockChipStack();
     }
-
-    return;
 }

@@ -79,6 +79,5 @@ bool WindowManager::InitiateAction(MoveType_t aMoveType, Action_t aAction, int32
 
 void WindowManager::UpdateWindow()
 {
-    //ChipLogProgress(NotSpecified, "UpdateWindow Level: LIFT: %d TILT: %d", lifi_level, tili_level);
-    ChipLogProgress(NotSpecified, "\r\nWindow Opened %d%%, Angle: %d%%\r\n", 100-lifi_level, 100-tili_level);
+    ChipLogProgress(NotSpecified, "\r\nWindow Opened %d%%, Angle: %d%%\r\n", 100 - lifi_level, 100 - tili_level);
 }

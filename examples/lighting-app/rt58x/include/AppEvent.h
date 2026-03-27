@@ -33,9 +33,9 @@ struct AppEvent
 
         kEventType_Identify_Start,
         kEventType_Identify_Identify,
-        kEventType_Identify_Stop,    
+        kEventType_Identify_Stop,
     };
-    
+
     enum AppActionTypes
     {
         kActionTypes_FactoryReset = 0,
@@ -51,7 +51,6 @@ struct AppEvent
         {
             uint8_t Action;
             uint8_t ButtonIdx;
-
         } ButtonEvent;
         struct
         {

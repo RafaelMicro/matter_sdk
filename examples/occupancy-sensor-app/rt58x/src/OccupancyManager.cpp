@@ -35,7 +35,6 @@ using namespace ::chip::DeviceLayer;
 
 constexpr EndpointId kOccupancyEndpoint = 1;
 
-//namespace ThermAttr = chip::app::Clusters::Thermostat::Attributes;
 namespace OccupancyAttr = chip::app::Clusters::OccupancySensing::Attributes;
 /**********************************************************
  * Variable declarations
@@ -60,7 +59,7 @@ void OccupancyManager::AttributeChangeHandler(EndpointId endpointId, AttributeId
 CHIP_ERROR OccupancyManager::ToggleOccupancy()
 {
     mOccupancy ^= 0x1; // toggle occupancy bit
-    if(mOccupancy & 0x1)
+    if (mOccupancy & 0x1)
     {
       ChipLogProgress(NotSpecified, "Occupancied");
       hosal_gpio_pin_clear(21);

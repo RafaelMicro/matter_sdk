@@ -52,7 +52,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     switch (clusterId)
     {
     case OnOff::Id:
-        if (attributeId == OnOff::Attributes::OnOff::Id) 
+        if (attributeId == OnOff::Attributes::OnOff::Id)
         {
             LightMgr().InitiateAction(*value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, value);
         }
@@ -70,7 +70,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             LightMgr().SetColorMode(ColorMode);
             return;
         }
-        else if (attributeId == ColorControl::Attributes::CurrentX::Id || 
+        else if (attributeId == ColorControl::Attributes::CurrentX::Id ||
                  attributeId == ColorControl::Attributes::CurrentY::Id)
         {
             XyColor_t xy;
@@ -79,8 +79,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
             LightMgr().SetColorMode(ColorControl::ColorModeEnum::kCurrentXAndCurrentY);
             LightMgr().InitiateAction(LightingManager::COLOR_ACTION_XY, (uint8_t *)&xy);
         }
-        else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
-                 attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
+        else if (attributeId == ColorControl::Attributes::CurrentHue::Id        ||
+                 attributeId == ColorControl::Attributes::CurrentSaturation::Id ||
                  attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
         {
             HsvColor_t hsv = {.h = 0, .s = 0, .v = 0};
@@ -98,8 +98,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     default:
         break;
     }
-
 }
+
 /** @brief OnOff Cluster Init
  *
  * This function is called when a specific cluster is initialized. It gives the

@@ -20,13 +20,13 @@
 #include <AppTask.h>
 
 #include "AppConfig.h"
-#include "init_rt58x_platform.h"
+#include "RT58xConfig.h"
 #include "init_device_environment.h"
+#include "init_rt58x_platform.h"
 #include <DeviceInfoProviderImpl.h>
 
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
-#include "RT58xConfig.h"
 
 #include <lib/core/CHIPError.h>
 
@@ -54,11 +54,12 @@ int main(void)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "Platform::MemoryInit() failed");
-        return 0; 
+        return 0;
     }
 
     ChipLogProgress(NotSpecified, "=============================================================================");
-    ChipLogProgress(NotSpecified, "Rafael-Humidity-Sensor-example(Matter 1.5) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "Rafael-Humidity-Sensor-example(Matter 1.5) starting Version %d",
+                    CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     ChipLogProgress(NotSpecified, "=============================================================================");
 
     err = PlatformMgr().InitChipStack();
@@ -71,13 +72,13 @@ int main(void)
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

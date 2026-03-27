@@ -418,7 +418,7 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
     case BLE_ATT_GATT_EVT_DATA_LENGTH_CHANGE:
     {
         ble_evt_data_length_change_t *p_data_len_param = (ble_evt_data_length_change_t *)&p_ble_evt_param->event_param.ble_evt_att_gatt.param.ble_evt_data_length_change;
-        ChipLogDetail(DeviceLayer, "Data length changed, ID: %n", p_data_len_param->host_id);
+        ChipLogDetail(DeviceLayer, "Data length changed, ID: %d", p_data_len_param->host_id);
         ChipLogDetail(DeviceLayer, "MaxTxOctets: %d  MaxTxTime:%d", p_data_len_param->max_tx_octets, p_data_len_param->max_tx_time);
         ChipLogDetail(DeviceLayer, "MaxRxOctets: %d  MaxRxTime:%d", p_data_len_param->max_rx_octets, p_data_len_param->max_rx_time);
     }
@@ -984,7 +984,7 @@ CHIP_ERROR BLEManagerImpl::_SetDeviceName(const char * deviceName)
     CHIP_ERROR err = CHIP_NO_ERROR;
     ble_err_t status;
 
-    status = ble_svcs_gaps_device_name_set((uint8_t *)deviceName, sizeof(deviceName));
+    status = ble_svcs_gaps_device_name_set((uint8_t *)deviceName, strlen(deviceName));
     if (status != BLE_ERR_OK)
     {
         mFlags.Clear(Flags::kDeviceNameSet);
@@ -1004,16 +1004,11 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     CHIP_ERROR err;
     CHIP_ERROR chipErr;
     uint16_t discriminator;
-    uint16_t advInterval = 0;
     uint32_t mDeviceNameLength = 0;
     uint8_t index = 0;
 
-    uint8_t advPayload[BLE_ADV_DATA_SIZE_MAX] = { 0 };
-    uint8_t chipOverBleService[2];
     ChipBLEDeviceIdentificationInfo mDeviceIdInfo = { 0 };
     uint8_t mDeviceIdInfoLength = 0;
-    uint8_t chipAdvDataFlags = CHIP_ADV_DATA_TYPE_SERVICE_DATA;
-
 
     ble_adv_param_t adv_param;
     ble_gap_addr_t addr_param;
@@ -1055,7 +1050,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     index += mDeviceIdInfoLength;
     adv_data.length = index;
 
-    ble_cmd_adv_data_set(&adv_data);
+    status = ble_cmd_adv_data_set(&adv_data);
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"adv_data() status = %d\n", status);
@@ -1074,10 +1069,10 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     index += mDeviceNameLength;
     scan_rsp.length = index;
 
-    ble_cmd_adv_scan_rsp_set(&scan_rsp);
+    status = ble_cmd_adv_scan_rsp_set(&scan_rsp);
     if (status != BLE_ERR_OK)
     {
-        ChipLogError(DeviceLayer,"adv_data() status = %d\n", status);
+        ChipLogError(DeviceLayer,"scan_rsp() status = %d\n", status);
         err = BLE_ERR_STATE_TRANSLATE(status);
     }
 

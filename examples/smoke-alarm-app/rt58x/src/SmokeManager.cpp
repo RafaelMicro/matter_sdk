@@ -66,14 +66,14 @@ CHIP_ERROR SmokeManager::Init()
 
     sSmokeTimer = xTimerCreateStatic("sensorTmr", pdMS_TO_TICKS(10000), false, nullptr, SelfTestTimerEventHandler,
                                       &sStaticSmokeTimerStruct);
-    if(sSmokeTimer == NULL)
+    if (sSmokeTimer == NULL)
     {
         ChipLogProgress(NotSpecified, "sSmokeTimer timer create failed");
         return CHIP_ERROR_NO_MEMORY;
     }
     sLedTimer = xTimerCreateStatic("ledTmr", pdMS_TO_TICKS(100), true, nullptr, AlarmLedTimerHandler,
                                       &sStaticLedTimerStruct);
-    if(sLedTimer == NULL)
+    if (sLedTimer == NULL)
     {
         ChipLogProgress(NotSpecified, "sSmokeTimer timer create failed");
         return CHIP_ERROR_NO_MEMORY;
@@ -85,10 +85,10 @@ CHIP_ERROR SmokeManager::Init()
 void SmokeManager::StartSelfTesting()
 {
     ChipLogProgress(Zcl, "Start self-testing");
-    if(sSmokeTimer && SmokeMgr().mStartSelfTesting == false)
+    if (sSmokeTimer && SmokeMgr().mStartSelfTesting == false)
     {
         SmokeMgr().mStartSelfTesting = true;
-        xTimerStart(sSmokeTimer,0);
+        xTimerStart(sSmokeTimer, 0);
     }
 }
 
@@ -103,26 +103,26 @@ void SmokeManager::SelfTestTimerEventHandler(TimerHandle_t xTimer)
     ChipLogProgress(Zcl, "End self-testing");
 
 }
-void SmokeManager::ToggleSmokeState(AlarmStateEnum  AlarmState)
+void SmokeManager::ToggleSmokeState(AlarmStateEnum AlarmState)
 {
-    switch(AlarmState)
+    switch (AlarmState)
     {
         case AlarmStateEnum::kNormal:
         {
             mSmokeAlarmState = AlarmStateEnum::kNormal;
-            ChipLogProgress(NotSpecified,"Smoke State: Normal");
+            ChipLogProgress(NotSpecified, "Smoke State: Normal");
         }
         break;
         case AlarmStateEnum::kWarning:
         {
             mSmokeAlarmState = AlarmStateEnum::kWarning;
-            ChipLogProgress(NotSpecified,"Smoke State: Warning");
+            ChipLogProgress(NotSpecified, "Smoke State: Warning");
         }
         break;
         case AlarmStateEnum::kCritical:
         {
             mSmokeAlarmState = AlarmStateEnum::kCritical;
-            ChipLogProgress(NotSpecified,"Smoke State: Critical");
+            ChipLogProgress(NotSpecified, "Smoke State: Critical");
         }
         break;
         default:
@@ -139,12 +139,12 @@ void SmokeManager::AlarmLedTimerHandler(TimerHandle_t xTimer)
 }
 void SmokeManager::HandleSmokeState(uint8_t SmokeAlarmState)
 {
-    if(SmokeAlarmState == 0 && sLedTimer && xTimerIsTimerActive(sLedTimer))
+    if (SmokeAlarmState == 0 && sLedTimer && xTimerIsTimerActive(sLedTimer))
     {
         xTimerStop(sLedTimer, 0);
         hosal_gpio_pin_set(21);
     }
-    else if(sLedTimer && !xTimerIsTimerActive(sLedTimer))
+    else if (sLedTimer && !xTimerIsTimerActive(sLedTimer))
     {
         xTimerStart(sLedTimer, 0);
     }

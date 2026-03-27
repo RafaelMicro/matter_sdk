@@ -19,45 +19,31 @@
 
 #pragma once
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "AppEvent.h"
 #include "BaseApplication.h"
+#include "EnhancedFlashDataset.h"
+#include "FactoryDataProvider.h"
 #include "FreeRTOS.h"
 #include "WaterValveManager.h"
-// #include "sl_simple_button_instances.h"
-#include "timers.h" // provides FreeRTOS timer support
+#include "hosal_gpio.h"
+#include "hosal_sysctrl.h"
+#include "timers.h"
+
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
 #include <lib/core/CHIPError.h>
 #include <platform/CHIPDeviceLayer.h>
-#include "EnhancedFlashDataset.h"
-#include "hosal_gpio.h"
-#include "hosal_sysctrl.h"
-
-#include "FactoryDataProvider.h"
-
-/**********************************************************
- * Defines
- *********************************************************/
-
-/**********************************************************
- * AppTask Declaration
- *********************************************************/
 
 class AppTask
 {
-
 public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
-
     void PostEvent(const AppEvent * event);
+
 private:
     friend AppTask & GetAppTask(void);
 
@@ -80,25 +66,24 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset   = 1,
-        kFunction_Switch_1       = 2,
-        kFunction_Switch_2       = 3,
-
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset = 1,
+        kFunction_Switch_1     = 2,
+        kFunction_Switch_2     = 3,
         kFunction_Invalid
-    } Function;
+    };
 
     Function_t mFunction;
     bool mFunctionTimerActive;
     bool mFunctionSwitchActive;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
 #endif
-
 };
+
 inline AppTask & GetAppTask(void)
 {
     return AppTask::sAppTask;

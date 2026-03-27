@@ -33,7 +33,7 @@
 using namespace chip;
 using namespace ::chip::DeviceLayer;
 
-constexpr EndpointId kTemperatureMeasurementEndpoint = 1;
+constexpr chip::EndpointId kTemperatureMeasurementEndpoint = 1;
 constexpr uint16_t kTempTImerPeriodMs  = 60000; // 60s timer period
 constexpr uint16_t kMinTemperatureDelta  = 50;    // 0.5 degree Celcius
 
@@ -60,9 +60,6 @@ CHIP_ERROR TemperatureManager::Init()
         ChipLogProgress(NotSpecified, "sTempTimer timer create failed");
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
-
-    // Update Temp immediatly at bootup
-    //TempTimerEventHandler(sTempTimer);
 
     // Trigger periodic update
     xTimerStart(sTempTimer, 10);
@@ -93,11 +90,11 @@ void TemperatureManager::TempTimerEventHandler(TimerHandle_t xTimer)
     if ((temperature >= (lastTemperature + kMinTemperatureDelta)) || temperature <= (lastTemperature - kMinTemperatureDelta))
     {
         lastTemperature = temperature;
-        PlatformMgr().LockChipStack();
+        chip::DeviceLayer::PlatformMgr().LockChipStack();
         // The TempMagager shouldn't be aware of the Endpoint ID TODO Fix this.
         // TODO Per Spec we should also apply the Offset stored in the same cluster before saving the temp
 
-        app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Set(kTemperatureMeasurementEndpoint, temperature);
-        PlatformMgr().UnlockChipStack();
+        chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Set(kTemperatureMeasurementEndpoint, temperature);
+        chip::DeviceLayer::PlatformMgr().UnlockChipStack();
     }
 }

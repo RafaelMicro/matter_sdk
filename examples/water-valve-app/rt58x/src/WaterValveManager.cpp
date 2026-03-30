@@ -62,7 +62,7 @@ CHIP_ERROR WaterValveManager::HandleCloseValve()
     mCurrentLevelPercent = 0;
     hosal_gpio_pin_set(21);
 
-    ValveConfigurationAndControl::UpdateCurrentState(mEndpoint, ValveConfigurationAndControl::ValveStateEnum::kClosed);
+    ValveConfigurationAndControl::UpdateCurrentLevel(mEndpoint, 0);
     return CHIP_NO_ERROR;
 }
 

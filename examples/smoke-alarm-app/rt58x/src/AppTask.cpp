@@ -32,7 +32,9 @@
 
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/clusters/smoke-co-alarm-server/smoke-co-alarm-server.h>
+#include <app/clusters/smoke-co-alarm-server/SmokeCOTestEventTriggerHandler.h>
 #include <app/clusters/identify-server/identify-server.h>
+#include <app/TestEventTriggerDelegate.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/server/Dnssd.h>
@@ -176,6 +178,12 @@ void AppTask::InitServer(intptr_t arg)
     nativeParams.unlockCb              = UnlockOpenThreadTask;
     nativeParams.openThreadInstancePtr = chip::DeviceLayer::ThreadStackMgrImpl().OTInstance();
     initParams.endpointNativeParams    = static_cast<void *>(&nativeParams);
+
+    static SimpleTestEventTriggerDelegate sTestEventTriggerDelegate{};
+    static SmokeCOTestEventTriggerHandler sSmokeCOTestEventTriggerHandler{};
+    VerifyOrDie(sTestEventTriggerDelegate.Init(ByteSpan(sTestEventTriggerEnableKey)) == CHIP_NO_ERROR);
+    VerifyOrDie(sTestEventTriggerDelegate.AddHandler(&sSmokeCOTestEventTriggerHandler) == CHIP_NO_ERROR);
+    initParams.testEventTriggerDelegate = &sTestEventTriggerDelegate;
 
     err = chip::Server::GetInstance().Init(initParams);
     if (err != CHIP_NO_ERROR)

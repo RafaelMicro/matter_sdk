@@ -17,38 +17,69 @@
  *    limitations under the License.
  */
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include "OccupancyManager.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
 #include "semphr.h"
-/**********************************************************
- * Defines and Constants
- *********************************************************/
 
 using namespace chip;
 using namespace ::chip::DeviceLayer;
 
 constexpr EndpointId kOccupancyEndpoint = 1;
 
+// Default HoldTime: 10 seconds (valid range 1~300)
+constexpr uint16_t kHoldTimeDefault = 10;
+constexpr uint16_t kHoldTimeMin     = 1;
+constexpr uint16_t kHoldTimeMax     = 300;
+
 namespace OccupancyAttr = chip::app::Clusters::OccupancySensing::Attributes;
-/**********************************************************
- * Variable declarations
- *********************************************************/
+using namespace chip::app::Clusters::OccupancySensing;
+
+// OccupancySensing::Instance handles FeatureMap, HoldTime, HoldTimeLimits via AAI
+static Instance gOccupancySensingInstance(BitMask<Feature>(Feature::kPassiveInfrared));
 
 OccupancyManager OccupancyManager::sOccuMgr;
 
 CHIP_ERROR OccupancyManager::Init()
 {
-    chip::BitMask<chip::app::Clusters::OccupancySensing::OccupancyBitmap> temp;
+    // Init OccupancySensing AAI instance (handles FeatureMap, HoldTime, HoldTimeLimits)
+    ReturnErrorOnFailure(gOccupancySensingInstance.Init());
 
-    OccupancyAttr::Occupancy::Get(kOccupancyEndpoint, &temp);
+    // Set HoldTimeLimits
+    Structs::HoldTimeLimitsStruct::Type holdTimeLimits;
+    holdTimeLimits.holdTimeMin     = kHoldTimeMin;
+    holdTimeLimits.holdTimeMax     = kHoldTimeMax;
+    holdTimeLimits.holdTimeDefault = kHoldTimeDefault;
+    ReturnErrorOnFailure(SetHoldTimeLimits(kOccupancyEndpoint, holdTimeLimits));
 
-    mOccupancy =  temp.Raw();
+    // Set initial HoldTime
+    ReturnErrorOnFailure(SetHoldTime(kOccupancyEndpoint, kHoldTimeDefault));
+
+    // Initialize OccupancySensorType: kPir (0)
+    OccupancyAttr::OccupancySensorType::Set(kOccupancyEndpoint,
+        OccupancySensorTypeEnum::kPir);
+
+    // Initialize OccupancySensorTypeBitmap: kPir (0x1)
+    chip::BitMask<OccupancySensorTypeBitmap> bitmap;
+    bitmap.Set(OccupancySensorTypeBitmap::kPir);
+    OccupancyAttr::OccupancySensorTypeBitmap::Set(kOccupancyEndpoint, bitmap);
+
+    // Ensure occupancy starts as unoccupied
+    mOccupancy = 0;
+    OccupancyAttr::Occupancy::Set(kOccupancyEndpoint, mOccupancy);
+
+    // Create HoldTime auto-unoccupy timer (one-shot)
+    mHoldTimer = xTimerCreateStatic("HoldTmr", pdMS_TO_TICKS(kHoldTimeDefault * 1000),
+                                    pdFALSE, nullptr, HoldTimerEventHandler,
+                                    &mStaticHoldTimerStruct);
+    if (mHoldTimer == NULL)
+    {
+        ChipLogError(NotSpecified, "HoldTimer create failed");
+        return APP_ERROR_CREATE_TIMER_FAILED;
+    }
+
+    ChipLogProgress(NotSpecified, "OccupancyManager::Init done");
     return CHIP_NO_ERROR;
 }
 
@@ -58,22 +89,42 @@ void OccupancyManager::AttributeChangeHandler(EndpointId endpointId, AttributeId
 
 CHIP_ERROR OccupancyManager::ToggleOccupancy()
 {
-    mOccupancy ^= 0x1; // toggle occupancy bit
+    mOccupancy ^= 0x1;
+
     if (mOccupancy & 0x1)
     {
-      ChipLogProgress(NotSpecified, "Occupancied");
-      hosal_gpio_pin_clear(21);
+        ChipLogProgress(NotSpecified, "Occupied");
+        hosal_gpio_pin_clear(21);
+
+        // Start hold timer - read current HoldTime
+        uint16_t * holdTime = GetHoldTimeForEndpoint(kOccupancyEndpoint);
+        uint16_t   holdMs   = (holdTime != nullptr) ? (*holdTime * 1000) : (kHoldTimeDefault * 1000);
+        xTimerChangePeriod(mHoldTimer, pdMS_TO_TICKS(holdMs), 0);
+        xTimerStart(mHoldTimer, 0);
     }
     else
     {
-      ChipLogProgress(NotSpecified, "Unoccupancied");
-      hosal_gpio_pin_set(21);
+        ChipLogProgress(NotSpecified, "Unoccupied");
+        hosal_gpio_pin_set(21);
+        xTimerStop(mHoldTimer, 0);
     }
+
     PlatformMgr().LockChipStack();
     OccupancyAttr::Occupancy::Set(kOccupancyEndpoint, mOccupancy);
     PlatformMgr().UnlockChipStack();
 
-    ChipLogProgress(NotSpecified, "Occupancy status : %d", mOccupancy);
-
+    ChipLogProgress(NotSpecified, "Occupancy: %d", mOccupancy);
     return CHIP_NO_ERROR;
+}
+
+void OccupancyManager::HoldTimerEventHandler(TimerHandle_t xTimer)
+{
+    // HoldTime expired: auto-clear to unoccupied
+    ChipLogProgress(NotSpecified, "HoldTime expired, clearing occupancy");
+
+    PlatformMgr().LockChipStack();
+    OccuMgr().mOccupancy = 0;
+    hosal_gpio_pin_set(21);
+    OccupancyAttr::Occupancy::Set(kOccupancyEndpoint, static_cast<uint8_t>(0));
+    PlatformMgr().UnlockChipStack();
 }

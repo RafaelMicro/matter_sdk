@@ -26,6 +26,7 @@
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app-common/zap-generated/attributes/Accessors.h>
+#include <app/clusters/occupancy-sensor-server/occupancy-sensor-server.h>
 
 #include <lib/core/CHIPError.h>
 
@@ -40,9 +41,14 @@ public:
 private:
     friend OccupancyManager & OccuMgr();
 
+    static void HoldTimerEventHandler(TimerHandle_t xTimer);
+
     uint8_t mOccupancy;
     int16_t mOccupancySensorType;
     int16_t mOccupancySensorTypeBitmap;
+
+    TimerHandle_t mHoldTimer;
+    StaticTimer_t mStaticHoldTimerStruct;
 
     static OccupancyManager sOccuMgr;
 };

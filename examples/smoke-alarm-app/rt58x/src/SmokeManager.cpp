@@ -112,9 +112,9 @@ void SmokeManager::SelfTestTimerEventHandler(TimerHandle_t xTimer)
     ChipLogProgress(Zcl, "End self-testing");
 
 }
-void SmokeManager::ToggleSmokeState(AlarmStateEnum AlarmState)
+void SmokeManager::ToggleSmokeState(AlarmStateEnum newAlarmState)
 {
-    switch (AlarmState)
+    switch (newAlarmState)
     {
         case AlarmStateEnum::kNormal:
         {

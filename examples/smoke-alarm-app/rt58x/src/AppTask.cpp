@@ -593,6 +593,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
                 ChipLogProgress(NotSpecified, "[BTN] Factory Reset has been Canceled");
             }
         }
+        break;
 
       case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
         if (aEvent->ButtonEvent.Action == true)
@@ -633,7 +634,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_2)
             {
-                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kWarning);
+                SmokeMgr().ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum::kWarning);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }
@@ -652,7 +653,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_3)
             {
-                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kNormal);
+                SmokeMgr().ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum::kNormal);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }

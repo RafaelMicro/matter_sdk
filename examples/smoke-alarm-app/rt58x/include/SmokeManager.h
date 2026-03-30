@@ -34,7 +34,7 @@ class SmokeManager
 {
 public:
     CHIP_ERROR Init();
-    void ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum AlarmState);
+    void ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum newAlarmState);
     void HandleSmokeState(uint8_t SmokeAlarmState);
     void HandleOnoffValue(uint8_t onoff);
 

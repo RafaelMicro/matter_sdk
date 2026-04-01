@@ -2528,19 +2528,20 @@ endpoint 1 {
     emits event EndOfService;
     emits event SelfTestComplete;
     emits event AllClear;
-    ram      attribute expressedState default = 0;
-    ram      attribute smokeState default = 0;
-    ram      attribute COState default = 0;
-    ram      attribute batteryAlert;
-    ram      attribute testInProgress;
-    ram      attribute hardwareFaultAlert;
-    ram      attribute endOfServiceAlert;
-    ram      attribute interconnectSmokeAlarm;
-    ram      attribute interconnectCOAlarm;
+    persist  attribute expressedState default = 0;
+    persist  attribute smokeState default = 0;
+    persist  attribute COState default = 0;
+    persist  attribute batteryAlert default = 0;
+    ram      attribute testInProgress default = 0;
+    persist  attribute hardwareFaultAlert default = 0;
+    persist  attribute endOfServiceAlert default = 0;
+    persist  attribute interconnectSmokeAlarm default = 0;
+    persist  attribute interconnectCOAlarm default = 0;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
     ram      attribute featureMap default = 3;
     ram      attribute clusterRevision default = 1;
+    handle command SelfTestRequest;
   }
 }

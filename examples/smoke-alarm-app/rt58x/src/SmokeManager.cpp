@@ -63,6 +63,8 @@ CHIP_ERROR SmokeManager::Init()
     mSmokeAlarmState = AlarmStateEnum::kNormal;
     mCOAlarmState = AlarmStateEnum::kNormal;
 
+    SmokeCoAlarmServer::Instance().SetSmokeState(1, AlarmStateEnum::kNormal);
+    SmokeCoAlarmServer::Instance().SetCOState(1, AlarmStateEnum::kNormal);
     SmokeCoAlarmServer::Instance().SetTestInProgress(1, false);
     SmokeCoAlarmServer::Instance().SetHardwareFaultAlert(1, false);
     SmokeCoAlarmServer::Instance().SetBatteryAlert(1, AlarmStateEnum::kNormal);

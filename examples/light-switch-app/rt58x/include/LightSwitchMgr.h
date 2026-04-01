@@ -43,6 +43,9 @@ public:
 
     void GenericSwitchOnInitialPress();
     void GenericSwitchOnShortRelease();
+    void GenericSwitchOnLongPress();
+    void GenericSwitchOnLongRelease();
+
 
     static LightSwitchMgr & GetInstance() { return sSwitch; }
 

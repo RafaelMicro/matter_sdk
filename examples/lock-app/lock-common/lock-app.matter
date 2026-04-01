@@ -3069,8 +3069,8 @@ endpoint 1 {
     persist  attribute lockState default = 1;
     ram      attribute lockType;
     ram      attribute actuatorEnabled;
-    ram      attribute numberOfTotalUsersSupported default = 10;
-    ram      attribute numberOfPINUsersSupported default = 10;
+    ram      attribute numberOfTotalUsersSupported default = 5;
+    ram      attribute numberOfPINUsersSupported default = 5;
     ram      attribute maxPINCodeLength default = 8;
     ram      attribute minPINCodeLength default = 6;
     ram      attribute credentialRulesSupport default = 1;
@@ -3078,7 +3078,6 @@ endpoint 1 {
     ram      attribute autoRelockTime default = 60;
     ram      attribute operatingMode default = 0x00;
     ram      attribute supportedOperatingModes default = 0xFFF6;
-    ram      attribute enablePrivacyModeButton default = 0x00;
     ram      attribute wrongCodeEntryLimit default = 3;
     ram      attribute userCodeTemporaryDisableTime default = 10;
     ram      attribute requirePINforRemoteOperation default = 0;

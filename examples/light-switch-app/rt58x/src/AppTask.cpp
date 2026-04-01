@@ -547,6 +547,18 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
         UpdateStatusLED();
         chip::DeviceLayer::PlatformMgr().ScheduleWork(DoFactoryReset, 0);
     }
+    else if(sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_Switch_LongPress)
+    {
+        AppEvent event;
+        event.Type = AppEvent::kEventType_Button_Func_LongPressed;
+        event.ButtonEvent.Action = kButtonPushEvent;
+        event.Handler            = SwitchActionEventHandler;
+        sAppTask.PostEvent(&event);
+        // Actually trigger Factory Reset
+        sAppTask.mFunction            = kFunction_NoneSelected;
+        sAppTask.mFunctionTimerActive = false;
+        sAppTask.mIsLongPressTriggered = true;
+    }
 }
 
 void AppTask::FunctionHandler(AppEvent * aEvent)
@@ -585,17 +597,35 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         if (aEvent->ButtonEvent.Action == true)
         {
             AppEvent event;
-            event.Type               = AppEvent::kEventType_Button_Func_Pressed;
+            event.Type               = AppEvent::kEventType_Button_Func_InitialPressed;
             event.ButtonEvent.Action = kButtonPushEvent;
             event.Handler            = SwitchActionEventHandler;
             sAppTask.PostEvent(&event);
 
-            sAppTask.mFunction = kFunction_NoneSelected;
+            if (!sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_NoneSelected)
+            {
+                sAppTask.StartTimer(5000);
+                sAppTask.mFunction = kFunction_Switch_LongPress;
+            }
         }
         else
         {
+            if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_Switch_LongPress)
+            {
+                sAppTask.CancelTimer();
+                sAppTask.mFunction = kFunction_NoneSelected;
+            }
+
             AppEvent event;
-            event.Type               = AppEvent::kEventType_Button_Func_Released;
+            if(sAppTask.mIsLongPressTriggered)
+            {
+                event.Type = AppEvent::kEventType_Button_Func_LongReleased;
+            }
+            else
+            {
+                event.Type = AppEvent::kEventType_Button_Func_ShortReleased;
+            }
+            sAppTask.mIsLongPressTriggered = false;
             event.ButtonEvent.Action = kButtonPushEvent;
             event.Handler            = SwitchActionEventHandler;
             sAppTask.PostEvent(&event);
@@ -609,13 +639,21 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
 
 void AppTask::SwitchActionEventHandler(AppEvent * aEvent)
 {
-    if (aEvent->Type == AppEvent::kEventType_Button_Func_Pressed)
+    if (aEvent->Type == AppEvent::kEventType_Button_Func_InitialPressed)
     {
         LightSwitchMgr::GetInstance().GenericSwitchOnInitialPress();
     }
-    else if (aEvent->Type == AppEvent::kEventType_Button_Func_Released)
+    else if (aEvent->Type == AppEvent::kEventType_Button_Func_ShortReleased)
     {
         LightSwitchMgr::GetInstance().GenericSwitchOnShortRelease();
+    }
+    else if (aEvent->Type == AppEvent::kEventType_Button_Func_LongPressed)
+    {
+        LightSwitchMgr::GetInstance().GenericSwitchOnLongPress();
+    }
+    else if (aEvent->Type == AppEvent::kEventType_Button_Func_LongReleased)
+    {
+        LightSwitchMgr::GetInstance().GenericSwitchOnLongRelease();
     }
 }
 
@@ -623,7 +661,7 @@ void AppTask::ButtonEventHandler(uint32_t pin, void * isr_param)
 {
     uint32_t pin_status;
     hosal_gpio_pin_get(pin, &pin_status);
-    ChipLogProgress(NotSpecified, "ButtonEventHandler pin %ld %ld", pin, pin_status);
+    //ChipLogProgress(NotSpecified, "ButtonEventHandler pin %ld %ld", pin, pin_status);
     switch (pin)
     {
     case (0):

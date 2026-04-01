@@ -99,13 +99,14 @@ private:
     {
         kFunction_NoneSelected = 0,
         kFunction_FactoryReset = 1,
-        kFunction_Switch_1     = 2,
+        kFunction_Switch_LongPress = 2,
 
         kFunction_Invalid
     } Function;
 
     Function_t mFunction;
     bool       mFunctionTimerActive;
+    bool mIsLongPressTriggered = false;
 
     static AppTask sAppTask;
 

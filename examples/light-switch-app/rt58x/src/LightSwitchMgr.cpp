@@ -73,6 +73,30 @@ void LightSwitchMgr::GenericSwitchOnShortRelease()
 
     DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
 }
+/**
+ * @brief Function that triggers a generic switch OnLongPress event
+ */
+void LightSwitchMgr::GenericSwitchOnLongPress()
+{
+    GenericSwitchEventData * data = Platform::New<GenericSwitchEventData>();
+
+    data->endpoint = mGenericSwitchEndpoint;
+    data->event    = Switch::Events::LongPress::Id;
+
+    DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+}
+/**
+ * @brief Function that triggers a generic switch OnLongRelease event
+ */
+void LightSwitchMgr::GenericSwitchOnLongRelease()
+{
+    GenericSwitchEventData * data = Platform::New<GenericSwitchEventData>();
+
+    data->endpoint = mGenericSwitchEndpoint;
+    data->event    = Switch::Events::LongRelease::Id;
+
+    DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+}
 
 void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 {
@@ -99,6 +123,27 @@ void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 
         // Trigger event
         Clusters::SwitchServer::Instance().OnShortRelease(data->endpoint, previousPosition);
+        break;
+    }
+    case Switch::Events::LongPress::Id: {
+        uint8_t currentPosition = 1;
+
+        // Set new attribute value
+        Clusters::Switch::Attributes::CurrentPosition::Set(data->endpoint, currentPosition);
+
+        // Trigger event
+        Clusters::SwitchServer::Instance().OnLongPress(data->endpoint, currentPosition);
+        break;
+    }
+    case Switch::Events::LongRelease::Id: {
+        uint8_t previousPosition = 1;
+        uint8_t currentPosition  = 0;
+
+        // Set new attribute value
+        Clusters::Switch::Attributes::CurrentPosition::Set(data->endpoint, currentPosition);
+
+        // Trigger event
+        Clusters::SwitchServer::Instance().OnLongRelease(data->endpoint, previousPosition);
         break;
     }
     default:

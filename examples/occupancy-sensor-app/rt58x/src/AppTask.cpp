@@ -583,7 +583,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
                 ChipLogProgress(NotSpecified, "[BTN] Factory Reset has been Canceled");
             }
         }
-
+        break;
       case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
         if (aEvent->ButtonEvent.Action == true)
         {
@@ -605,7 +605,6 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             }
         }
         break;
-
       default:
          break;
     }

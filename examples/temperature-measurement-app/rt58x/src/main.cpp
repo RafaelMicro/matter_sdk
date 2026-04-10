@@ -54,10 +54,10 @@ int main(void)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "Platform::MemoryInit() failed");
-        return 0; 
+        return 0;
     }
     ChipLogProgress(NotSpecified, "=============================================================================");
-    ChipLogProgress(NotSpecified, "Rafael-Tempearture-Sensor-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "Rafael-Tempearture-Sensor-example(Matter 1.5) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     ChipLogProgress(NotSpecified, "=============================================================================");
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
@@ -69,7 +69,7 @@ int main(void)
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
@@ -77,6 +77,6 @@ int main(void)
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

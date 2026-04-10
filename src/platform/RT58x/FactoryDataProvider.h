@@ -32,7 +32,9 @@
 #include "flashctl.h"
 #include "log.h"
 
-#if defined(CONFIG_RT584H) || defined(CONFIG_RT584L)
+#if defined(CONFIG_RT584HA4)
+#define FLASH_SECURE_OFFSET 0x10200000
+#elif defined(CONFIG_RT584H) || defined(CONFIG_RT584L)
 #define FLASH_SECURE_OFFSET 0x10000000
 #else
 #define FLASH_SECURE_OFFSET 0

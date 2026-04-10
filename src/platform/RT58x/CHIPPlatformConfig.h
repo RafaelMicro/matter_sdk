@@ -29,7 +29,6 @@
 
 // ==================== General Platform Adaptations ====================
 
-#define NL_ASSERT_ABORT()   sys_software_reset()
 #define CHIP_CONFIG_ABORT() sys_software_reset()
 
 #define CHIP_CONFIG_PERSISTED_STORAGE_KEY_TYPE uint16_t

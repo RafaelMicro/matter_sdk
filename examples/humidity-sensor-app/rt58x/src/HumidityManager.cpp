@@ -46,13 +46,13 @@ StaticTimer_t sStaticHumiTimerStruct;
 
 HumidityManager HumidityManager::sHumiMgr;
 
-static int16_t mSimulatedHumi[]               = { 5500, 6800, 7200, 6500, 5200, 4000, 5000, 3900, 2700, 4200 };
+static int16_t mSimulatedHumi[] = { 5500, 6800, 7200, 6500, 5200, 4000, 5000, 3900, 2700, 4200 };
 
 CHIP_ERROR HumidityManager::Init()
 {
     /* Simulate Humidity changes every minutes*/
     sHumiTimer = xTimerCreateStatic("HumiTmr", pdMS_TO_TICKS(60000), true, nullptr, HumiTimerEventHandler,
-                                      &sStaticHumiTimerStruct);
+                                    &sStaticHumiTimerStruct);
 
     if (sHumiTimer == NULL)
     {
@@ -60,27 +60,29 @@ CHIP_ERROR HumidityManager::Init()
         return APP_ERROR_CREATE_TIMER_FAILED;
     }
     xTimerStart(sHumiTimer, 10);
+    HumidityAttr::MeasuredValue::Set(kHumidityMeasurementEndpoint, 5800);
 
     ChipLogProgress(NotSpecified, "HumiManager::Init");
 
     return CHIP_NO_ERROR;
 }
+
 void HumidityManager::AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size)
 {
-    
 }
+
 void HumidityManager::HumiTimerEventHandler(TimerHandle_t xTimer)
 {
-    int16_t humidity            = 0;
+    int16_t humidity          = 0;
     static uint8_t simulatedIndex = 0;
     if (simulatedIndex >= 9)
     {
         simulatedIndex = 0;
     }
     humidity = mSimulatedHumi[simulatedIndex];
+    simulatedIndex++;
     ChipLogProgress(NotSpecified, "Humidity is : %d", humidity);
 
-    
     PlatformMgr().LockChipStack();
     // The HumiMagager shouldn't be aware of the Endpoint ID TODO Fix this.
     // TODO Per Spec we should also apply the Offset stored in the same cluster before saving the temp

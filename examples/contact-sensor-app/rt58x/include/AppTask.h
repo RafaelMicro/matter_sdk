@@ -19,24 +19,19 @@
 
 #pragma once
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include <stdbool.h>
 #include <stdint.h>
 
 #include "AppEvent.h"
 #include "BaseApplication.h"
+#include "ContactManager.h"
 #include "FreeRTOS.h"
 #include "PowerManager.h"
-#include "ContactManager.h"
-
-#include "timers.h" // provides FreeRTOS timer support
+#include "timers.h"
 #include "hosal_gpio.h"
 #include "hosal_sysctrl.h"
 #include "EnhancedFlashDataset.h"
-#include "hosal_sysctrl.h"
+
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
 #include <lib/core/CHIPError.h>
@@ -44,26 +39,12 @@
 
 #include "FactoryDataProvider.h"
 
-/**********************************************************
- * Defines
- *********************************************************/
-
-/**********************************************************
- * AppTask Declaration
- *********************************************************/
-
 class AppTask
 {
-
 public:
     CHIP_ERROR StartAppTask();
     static void AppTaskMain(void * pvParameter);
     void PostEvent(const AppEvent * event);
-    void UpdateThermoStatUI();
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
 
 private:
     friend AppTask & GetAppTask(void);
@@ -74,7 +55,7 @@ private:
     static void UpdateStatusLED();
     void DispatchEvent(AppEvent * event);
 
-    static void ButtonEventHandler(uint32_t pin, void* isr_param);
+    static void ButtonEventHandler(uint32_t pin, void * isr_param);
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
     static void TimerEventHandler(chip::System::Layer * aLayer, void * aAppState);
@@ -84,24 +65,22 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset  ,
-        kFunction_Switch_1      ,
-
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset,
+        kFunction_Switch_1,
         kFunction_Invalid
     } Function;
 
     Function_t mFunction;
-    bool mFunctionTimerActive;
-    bool mFunctionSwitchActive;
-    bool mSyncClusterToButtonAction;
+    bool       mFunctionTimerActive;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
-#endif    
+#endif
 };
+
 inline AppTask & GetAppTask(void)
 {
     return AppTask::sAppTask;

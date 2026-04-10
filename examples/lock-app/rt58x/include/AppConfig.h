@@ -19,8 +19,6 @@
 
 #pragma once
 
-// #include "efr32_utils.h"
-
 // ---- Lighting Example App Config ----
 
 #define APP_TASK_NAME "APP"
@@ -29,11 +27,9 @@
 // state to another.
 #define ACTUATOR_MOVEMENT_PERIOS_MS 10
 
-
-
 // Maximum number of users supported by lock
-#define CONFIG_LOCK_NUM_USERS (4)
+#define CONFIG_LOCK_NUM_USERS (5)
 // Maximum number of credentials supported by lock
-#define CONFIG_LOCK_NUM_CREDENTIALS (4)
+#define CONFIG_LOCK_NUM_CREDENTIALS (5)
 // Maximum number of credentials per user supported by lock
-#define CONFIG_LOCK_NUM_CREDENTIALS_PER_USER (4)
+#define CONFIG_LOCK_NUM_CREDENTIALS_PER_USER (5)

@@ -44,13 +44,6 @@ declare_args() {
 # Sanity check
 assert(!(chip_enable_wifi && chip_enable_openthread))
 
-chip_data_model("window-common") {
-  zap_file = "${chip_root}/examples/window-app/common/window-app.zap"
-
-  #zap_pregenerated_dir = "${chip_root}/zzz_generated/window-app/zap-generated"
-  is_server = true
-}
-
 rt58x_sdk("sdk") {
   sources = [
     "${rt58x_project_dir}/include/CHIPProjectConfig.h",
@@ -94,8 +87,8 @@ rt58x_executable("window_app") {
   }
   deps = [
     ":sdk",
-    ":window-common",
     "${chip_root}/examples/providers:device_info_provider",
+    "${chip_root}/examples/window-app/common:window-common",
     "${chip_root}/src/lib",
     "${chip_root}/src/setup_payload",
   ]
@@ -122,9 +115,13 @@ rt58x_executable("window_app") {
   {
     ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
   }
-  else
+  else if (rafael_board == "RT584H" || rafael_board == "RT584L")
   {
     ldscript = "${examples_plat_dir}/ldscript/rt584.ld"
+  }
+  else if (rafael_board == "RT584HA4")
+  {
+    ldscript = "${examples_plat_dir}/ldscript/rt584HA4.ld"
   }
 
   inputs = [ ldscript ]

@@ -29,9 +29,8 @@
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/on-off-server/on-off-server.h>
 
-
 #include "init_rt58x_platform.h"
-#include "init_device_environment.h"  
+#include "init_device_environment.h"
 #include <lib/core/CHIPError.h>
 
 class LightingManager
@@ -60,8 +59,6 @@ public:
     RgbColor_t GetRgb();
     void SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode);
     bool InitiateAction(Action_t aAction, uint8_t * value);
-    static void DelayedXYAction(chip::System::Layer * aLayer, void * aAppState);
-    static void DelayedHSVAction(chip::System::Layer * aLayer, void * aAppState);
 
 
 private:
@@ -72,7 +69,6 @@ private:
     HsvColor_t mHSV;
     RgbColor_t mRGB;
     CtColor_t mCT;
-    //uint8_t mColorMode;
     chip::app::Clusters::ColorControl::ColorModeEnum mColorMode =
         chip::app::Clusters::ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation;
 
@@ -85,6 +81,7 @@ private:
 
     void UpdateLight();
 
+    TimerHandle_t mTimer;
     static void TimerEventHandler(TimerHandle_t xTimer);
     static LightingManager sLight;
 };

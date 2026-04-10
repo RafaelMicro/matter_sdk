@@ -324,6 +324,11 @@ static uint32_t computeCallbackWaitTimeMs(CallbackScheduleState & callbackSchedu
 
 static void scheduleTimerCallbackMs(EndpointId endpoint, uint32_t delayMs)
 {
+    if(delayMs == 0)
+    {
+        timerCallback(nullptr, reinterpret_cast<void *>(static_cast<uintptr_t>(endpoint)));
+        return;
+    }
     CHIP_ERROR err = DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(delayMs), timerCallback,
                                                            reinterpret_cast<void *>(static_cast<uintptr_t>(endpoint)));
 

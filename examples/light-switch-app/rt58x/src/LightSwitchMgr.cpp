@@ -18,7 +18,6 @@
  */
 
 #include "LightSwitchMgr.h"
-#include "BindingHandler.h"
 
 #include "AppConfig.h"
 #include "AppEvent.h"
@@ -41,22 +40,12 @@ LightSwitchMgr LightSwitchMgr::sSwitch;
  * @param lightSwitchEndpoint endpoint for the light switch device type
  * @param genericSwitchEndpoint endpoint for the generic switch device type
  */
-CHIP_ERROR LightSwitchMgr::Init(EndpointId lightSwitchEndpoint, chip::EndpointId genericSwitchEndpoint)
+CHIP_ERROR LightSwitchMgr::Init(chip::EndpointId genericSwitchEndpoint)
 {
-    VerifyOrReturnError(lightSwitchEndpoint != kInvalidEndpointId, CHIP_ERROR_INVALID_ARGUMENT);
     VerifyOrReturnError(genericSwitchEndpoint != kInvalidEndpointId, CHIP_ERROR_INVALID_ARGUMENT);
 
-    mLightSwitchEndpoint   = lightSwitchEndpoint;
     mGenericSwitchEndpoint = genericSwitchEndpoint;
-
-    // Configure Bindings
-    CHIP_ERROR error = InitBindingHandler();
-    if (error != CHIP_NO_ERROR)
-    {
-        ChipLogError(NotSpecified, "InitBindingHandler() failed!");
-    }
-
-    return error;
+    return CHIP_NO_ERROR;
 }
 
 /**
@@ -84,41 +73,33 @@ void LightSwitchMgr::GenericSwitchOnShortRelease()
 
     DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
 }
-
-void LightSwitchMgr::TriggerLightSwitchAction(LightSwitchAction action, bool isGroupCommand)
+/**
+ * @brief Function that triggers a generic switch OnLongPress event
+ */
+void LightSwitchMgr::GenericSwitchOnLongPress()
 {
-    BindingCommandData * data = Platform::New<BindingCommandData>();
+    GenericSwitchEventData * data = Platform::New<GenericSwitchEventData>();
 
-    data->clusterId = chip::app::Clusters::OnOff::Id;
-    data->isGroup   = isGroupCommand;
+    data->endpoint = mGenericSwitchEndpoint;
+    data->event    = Switch::Events::LongPress::Id;
 
-    switch (action)
-    {
-    case LightSwitchAction::Toggle:
-        data->commandId = OnOff::Commands::Toggle::Id;
+    DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+}
+/**
+ * @brief Function that triggers a generic switch OnLongRelease event
+ */
+void LightSwitchMgr::GenericSwitchOnLongRelease()
+{
+    GenericSwitchEventData * data = Platform::New<GenericSwitchEventData>();
 
-        break;
+    data->endpoint = mGenericSwitchEndpoint;
+    data->event    = Switch::Events::LongRelease::Id;
 
-    case LightSwitchAction::On:
-        data->commandId = OnOff::Commands::On::Id;
-        break;
-
-    case LightSwitchAction::Off:
-        data->commandId = OnOff::Commands::Off::Id;
-        break;
-
-    default:
-        Platform::Delete(data);
-        return;
-        break;
-    }
-
-    DeviceLayer::PlatformMgr().ScheduleWork(SwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
+    DeviceLayer::PlatformMgr().ScheduleWork(GenericSwitchWorkerFunction, reinterpret_cast<intptr_t>(data));
 }
 
 void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 {
-
     GenericSwitchEventData * data = reinterpret_cast<GenericSwitchEventData *>(context);
 
     switch (data->event)
@@ -142,6 +123,27 @@ void LightSwitchMgr::GenericSwitchWorkerFunction(intptr_t context)
 
         // Trigger event
         Clusters::SwitchServer::Instance().OnShortRelease(data->endpoint, previousPosition);
+        break;
+    }
+    case Switch::Events::LongPress::Id: {
+        uint8_t currentPosition = 1;
+
+        // Set new attribute value
+        Clusters::Switch::Attributes::CurrentPosition::Set(data->endpoint, currentPosition);
+
+        // Trigger event
+        Clusters::SwitchServer::Instance().OnLongPress(data->endpoint, currentPosition);
+        break;
+    }
+    case Switch::Events::LongRelease::Id: {
+        uint8_t previousPosition = 1;
+        uint8_t currentPosition  = 0;
+
+        // Set new attribute value
+        Clusters::Switch::Attributes::CurrentPosition::Set(data->endpoint, currentPosition);
+
+        // Trigger event
+        Clusters::SwitchServer::Instance().OnLongRelease(data->endpoint, previousPosition);
         break;
     }
     default:

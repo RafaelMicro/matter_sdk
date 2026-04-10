@@ -17,18 +17,10 @@
  *    limitations under the License.
  */
 
-/**********************************************************
- * Includes
- *********************************************************/
-
 #include "PowerManager.h"
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "AppTask.h"
-
-/**********************************************************
- * Defines and Constants
- *********************************************************/
 
 using namespace chip;
 using namespace chip::DeviceLayer;
@@ -36,13 +28,9 @@ using namespace chip::app::Clusters;
 
 constexpr EndpointId kContactEndpoint = 1;
 
-
-/**********************************************************
- * Variable declarations
- *********************************************************/
-
 TimerHandle_t sPowerTimer;
 StaticTimer_t sPowerTimerStruct;
+
 PowerManager PowerManager::sPowerManager;
 
 CHIP_ERROR PowerManager::Init()
@@ -50,9 +38,9 @@ CHIP_ERROR PowerManager::Init()
     ChipLogProgress(NotSpecified, "PowerManager::Init");
     /* Init Battery Percentage Remaining, unit: 0.5%. e.g. 200 means 100% */
     PowerSource::Attributes::BatPercentRemaining::Set(kContactEndpoint, 200);
-    /* simulate battery power decrease by 5% every minutes */
-    sPowerTimer = xTimerCreateStatic("pow", pdMS_TO_TICKS(60000), true, nullptr, PowerTimerEventHandler,
-                                      &sPowerTimerStruct);
+    /* Simulate battery power decrease by 5% every 10 minutes */
+    sPowerTimer = xTimerCreateStatic("pow", pdMS_TO_TICKS(600000), true, nullptr,
+                                     PowerTimerEventHandler, &sPowerTimerStruct);
     xTimerStart(sPowerTimer, 10);
     return CHIP_NO_ERROR;
 }
@@ -60,15 +48,15 @@ CHIP_ERROR PowerManager::Init()
 void PowerManager::PowerTimerEventHandler(TimerHandle_t xTimer)
 {
     static uint8_t BatteryPercentRemaining = 200;
-    if(BatteryPercentRemaining > 10)
+    if (BatteryPercentRemaining > 10)
     {
-        BatteryPercentRemaining -=10;
+        BatteryPercentRemaining -= 10;
     }
     else
     {
         BatteryPercentRemaining = 200;
     }
-    ChipLogProgress(NotSpecified, "Battery power Remaining: %d%", BatteryPercentRemaining/2);
+    ChipLogProgress(NotSpecified, "Battery power Remaining: %d%%", BatteryPercentRemaining / 2);
     PlatformMgr().LockChipStack();
     PowerSource::Attributes::BatPercentRemaining::Set(kContactEndpoint, BatteryPercentRemaining);
     PlatformMgr().UnlockChipStack();

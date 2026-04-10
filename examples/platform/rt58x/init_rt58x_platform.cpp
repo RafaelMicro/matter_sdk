@@ -58,6 +58,7 @@ extern "C" {
 #include "EnhancedFlashDataset.h"
 #include "hosal_wdt.h"
 #include "hosal_rf.h"
+#include "hosal_lpm.h"
 #include "hosal_dma.h"
 #include "hosal_gpio.h"
 #include "hosal_crypto_aes.h"
@@ -121,6 +122,11 @@ void init_rt58x_platform(void)
     wdt_init();
     uartConsoleInit();
     _dump_boot_info();
+    hosal_lpm_init();
+#ifdef CONFIG_HOSAL_SOC_IDLE_SLEEP
+    hosal_lpm_ioctrl(HOSAL_LPM_SET_POWER_LEVEL, HOSAL_LPM_SLEEP);
+    hosal_lpm_ioctrl(HOSAL_LPM_ENABLE_WAKE_UP_SOURCE, HOSAL_LOW_POWER_WAKEUP_GPIO);
+#endif
     enhanced_flash_dataset_init();
     //efd_env_set_default();
 }

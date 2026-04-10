@@ -22,20 +22,16 @@
 #include <stdint.h>
 
 #include "AppEvent.h"
-
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app-common/zap-generated/attributes/Accessors.h>
-
 #include <lib/core/CHIPError.h>
-
-using namespace chip;
 
 class HumidityManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
+    void AttributeChangeHandler(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value, uint16_t size);
 
 private:
     friend HumidityManager & HumiMgr();

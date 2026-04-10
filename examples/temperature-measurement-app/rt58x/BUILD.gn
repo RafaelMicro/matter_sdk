@@ -117,9 +117,13 @@ rt58x_executable("temperature-measurement-app") {
   {
     ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
   }
-  else
+  else if (rafael_board == "RT584H" || rafael_board == "RT584L")
   {
     ldscript = "${examples_plat_dir}/ldscript/rt584.ld"
+  }
+  else if (rafael_board == "RT584HA4")
+  {
+    ldscript = "${examples_plat_dir}/ldscript/rt584HA4.ld"
   }
 
   inputs = [ ldscript ]

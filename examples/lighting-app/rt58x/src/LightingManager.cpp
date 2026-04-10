@@ -106,14 +106,22 @@ CHIP_ERROR LightingManager::Init()
     if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
         mRGB = HsvToRgb(mHSV);
     else if (mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
-        mRGB = XYToRgb(mLevel, mXY.x, mXY.y); 
+        mRGB = XYToRgb(mLevel, mXY.x, mXY.y);
     else if (mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)
-        mRGB = CTToRgb(mCT); 
+        mRGB = CTToRgb(mCT);
     mState = currentLedState ? kState_On : kState_Off;
+
+    mTimer = xTimerCreate("LightTimer", pdMS_TO_TICKS(100), pdFALSE, nullptr, TimerEventHandler);
+    if (mTimer == nullptr)
+    {
+        ChipLogError(NotSpecified, "Failed to create timer");
+        return CHIP_ERROR_NO_MEMORY;
+    }
     UpdateLight();
 
     return CHIP_NO_ERROR;
 }
+
 bool LightingManager::IsTurnedOn()
 {
     return mState == kState_On;
@@ -159,7 +167,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
     case COLOR_ACTION_CT:
         ct.ctMireds = *reinterpret_cast<uint16_t *>(value);
         ChipLogProgress(NotSpecified, "LightMgr:COLOR: ct:%u->%u", mCT.ctMireds, ct.ctMireds);
-        break;        
+        break;
     default:
         ChipLogProgress(NotSpecified, "LightMgr:Unknown");
         break;
@@ -211,7 +219,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
         }
         else
         {
-           new_state = kState_On;
+            new_state = kState_On;
         }
     }
     else if (aAction == COLOR_ACTION_CT)
@@ -223,7 +231,7 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
         }
         else
         {
-           new_state = kState_On;
+            new_state = kState_On;
         }
     }
     if (action_initiated)
@@ -253,31 +261,18 @@ bool LightingManager::InitiateAction(Action_t aAction, uint8_t * value)
 
     return action_initiated;
 }
-void LightingManager::DelayedXYAction(chip::System::Layer * aLayer, void * aAppState)
-{
-    XyColor_t xy;
-    ColorControl::Attributes::CurrentX::Get(1, &xy.x);
-    ColorControl::Attributes::CurrentY::Get(1, &xy.y);
-    sLight.InitiateAction(COLOR_ACTION_XY, (uint8_t *)&xy);
-}
-void LightingManager::DelayedHSVAction(chip::System::Layer * aLayer, void * aAppState)
-{
-    HsvColor_t hsv = {.h = 0, .s = 0, .v = 0};
-    ColorControl::Attributes::CurrentHue::Get(1, &hsv.h);
-    ColorControl::Attributes::CurrentSaturation::Get(1, &hsv.s);
-    sLight.InitiateAction(LightingManager::COLOR_ACTION_HSV, (uint8_t *)&hsv);
-}
+
 void LightingManager::SetLevel(uint8_t aLevel)
 {
     mLevel = aLevel;
     mHSV.v = mLevel;
-    if(mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
+    if (mColorMode == ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation)
     {
-        mRGB   = HsvToRgb(mHSV);
+        mRGB = HsvToRgb(mHSV);
     }
-    else if(mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
+    else if (mColorMode == ColorControl::ColorModeEnum::kCurrentXAndCurrentY)
     {
-        mRGB   = XYToRgb(mLevel, mXY.x, mXY.y);
+        mRGB = XYToRgb(mLevel, mXY.x, mXY.y);
     }
 }
 
@@ -294,12 +289,7 @@ void LightingManager::SetColor(uint8_t hue, uint8_t saturation)
     mHSV.s = saturation;
     mHSV.v = mLevel; // use level from Level Cluster as Vibrance parameter
 
-    // ChipLogProgress(NotSpecified, "Sync HSV: %d %d %d", mHSV.h, mHSV.s, mHSV.v);
-
     mRGB = HsvToRgb(mHSV);
-
-    // ChipLogProgress(NotSpecified, "===> H: %d, S: %d\r\n", hue, saturation);
-    // ChipLogProgress(NotSpecified, "===> R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
 }
 
 void LightingManager::SetColorTemperature(CtColor_t ct)
@@ -308,9 +298,24 @@ void LightingManager::SetColorTemperature(CtColor_t ct)
     mRGB = CTToRgb(mCT);
 }
 
-void LightingManager::SetColorMode(chip::app::Clusters::ColorControl::ColorModeEnum ColorMode)
+void LightingManager::SetColorMode(ColorControl::ColorModeEnum ColorMode)
 {
     mColorMode = ColorMode;
+    switch (mColorMode)
+    {
+        case ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation:
+            mRGB = HsvToRgb(mHSV);
+            break;
+        case ColorControl::ColorModeEnum::kCurrentXAndCurrentY:
+            mRGB = XYToRgb(mLevel, mXY.x, mXY.y);
+            break;
+        case ColorControl::ColorModeEnum::kColorTemperatureMireds:
+            mRGB = CTToRgb(mCT);
+            break;
+        default:
+            break;
+    }
+    UpdateLight();
 }
 
 void LightingManager::Set(bool aOn)
@@ -327,22 +332,29 @@ void LightingManager::Set(bool aOn)
 
 void LightingManager::UpdateLight()
 {
-    //ChipLogProgress(NotSpecified, "UpdateLight: %d Mode: %d L:%d R:%d G:%d B:%d", mState, mColorMode, mLevel, mRGB.r, mRGB.g, mRGB.b);
-    ChipLogProgress(NotSpecified, "R: %d, G: %d, B: %d\r\n", mRGB.r, mRGB.g, mRGB.b);
-
-    if (mState == kState_On && mLevel > 1)
+    if (mTimer)
     {
-        if(mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds)//using color temperature
+        xTimerChangePeriod(mTimer, pdMS_TO_TICKS(500), 0);
+    }
+}
+
+void LightingManager::TimerEventHandler(TimerHandle_t xTimer)
+{
+    ChipLogProgress(NotSpecified, "R: %d, G: %d, B: %d\r\n", sLight.mRGB.r, sLight.mRGB.g, sLight.mRGB.b);
+
+    if (sLight.mState == kState_On && sLight.mLevel > 1)
+    {
+        if (sLight.mColorMode == ColorControl::ColorModeEnum::kColorTemperatureMireds) //using color temperature
         {
-            pwm_set_color(CorrectRGB(mRGB.r,mLevel), CorrectRGB(mRGB.g,mLevel), CorrectRGB(mRGB.b,mLevel));
+            pwm_set_color(CorrectRGB(sLight.mRGB.r,sLight.mLevel), CorrectRGB(sLight.mRGB.g,sLight.mLevel), CorrectRGB(sLight.mRGB.b,sLight.mLevel));
         }
         else
         {
-            pwm_set_color(mRGB.r, mRGB.g, mRGB.b);
+            pwm_set_color(sLight.mRGB.r, sLight.mRGB.g, sLight.mRGB.b);
         }
     }
     else
     {
-            pwm_set_color(0, 0, 0);
+        pwm_set_color(0, 0, 0);
     }
 }

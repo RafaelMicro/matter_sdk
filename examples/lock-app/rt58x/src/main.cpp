@@ -58,7 +58,7 @@ int main(void)
     }
 
     ChipLogProgress(NotSpecified, "=============================================================================");
-    ChipLogProgress(NotSpecified, "Rafael-Door-Lock-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "Rafael-Door-Lock-example(Matter 1.5) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     ChipLogProgress(NotSpecified, "=============================================================================");
 
     err = PlatformMgr().InitChipStack();
@@ -67,17 +67,17 @@ int main(void)
         ChipLogError(NotSpecified, "PlatformMgr().InitChipStack() failed");
         goto exit;
     }
-    
+
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

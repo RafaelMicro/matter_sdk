@@ -246,14 +246,6 @@ enum PublicEventTypes
      */
     kServerReady,
 
-    kRemoveFabricEvent,
-
-    kOnOffAttributeChanged,
-    kLevelControlAttributeChanged,
-    kColorControlAttributeXYChanged,
-    kColorControlAttributeHSVChanged,
-    kColorControlAttributeCTChanged,
-
     /**
      * Signals that BLE is deinitialized.
      */
@@ -574,11 +566,6 @@ struct ChipDeviceEvent final
         {
             OtaState newState;
         } OtaStateChanged;
-
-            struct
-        {
-
-        } RemoveFabric;
 
         struct
         {

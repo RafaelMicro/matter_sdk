@@ -79,7 +79,7 @@ rt58x_executable("light_switch_app") {
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
     "src/AppTask.cpp",
-    "src/BindingHandler.cpp",
+    #"src/BindingHandler.cpp",
     "src/LightSwitchMgr.cpp",
     "src/ZclCallbacks.cpp",
     "src/init_device_environment.cpp",
@@ -118,9 +118,13 @@ rt58x_executable("light_switch_app") {
   {
     ldscript = "${examples_plat_dir}/ldscript/rt58x.ld"
   }
-  else
+  else if (rafael_board == "RT584H" || rafael_board == "RT584L")
   {
     ldscript = "${examples_plat_dir}/ldscript/rt584.ld"
+  }
+  else if (rafael_board == "RT584HA4")
+  {
+    ldscript = "${examples_plat_dir}/ldscript/rt584HA4.ld"
   }
 
   inputs = [ ldscript ]

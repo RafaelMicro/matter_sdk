@@ -96,8 +96,10 @@
 | OperationalState                                                    | 0x0060 |
 | RvcOperationalState                                                 | 0x0061 |
 | ScenesManagement                                                    | 0x0062 |
+| Groupcast                                                           | 0x0065 |
 | HepaFilterMonitoring                                                | 0x0071 |
 | ActivatedCarbonFilterMonitoring                                     | 0x0072 |
+| WaterTankLevelMonitoring                                            | 0x0079 |
 | BooleanStateConfiguration                                           | 0x0080 |
 | ValveConfigurationAndControl                                        | 0x0081 |
 | ElectricalPowerMeasurement                                          | 0x0090 |
@@ -7348,6 +7350,7 @@ public:
 | * AccessControlEntriesPerFabric                                     | 0x0004 |
 | * CommissioningARL                                                  | 0x0005 |
 | * Arl                                                               | 0x0006 |
+| * AuxiliaryACL                                                      | 0x0007 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -7358,6 +7361,7 @@ public:
 | * AccessControlEntryChanged                                         | 0x0000 |
 | * AccessControlExtensionChanged                                     | 0x0001 |
 | * FabricRestrictionReviewUpdate                                     | 0x0002 |
+| * AuxiliaryAccessUpdated                                            | 0x0003 |
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -7555,6 +7559,11 @@ public:
                         }
                         newElement_0.targets = array_3;
                     }
+                }
+                if (entry_0.auxiliaryType.HasValue()) {
+                    newElement_0.auxiliaryType = [NSNumber numberWithUnsignedChar:chip::to_underlying(entry_0.auxiliaryType.Value())];
+                } else {
+                    newElement_0.auxiliaryType = nil;
                 }
                 newElement_0.fabricIndex = [NSNumber numberWithUnsignedChar:entry_0.fabricIndex];
                 [array_0 addObject:newElement_0];
@@ -8175,6 +8184,96 @@ public:
         return CHIP_NO_ERROR;
     }
 };
+
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute AuxiliaryACL
+ */
+class ReadAccessControlAuxiliaryACL : public ReadAttribute {
+public:
+    ReadAccessControlAuxiliaryACL()
+        : ReadAttribute("auxiliary-acl")
+    {
+    }
+
+    ~ReadAccessControlAuxiliaryACL()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccessControl::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::AccessControl::Attributes::AuxiliaryACL::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterAccessControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRReadParams alloc] init];
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        [cluster readAttributeAuxiliaryACLWithParams:params completion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"AccessControl.AuxiliaryACL response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("AccessControl AuxiliaryACL read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeAccessControlAuxiliaryACL : public SubscribeAttribute {
+public:
+    SubscribeAttributeAccessControlAuxiliaryACL()
+        : SubscribeAttribute("auxiliary-acl")
+    {
+    }
+
+    ~SubscribeAttributeAccessControlAuxiliaryACL()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::AccessControl::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::AccessControl::Attributes::AuxiliaryACL::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterAccessControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeAuxiliaryACLWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"AccessControl.AuxiliaryACL response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
 
 /*
  * Attribute GeneratedCommandList
@@ -19609,6 +19708,9 @@ public:
 | * TCAcknowledgements                                                | 0x0007 |
 | * TCAcknowledgementsRequired                                        | 0x0008 |
 | * TCUpdateDeadline                                                  | 0x0009 |
+| * RecoveryIdentifier                                                | 0x000A |
+| * NetworkRecoveryReason                                             | 0x000B |
+| * IsCommissioningWithoutPower                                       | 0x000C |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -20709,6 +20811,261 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"GeneralCommissioning.TCUpdateDeadline response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute RecoveryIdentifier
+ */
+class ReadGeneralCommissioningRecoveryIdentifier : public ReadAttribute {
+public:
+    ReadGeneralCommissioningRecoveryIdentifier()
+        : ReadAttribute("recovery-identifier")
+    {
+    }
+
+    ~ReadGeneralCommissioningRecoveryIdentifier()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::RecoveryIdentifier::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeRecoveryIdentifierWithCompletion:^(NSData * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"GeneralCommissioning.RecoveryIdentifier response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("GeneralCommissioning RecoveryIdentifier read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGeneralCommissioningRecoveryIdentifier : public SubscribeAttribute {
+public:
+    SubscribeAttributeGeneralCommissioningRecoveryIdentifier()
+        : SubscribeAttribute("recovery-identifier")
+    {
+    }
+
+    ~SubscribeAttributeGeneralCommissioningRecoveryIdentifier()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::RecoveryIdentifier::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeRecoveryIdentifierWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSData * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"GeneralCommissioning.RecoveryIdentifier response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute NetworkRecoveryReason
+ */
+class ReadGeneralCommissioningNetworkRecoveryReason : public ReadAttribute {
+public:
+    ReadGeneralCommissioningNetworkRecoveryReason()
+        : ReadAttribute("network-recovery-reason")
+    {
+    }
+
+    ~ReadGeneralCommissioningNetworkRecoveryReason()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::NetworkRecoveryReason::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeNetworkRecoveryReasonWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"GeneralCommissioning.NetworkRecoveryReason response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("GeneralCommissioning NetworkRecoveryReason read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGeneralCommissioningNetworkRecoveryReason : public SubscribeAttribute {
+public:
+    SubscribeAttributeGeneralCommissioningNetworkRecoveryReason()
+        : SubscribeAttribute("network-recovery-reason")
+    {
+    }
+
+    ~SubscribeAttributeGeneralCommissioningNetworkRecoveryReason()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::NetworkRecoveryReason::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeNetworkRecoveryReasonWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"GeneralCommissioning.NetworkRecoveryReason response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute IsCommissioningWithoutPower
+ */
+class ReadGeneralCommissioningIsCommissioningWithoutPower : public ReadAttribute {
+public:
+    ReadGeneralCommissioningIsCommissioningWithoutPower()
+        : ReadAttribute("is-commissioning-without-power")
+    {
+    }
+
+    ~ReadGeneralCommissioningIsCommissioningWithoutPower()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::IsCommissioningWithoutPower::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeIsCommissioningWithoutPowerWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"GeneralCommissioning.IsCommissioningWithoutPower response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("GeneralCommissioning IsCommissioningWithoutPower read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGeneralCommissioningIsCommissioningWithoutPower : public SubscribeAttribute {
+public:
+    SubscribeAttributeGeneralCommissioningIsCommissioningWithoutPower()
+        : SubscribeAttribute("is-commissioning-without-power")
+    {
+    }
+
+    ~SubscribeAttributeGeneralCommissioningIsCommissioningWithoutPower()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::GeneralCommissioning::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::GeneralCommissioning::Attributes::IsCommissioningWithoutPower::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGeneralCommissioning alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeIsCommissioningWithoutPowerWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"GeneralCommissioning.IsCommissioningWithoutPower response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -63485,6 +63842,1005 @@ public:
 
 #endif // MTR_ENABLE_PROVISIONAL
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*----------------------------------------------------------------------------*\
+| Cluster Groupcast                                                   | 0x0065 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * JoinGroup                                                         |   0x00 |
+| * LeaveGroup                                                        |   0x01 |
+| * UpdateGroupKey                                                    |   0x03 |
+| * ExpireGracePeriod                                                 |   0x04 |
+| * ConfigureAuxiliaryACL                                             |   0x05 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * Membership                                                        | 0x0000 |
+| * MaxMembershipCount                                                | 0x0001 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command JoinGroup
+ */
+class GroupcastJoinGroup : public ClusterCommand {
+public:
+    GroupcastJoinGroup()
+        : ClusterCommand("join-group")
+        , mComplex_Endpoints(&mRequest.endpoints)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Endpoints", &mComplex_Endpoints);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("KeyID", 0, UINT32_MAX, &mRequest.keyID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Key", &mRequest.key);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GracePeriod", 0, UINT32_MAX, &mRequest.gracePeriod);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("UseAuxiliaryACL", 0, 1, &mRequest.useAuxiliaryACL);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groupcast::Commands::JoinGroup::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRGroupcastClusterJoinGroupParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.groupID = [NSNumber numberWithUnsignedShort:mRequest.groupID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.endpoints) {
+                NSNumber * newElement_0;
+                newElement_0 = [NSNumber numberWithUnsignedShort:entry_0];
+                [array_0 addObject:newElement_0];
+            }
+            params.endpoints = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        params.keyID = [NSNumber numberWithUnsignedInt:mRequest.keyID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.key.HasValue()) {
+            params.key = [NSData dataWithBytes:mRequest.key.Value().data() length:mRequest.key.Value().size()];
+        } else {
+            params.key = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.gracePeriod.HasValue()) {
+            params.gracePeriod = [NSNumber numberWithUnsignedInt:mRequest.gracePeriod.Value()];
+        } else {
+            params.gracePeriod = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.useAuxiliaryACL.HasValue()) {
+            params.useAuxiliaryACL = [NSNumber numberWithBool:mRequest.useAuxiliaryACL.Value()];
+        } else {
+            params.useAuxiliaryACL = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster joinGroupWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Groupcast::Commands::JoinGroup::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::EndpointId>> mComplex_Endpoints;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command LeaveGroup
+ */
+class GroupcastLeaveGroup : public ClusterCommand {
+public:
+    GroupcastLeaveGroup()
+        : ClusterCommand("leave-group")
+        , mComplex_Endpoints(&mRequest.endpoints)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Endpoints", &mComplex_Endpoints);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groupcast::Commands::LeaveGroup::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRGroupcastClusterLeaveGroupParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.groupID = [NSNumber numberWithUnsignedShort:mRequest.groupID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.endpoints.HasValue()) {
+            { // Scope for our temporary variables
+                auto * array_1 = [NSMutableArray new];
+                for (auto & entry_1 : mRequest.endpoints.Value()) {
+                    NSNumber * newElement_1;
+                    newElement_1 = [NSNumber numberWithUnsignedShort:entry_1];
+                    [array_1 addObject:newElement_1];
+                }
+                params.endpoints = array_1;
+            }
+        } else {
+            params.endpoints = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster leaveGroupWithParams:params completion:
+                    ^(MTRGroupcastClusterLeaveGroupResponseParams * _Nullable values, NSError * _Nullable error) {
+                        NSLog(@"Values: %@", values);
+                        if (error == nil) {
+                            constexpr chip::CommandId responseId = chip::app::Clusters::Groupcast::Commands::LeaveGroupResponse::Id;
+                            RemoteDataModelLogger::LogCommandAsJSON(@(endpointId), @(clusterId), @(responseId), values);
+                        }
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            constexpr chip::CommandId responseId = chip::app::Clusters::Groupcast::Commands::LeaveGroupResponse::Id;
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(responseId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Groupcast::Commands::LeaveGroup::Type mRequest;
+    TypedComplexArgument<chip::Optional<chip::app::DataModel::List<const chip::EndpointId>>> mComplex_Endpoints;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command UpdateGroupKey
+ */
+class GroupcastUpdateGroupKey : public ClusterCommand {
+public:
+    GroupcastUpdateGroupKey()
+        : ClusterCommand("update-group-key")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("KeyID", 0, UINT32_MAX, &mRequest.keyID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Key", &mRequest.key);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GracePeriod", 0, UINT32_MAX, &mRequest.gracePeriod);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groupcast::Commands::UpdateGroupKey::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRGroupcastClusterUpdateGroupKeyParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.groupID = [NSNumber numberWithUnsignedShort:mRequest.groupID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        params.keyID = [NSNumber numberWithUnsignedInt:mRequest.keyID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.key.HasValue()) {
+            params.key = [NSData dataWithBytes:mRequest.key.Value().data() length:mRequest.key.Value().size()];
+        } else {
+            params.key = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.gracePeriod.HasValue()) {
+            params.gracePeriod = [NSNumber numberWithUnsignedInt:mRequest.gracePeriod.Value()];
+        } else {
+            params.gracePeriod = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster updateGroupKeyWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Groupcast::Commands::UpdateGroupKey::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command ExpireGracePeriod
+ */
+class GroupcastExpireGracePeriod : public ClusterCommand {
+public:
+    GroupcastExpireGracePeriod()
+        : ClusterCommand("expire-grace-period")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groupcast::Commands::ExpireGracePeriod::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRGroupcastClusterExpireGracePeriodParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.groupID = [NSNumber numberWithUnsignedShort:mRequest.groupID];
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster expireGracePeriodWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Groupcast::Commands::ExpireGracePeriod::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command ConfigureAuxiliaryACL
+ */
+class GroupcastConfigureAuxiliaryACL : public ClusterCommand {
+public:
+    GroupcastConfigureAuxiliaryACL()
+        : ClusterCommand("configure-auxiliary-acl")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("GroupID", 0, UINT16_MAX, &mRequest.groupID);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("UseAuxiliaryACL", 0, 1, &mRequest.useAuxiliaryACL);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Groupcast::Commands::ConfigureAuxiliaryACL::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRGroupcastClusterConfigureAuxiliaryACLParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.groupID = [NSNumber numberWithUnsignedShort:mRequest.groupID];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        params.useAuxiliaryACL = [NSNumber numberWithBool:mRequest.useAuxiliaryACL];
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster configureAuxiliaryACLWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Groupcast::Commands::ConfigureAuxiliaryACL::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute Membership
+ */
+class ReadGroupcastMembership : public ReadAttribute {
+public:
+    ReadGroupcastMembership()
+        : ReadAttribute("membership")
+    {
+    }
+
+    ~ReadGroupcastMembership()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::Membership::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRReadParams alloc] init];
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        [cluster readAttributeMembershipWithParams:params completion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.Membership response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast Membership read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastMembership : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastMembership()
+        : SubscribeAttribute("membership")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastMembership()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::Membership::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMembershipWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.Membership response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute MaxMembershipCount
+ */
+class ReadGroupcastMaxMembershipCount : public ReadAttribute {
+public:
+    ReadGroupcastMaxMembershipCount()
+        : ReadAttribute("max-membership-count")
+    {
+    }
+
+    ~ReadGroupcastMaxMembershipCount()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::MaxMembershipCount::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeMaxMembershipCountWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.MaxMembershipCount response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast MaxMembershipCount read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastMaxMembershipCount : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastMaxMembershipCount()
+        : SubscribeAttribute("max-membership-count")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastMaxMembershipCount()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::MaxMembershipCount::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMaxMembershipCountWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.MaxMembershipCount response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute GeneratedCommandList
+ */
+class ReadGroupcastGeneratedCommandList : public ReadAttribute {
+public:
+    ReadGroupcastGeneratedCommandList()
+        : ReadAttribute("generated-command-list")
+    {
+    }
+
+    ~ReadGroupcastGeneratedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::GeneratedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeGeneratedCommandListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.GeneratedCommandList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast GeneratedCommandList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastGeneratedCommandList : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastGeneratedCommandList()
+        : SubscribeAttribute("generated-command-list")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastGeneratedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::GeneratedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeGeneratedCommandListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.GeneratedCommandList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute AcceptedCommandList
+ */
+class ReadGroupcastAcceptedCommandList : public ReadAttribute {
+public:
+    ReadGroupcastAcceptedCommandList()
+        : ReadAttribute("accepted-command-list")
+    {
+    }
+
+    ~ReadGroupcastAcceptedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::AcceptedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeAcceptedCommandListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.AcceptedCommandList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast AcceptedCommandList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastAcceptedCommandList : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastAcceptedCommandList()
+        : SubscribeAttribute("accepted-command-list")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastAcceptedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::AcceptedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeAcceptedCommandListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.AcceptedCommandList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute AttributeList
+ */
+class ReadGroupcastAttributeList : public ReadAttribute {
+public:
+    ReadGroupcastAttributeList()
+        : ReadAttribute("attribute-list")
+    {
+    }
+
+    ~ReadGroupcastAttributeList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::AttributeList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeAttributeListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.AttributeList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast AttributeList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastAttributeList : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastAttributeList()
+        : SubscribeAttribute("attribute-list")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastAttributeList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::AttributeList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeAttributeListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.AttributeList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute FeatureMap
+ */
+class ReadGroupcastFeatureMap : public ReadAttribute {
+public:
+    ReadGroupcastFeatureMap()
+        : ReadAttribute("feature-map")
+    {
+    }
+
+    ~ReadGroupcastFeatureMap()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::FeatureMap::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeFeatureMapWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.FeatureMap response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast FeatureMap read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastFeatureMap : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastFeatureMap()
+        : SubscribeAttribute("feature-map")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastFeatureMap()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::FeatureMap::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeFeatureMapWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.FeatureMap response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ClusterRevision
+ */
+class ReadGroupcastClusterRevision : public ReadAttribute {
+public:
+    ReadGroupcastClusterRevision()
+        : ReadAttribute("cluster-revision")
+    {
+    }
+
+    ~ReadGroupcastClusterRevision()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Groupcast::Attributes::ClusterRevision::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeClusterRevisionWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Groupcast.ClusterRevision response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Groupcast ClusterRevision read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeGroupcastClusterRevision : public SubscribeAttribute {
+public:
+    SubscribeAttributeGroupcastClusterRevision()
+        : SubscribeAttribute("cluster-revision")
+    {
+    }
+
+    ~SubscribeAttributeGroupcastClusterRevision()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Groupcast::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Groupcast::Attributes::ClusterRevision::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterGroupcast alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeClusterRevisionWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Groupcast.ClusterRevision response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#endif // MTR_ENABLE_PROVISIONAL
 /*----------------------------------------------------------------------------*\
 | Cluster HepaFilterMonitoring                                        | 0x0071 |
 |------------------------------------------------------------------------------|
@@ -65509,6 +66865,1056 @@ public:
     }
 };
 
+#if MTR_ENABLE_PROVISIONAL
+/*----------------------------------------------------------------------------*\
+| Cluster WaterTankLevelMonitoring                                    | 0x0079 |
+|------------------------------------------------------------------------------|
+| Commands:                                                           |        |
+| * ResetCondition                                                    |   0x00 |
+|------------------------------------------------------------------------------|
+| Attributes:                                                         |        |
+| * Condition                                                         | 0x0000 |
+| * DegradationDirection                                              | 0x0001 |
+| * ChangeIndication                                                  | 0x0002 |
+| * InPlaceIndicator                                                  | 0x0003 |
+| * LastChangedTime                                                   | 0x0004 |
+| * ReplacementProductList                                            | 0x0005 |
+| * GeneratedCommandList                                              | 0xFFF8 |
+| * AcceptedCommandList                                               | 0xFFF9 |
+| * AttributeList                                                     | 0xFFFB |
+| * FeatureMap                                                        | 0xFFFC |
+| * ClusterRevision                                                   | 0xFFFD |
+|------------------------------------------------------------------------------|
+| Events:                                                             |        |
+\*----------------------------------------------------------------------------*/
+
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command ResetCondition
+ */
+class WaterTankLevelMonitoringResetCondition : public ClusterCommand {
+public:
+    WaterTankLevelMonitoringResetCondition()
+        : ClusterCommand("reset-condition")
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::WaterTankLevelMonitoring::Commands::ResetCondition::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRWaterTankLevelMonitoringClusterResetConditionParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster resetConditionWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute Condition
+ */
+class ReadWaterTankLevelMonitoringCondition : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringCondition()
+        : ReadAttribute("condition")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringCondition()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::Condition::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeConditionWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.Condition response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring Condition read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringCondition : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringCondition()
+        : SubscribeAttribute("condition")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringCondition()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::Condition::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeConditionWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.Condition response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute DegradationDirection
+ */
+class ReadWaterTankLevelMonitoringDegradationDirection : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringDegradationDirection()
+        : ReadAttribute("degradation-direction")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringDegradationDirection()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::DegradationDirection::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeDegradationDirectionWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.DegradationDirection response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring DegradationDirection read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringDegradationDirection : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringDegradationDirection()
+        : SubscribeAttribute("degradation-direction")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringDegradationDirection()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::DegradationDirection::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeDegradationDirectionWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.DegradationDirection response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ChangeIndication
+ */
+class ReadWaterTankLevelMonitoringChangeIndication : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringChangeIndication()
+        : ReadAttribute("change-indication")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringChangeIndication()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ChangeIndication::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeChangeIndicationWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.ChangeIndication response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring ChangeIndication read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringChangeIndication : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringChangeIndication()
+        : SubscribeAttribute("change-indication")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringChangeIndication()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ChangeIndication::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeChangeIndicationWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.ChangeIndication response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute InPlaceIndicator
+ */
+class ReadWaterTankLevelMonitoringInPlaceIndicator : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringInPlaceIndicator()
+        : ReadAttribute("in-place-indicator")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringInPlaceIndicator()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::InPlaceIndicator::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeInPlaceIndicatorWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.InPlaceIndicator response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring InPlaceIndicator read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringInPlaceIndicator : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringInPlaceIndicator()
+        : SubscribeAttribute("in-place-indicator")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringInPlaceIndicator()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::InPlaceIndicator::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeInPlaceIndicatorWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.InPlaceIndicator response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute LastChangedTime
+ */
+class ReadWaterTankLevelMonitoringLastChangedTime : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringLastChangedTime()
+        : ReadAttribute("last-changed-time")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringLastChangedTime()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::LastChangedTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeLastChangedTimeWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.LastChangedTime response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring LastChangedTime read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class WriteWaterTankLevelMonitoringLastChangedTime : public WriteAttribute {
+public:
+    WriteWaterTankLevelMonitoringLastChangedTime()
+        : WriteAttribute("last-changed-time")
+    {
+        AddArgument("attr-name", "last-changed-time");
+        AddArgument("attr-value", 0, UINT32_MAX, &mValue);
+        WriteAttribute::AddArguments();
+    }
+
+    ~WriteWaterTankLevelMonitoringLastChangedTime()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::LastChangedTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRWriteParams alloc] init];
+        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
+        NSNumber * _Nullable value = nil;
+        if (!mValue.IsNull()) {
+            value = [NSNumber numberWithUnsignedInt:mValue.Value()];
+        }
+
+        [cluster writeAttributeLastChangedTimeWithValue:value params:params completion:^(NSError * _Nullable error) {
+            if (error != nil) {
+                LogNSError("WaterTankLevelMonitoring LastChangedTime write Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::DataModel::Nullable<uint32_t> mValue;
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringLastChangedTime : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringLastChangedTime()
+        : SubscribeAttribute("last-changed-time")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringLastChangedTime()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::LastChangedTime::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeLastChangedTimeWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.LastChangedTime response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ReplacementProductList
+ */
+class ReadWaterTankLevelMonitoringReplacementProductList : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringReplacementProductList()
+        : ReadAttribute("replacement-product-list")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringReplacementProductList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ReplacementProductList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeReplacementProductListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.ReplacementProductList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring ReplacementProductList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringReplacementProductList : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringReplacementProductList()
+        : SubscribeAttribute("replacement-product-list")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringReplacementProductList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ReplacementProductList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeReplacementProductListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.ReplacementProductList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute GeneratedCommandList
+ */
+class ReadWaterTankLevelMonitoringGeneratedCommandList : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringGeneratedCommandList()
+        : ReadAttribute("generated-command-list")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringGeneratedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::GeneratedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeGeneratedCommandListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.GeneratedCommandList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring GeneratedCommandList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringGeneratedCommandList : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringGeneratedCommandList()
+        : SubscribeAttribute("generated-command-list")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringGeneratedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::GeneratedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeGeneratedCommandListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.GeneratedCommandList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute AcceptedCommandList
+ */
+class ReadWaterTankLevelMonitoringAcceptedCommandList : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringAcceptedCommandList()
+        : ReadAttribute("accepted-command-list")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringAcceptedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::AcceptedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeAcceptedCommandListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.AcceptedCommandList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring AcceptedCommandList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringAcceptedCommandList : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringAcceptedCommandList()
+        : SubscribeAttribute("accepted-command-list")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringAcceptedCommandList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::AcceptedCommandList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeAcceptedCommandListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.AcceptedCommandList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute AttributeList
+ */
+class ReadWaterTankLevelMonitoringAttributeList : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringAttributeList()
+        : ReadAttribute("attribute-list")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringAttributeList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::AttributeList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeAttributeListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.AttributeList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring AttributeList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringAttributeList : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringAttributeList()
+        : SubscribeAttribute("attribute-list")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringAttributeList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::AttributeList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeAttributeListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.AttributeList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute FeatureMap
+ */
+class ReadWaterTankLevelMonitoringFeatureMap : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringFeatureMap()
+        : ReadAttribute("feature-map")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringFeatureMap()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::FeatureMap::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeFeatureMapWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.FeatureMap response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring FeatureMap read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringFeatureMap : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringFeatureMap()
+        : SubscribeAttribute("feature-map")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringFeatureMap()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::FeatureMap::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeFeatureMapWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.FeatureMap response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ClusterRevision
+ */
+class ReadWaterTankLevelMonitoringClusterRevision : public ReadAttribute {
+public:
+    ReadWaterTankLevelMonitoringClusterRevision()
+        : ReadAttribute("cluster-revision")
+    {
+    }
+
+    ~ReadWaterTankLevelMonitoringClusterRevision()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ClusterRevision::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeClusterRevisionWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"WaterTankLevelMonitoring.ClusterRevision response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("WaterTankLevelMonitoring ClusterRevision read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeWaterTankLevelMonitoringClusterRevision : public SubscribeAttribute {
+public:
+    SubscribeAttributeWaterTankLevelMonitoringClusterRevision()
+        : SubscribeAttribute("cluster-revision")
+    {
+    }
+
+    ~SubscribeAttributeWaterTankLevelMonitoringClusterRevision()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::WaterTankLevelMonitoring::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::WaterTankLevelMonitoring::Attributes::ClusterRevision::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterWaterTankLevelMonitoring alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeClusterRevisionWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"WaterTankLevelMonitoring.ClusterRevision response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#endif // MTR_ENABLE_PROVISIONAL
 /*----------------------------------------------------------------------------*\
 | Cluster BooleanStateConfiguration                                   | 0x0080 |
 |------------------------------------------------------------------------------|
@@ -79256,6 +81662,7 @@ public:
 | Attributes:                                                         |        |
 | * AvailableEndpoints                                                | 0x0000 |
 | * ActiveEndpoints                                                   | 0x0001 |
+| * ElectricalCircuitNodes                                            | 0x0002 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -79428,6 +81835,160 @@ public:
         return CHIP_NO_ERROR;
     }
 };
+
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ElectricalCircuitNodes
+ */
+class ReadPowerTopologyElectricalCircuitNodes : public ReadAttribute {
+public:
+    ReadPowerTopologyElectricalCircuitNodes()
+        : ReadAttribute("electrical-circuit-nodes")
+    {
+    }
+
+    ~ReadPowerTopologyElectricalCircuitNodes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::PowerTopology::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::PowerTopology::Attributes::ElectricalCircuitNodes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterPowerTopology alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRReadParams alloc] init];
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        [cluster readAttributeElectricalCircuitNodesWithParams:params completion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"PowerTopology.ElectricalCircuitNodes response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("PowerTopology ElectricalCircuitNodes read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class WritePowerTopologyElectricalCircuitNodes : public WriteAttribute {
+public:
+    WritePowerTopologyElectricalCircuitNodes()
+        : WriteAttribute("electrical-circuit-nodes")
+        , mComplex(&mValue)
+    {
+        AddArgument("attr-name", "electrical-circuit-nodes");
+        AddArgument("attr-value", &mComplex);
+        WriteAttribute::AddArguments();
+    }
+
+    ~WritePowerTopologyElectricalCircuitNodes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::PowerTopology::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::PowerTopology::Attributes::ElectricalCircuitNodes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterPowerTopology alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRWriteParams alloc] init];
+        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
+        NSArray * _Nonnull value;
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mValue) {
+                MTRPowerTopologyClusterCircuitNodeStruct * newElement_0;
+                newElement_0 = [MTRPowerTopologyClusterCircuitNodeStruct new];
+                newElement_0.node = [NSNumber numberWithUnsignedLongLong:entry_0.node];
+                if (entry_0.endpoint.HasValue()) {
+                    newElement_0.endpoint = [NSNumber numberWithUnsignedShort:entry_0.endpoint.Value()];
+                } else {
+                    newElement_0.endpoint = nil;
+                }
+                if (entry_0.label.HasValue()) {
+                    newElement_0.label = [[NSString alloc] initWithBytes:entry_0.label.Value().data() length:entry_0.label.Value().size() encoding:NSUTF8StringEncoding];
+                } else {
+                    newElement_0.label = nil;
+                }
+                newElement_0.fabricIndex = [NSNumber numberWithUnsignedChar:entry_0.fabricIndex];
+                [array_0 addObject:newElement_0];
+            }
+            value = array_0;
+        }
+
+        [cluster writeAttributeElectricalCircuitNodesWithValue:value params:params completion:^(NSError * _Nullable error) {
+            if (error != nil) {
+                LogNSError("PowerTopology ElectricalCircuitNodes write Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::DataModel::List<const chip::app::Clusters::PowerTopology::Structs::CircuitNodeStruct::Type> mValue;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::PowerTopology::Structs::CircuitNodeStruct::Type>> mComplex;
+};
+
+class SubscribeAttributePowerTopologyElectricalCircuitNodes : public SubscribeAttribute {
+public:
+    SubscribeAttributePowerTopologyElectricalCircuitNodes()
+        : SubscribeAttribute("electrical-circuit-nodes")
+    {
+    }
+
+    ~SubscribeAttributePowerTopologyElectricalCircuitNodes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::PowerTopology::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::PowerTopology::Attributes::ElectricalCircuitNodes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterPowerTopology alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeElectricalCircuitNodesWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"PowerTopology.ElectricalCircuitNodes response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
 
 /*
  * Attribute GeneratedCommandList
@@ -91225,8 +93786,9 @@ public:
 | * CountdownTime                                                     | 0x0000 |
 | * MainState                                                         | 0x0001 |
 | * CurrentErrorList                                                  | 0x0002 |
-| * OverallState                                                      | 0x0003 |
-| * OverallTarget                                                     | 0x0004 |
+| * OverallCurrentState                                               | 0x0003 |
+| * OverallTargetState                                                | 0x0004 |
+| * LatchControlModes                                                 | 0x0005 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -91668,34 +94230,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute OverallState
+ * Attribute OverallCurrentState
  */
-class ReadClosureControlOverallState : public ReadAttribute {
+class ReadClosureControlOverallCurrentState : public ReadAttribute {
 public:
-    ReadClosureControlOverallState()
-        : ReadAttribute("overall-state")
+    ReadClosureControlOverallCurrentState()
+        : ReadAttribute("overall-current-state")
     {
     }
 
-    ~ReadClosureControlOverallState()
+    ~ReadClosureControlOverallCurrentState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallState::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallCurrentState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterClosureControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeOverallStateWithCompletion:^(MTRClosureControlClusterOverallStateStruct * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"ClosureControl.OverallState response %@", [value description]);
+        [cluster readAttributeOverallCurrentStateWithCompletion:^(MTRClosureControlClusterOverallCurrentStateStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ClosureControl.OverallCurrentState response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("ClosureControl OverallState read Error", error);
+                LogNSError("ClosureControl OverallCurrentState read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -91704,21 +94266,21 @@ public:
     }
 };
 
-class SubscribeAttributeClosureControlOverallState : public SubscribeAttribute {
+class SubscribeAttributeClosureControlOverallCurrentState : public SubscribeAttribute {
 public:
-    SubscribeAttributeClosureControlOverallState()
-        : SubscribeAttribute("overall-state")
+    SubscribeAttributeClosureControlOverallCurrentState()
+        : SubscribeAttribute("overall-current-state")
     {
     }
 
-    ~SubscribeAttributeClosureControlOverallState()
+    ~SubscribeAttributeClosureControlOverallCurrentState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallState::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallCurrentState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -91733,10 +94295,10 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeOverallStateWithParams:params
+        [cluster subscribeAttributeOverallCurrentStateWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(MTRClosureControlClusterOverallStateStruct * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"ClosureControl.OverallState response %@", [value description]);
+            reportHandler:^(MTRClosureControlClusterOverallCurrentStateStruct * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ClosureControl.OverallCurrentState response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -91753,34 +94315,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute OverallTarget
+ * Attribute OverallTargetState
  */
-class ReadClosureControlOverallTarget : public ReadAttribute {
+class ReadClosureControlOverallTargetState : public ReadAttribute {
 public:
-    ReadClosureControlOverallTarget()
-        : ReadAttribute("overall-target")
+    ReadClosureControlOverallTargetState()
+        : ReadAttribute("overall-target-state")
     {
     }
 
-    ~ReadClosureControlOverallTarget()
+    ~ReadClosureControlOverallTargetState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallTarget::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallTargetState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterClosureControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeOverallTargetWithCompletion:^(MTRClosureControlClusterOverallTargetStruct * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"ClosureControl.OverallTarget response %@", [value description]);
+        [cluster readAttributeOverallTargetStateWithCompletion:^(MTRClosureControlClusterOverallTargetStateStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ClosureControl.OverallTargetState response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("ClosureControl OverallTarget read Error", error);
+                LogNSError("ClosureControl OverallTargetState read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -91789,21 +94351,21 @@ public:
     }
 };
 
-class SubscribeAttributeClosureControlOverallTarget : public SubscribeAttribute {
+class SubscribeAttributeClosureControlOverallTargetState : public SubscribeAttribute {
 public:
-    SubscribeAttributeClosureControlOverallTarget()
-        : SubscribeAttribute("overall-target")
+    SubscribeAttributeClosureControlOverallTargetState()
+        : SubscribeAttribute("overall-target-state")
     {
     }
 
-    ~SubscribeAttributeClosureControlOverallTarget()
+    ~SubscribeAttributeClosureControlOverallTargetState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallTarget::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureControl::Attributes::OverallTargetState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -91818,10 +94380,95 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeOverallTargetWithParams:params
+        [cluster subscribeAttributeOverallTargetStateWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(MTRClosureControlClusterOverallTargetStruct * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"ClosureControl.OverallTarget response %@", [value description]);
+            reportHandler:^(MTRClosureControlClusterOverallTargetStateStruct * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ClosureControl.OverallTargetState response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute LatchControlModes
+ */
+class ReadClosureControlLatchControlModes : public ReadAttribute {
+public:
+    ReadClosureControlLatchControlModes()
+        : ReadAttribute("latch-control-modes")
+    {
+    }
+
+    ~ReadClosureControlLatchControlModes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureControl::Attributes::LatchControlModes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterClosureControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeLatchControlModesWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ClosureControl.LatchControlModes response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ClosureControl LatchControlModes read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeClosureControlLatchControlModes : public SubscribeAttribute {
+public:
+    SubscribeAttributeClosureControlLatchControlModes()
+        : SubscribeAttribute("latch-control-modes")
+    {
+    }
+
+    ~SubscribeAttributeClosureControlLatchControlModes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureControl::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureControl::Attributes::LatchControlModes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterClosureControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeLatchControlModesWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ClosureControl.LatchControlModes response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -92271,7 +94918,7 @@ public:
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * CurrentState                                                      | 0x0000 |
-| * Target                                                            | 0x0001 |
+| * TargetState                                                       | 0x0001 |
 | * Resolution                                                        | 0x0002 |
 | * StepValue                                                         | 0x0003 |
 | * Unit                                                              | 0x0004 |
@@ -92281,6 +94928,7 @@ public:
 | * RotationAxis                                                      | 0x0008 |
 | * Overflow                                                          | 0x0009 |
 | * ModulationType                                                    | 0x000A |
+| * LatchControlModes                                                 | 0x000B |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -92462,7 +95110,7 @@ public:
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterClosureDimension alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeCurrentStateWithCompletion:^(MTRClosureDimensionClusterCurrentStateStruct * _Nullable value, NSError * _Nullable error) {
+        [cluster readAttributeCurrentStateWithCompletion:^(MTRClosureDimensionClusterDimensionStateStruct * _Nullable value, NSError * _Nullable error) {
             NSLog(@"ClosureDimension.CurrentState response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
@@ -92507,7 +95155,7 @@ public:
         }
         [cluster subscribeAttributeCurrentStateWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(MTRClosureDimensionClusterCurrentStateStruct * _Nullable value, NSError * _Nullable error) {
+            reportHandler:^(MTRClosureDimensionClusterDimensionStateStruct * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"ClosureDimension.CurrentState response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
@@ -92525,34 +95173,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute Target
+ * Attribute TargetState
  */
-class ReadClosureDimensionTarget : public ReadAttribute {
+class ReadClosureDimensionTargetState : public ReadAttribute {
 public:
-    ReadClosureDimensionTarget()
-        : ReadAttribute("target")
+    ReadClosureDimensionTargetState()
+        : ReadAttribute("target-state")
     {
     }
 
-    ~ReadClosureDimensionTarget()
+    ~ReadClosureDimensionTargetState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureDimension::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureDimension::Attributes::Target::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureDimension::Attributes::TargetState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterClosureDimension alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeTargetWithCompletion:^(MTRClosureDimensionClusterTargetStruct * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"ClosureDimension.Target response %@", [value description]);
+        [cluster readAttributeTargetStateWithCompletion:^(MTRClosureDimensionClusterDimensionStateStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ClosureDimension.TargetState response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("ClosureDimension Target read Error", error);
+                LogNSError("ClosureDimension TargetState read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -92561,21 +95209,21 @@ public:
     }
 };
 
-class SubscribeAttributeClosureDimensionTarget : public SubscribeAttribute {
+class SubscribeAttributeClosureDimensionTargetState : public SubscribeAttribute {
 public:
-    SubscribeAttributeClosureDimensionTarget()
-        : SubscribeAttribute("target")
+    SubscribeAttributeClosureDimensionTargetState()
+        : SubscribeAttribute("target-state")
     {
     }
 
-    ~SubscribeAttributeClosureDimensionTarget()
+    ~SubscribeAttributeClosureDimensionTargetState()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureDimension::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureDimension::Attributes::Target::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureDimension::Attributes::TargetState::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -92590,10 +95238,10 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeTargetWithParams:params
+        [cluster subscribeAttributeTargetStateWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(MTRClosureDimensionClusterTargetStruct * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"ClosureDimension.Target response %@", [value description]);
+            reportHandler:^(MTRClosureDimensionClusterDimensionStateStruct * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ClosureDimension.TargetState response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -93359,6 +96007,91 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"ClosureDimension.ModulationType response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute LatchControlModes
+ */
+class ReadClosureDimensionLatchControlModes : public ReadAttribute {
+public:
+    ReadClosureDimensionLatchControlModes()
+        : ReadAttribute("latch-control-modes")
+    {
+    }
+
+    ~ReadClosureDimensionLatchControlModes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureDimension::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ClosureDimension::Attributes::LatchControlModes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterClosureDimension alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeLatchControlModesWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ClosureDimension.LatchControlModes response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ClosureDimension LatchControlModes read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeClosureDimensionLatchControlModes : public SubscribeAttribute {
+public:
+    SubscribeAttributeClosureDimensionLatchControlModes()
+        : SubscribeAttribute("latch-control-modes")
+    {
+    }
+
+    ~SubscribeAttributeClosureDimensionLatchControlModes()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ClosureDimension::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ClosureDimension::Attributes::LatchControlModes::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterClosureDimension alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeLatchControlModesWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ClosureDimension.LatchControlModes response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -97370,6 +100103,8 @@ public:
 | * ClearWeeklySchedule                                               |   0x03 |
 | * SetActiveScheduleRequest                                          |   0x05 |
 | * SetActivePresetRequest                                            |   0x06 |
+| * AddThermostatSuggestion                                           |   0x07 |
+| * RemoveThermostatSuggestion                                        |   0x08 |
 | * AtomicRequest                                                     |   0xFE |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
@@ -97433,6 +100168,10 @@ public:
 | * Presets                                                           | 0x0050 |
 | * Schedules                                                         | 0x0051 |
 | * SetpointHoldExpiryTimestamp                                       | 0x0052 |
+| * MaxThermostatSuggestions                                          | 0x0053 |
+| * ThermostatSuggestions                                             | 0x0054 |
+| * CurrentThermostatSuggestion                                       | 0x0055 |
+| * ThermostatSuggestionNotFollowingReason                            | 0x0056 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -97440,6 +100179,14 @@ public:
 | * ClusterRevision                                                   | 0xFFFD |
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
+| * SystemModeChange                                                  | 0x0000 |
+| * LocalTemperatureChange                                            | 0x0001 |
+| * OccupancyChange                                                   | 0x0002 |
+| * SetpointChange                                                    | 0x0003 |
+| * RunningStateChange                                                | 0x0004 |
+| * RunningModeChange                                                 | 0x0005 |
+| * ActiveScheduleChange                                              | 0x0006 |
+| * ActivePresetChange                                                | 0x0007 |
 \*----------------------------------------------------------------------------*/
 
 /*
@@ -97762,6 +100509,134 @@ private:
     chip::app::Clusters::Thermostat::Commands::SetActivePresetRequest::Type mRequest;
 };
 
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command AddThermostatSuggestion
+ */
+class ThermostatAddThermostatSuggestion : public ClusterCommand {
+public:
+    ThermostatAddThermostatSuggestion()
+        : ClusterCommand("add-thermostat-suggestion")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("PresetHandle", &mRequest.presetHandle);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("EffectiveTime", 0, UINT32_MAX, &mRequest.effectiveTime);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("ExpirationInMinutes", 0, UINT16_MAX, &mRequest.expirationInMinutes);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::AddThermostatSuggestion::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRThermostatClusterAddThermostatSuggestionParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.presetHandle = [NSData dataWithBytes:mRequest.presetHandle.data() length:mRequest.presetHandle.size()];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.effectiveTime.IsNull()) {
+            params.effectiveTime = nil;
+        } else {
+            params.effectiveTime = [NSNumber numberWithUnsignedInt:mRequest.effectiveTime.Value()];
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        params.expirationInMinutes = [NSNumber numberWithUnsignedShort:mRequest.expirationInMinutes];
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster addThermostatSuggestionWithParams:params completion:
+                    ^(MTRThermostatClusterAddThermostatSuggestionResponseParams * _Nullable values, NSError * _Nullable error) {
+                        NSLog(@"Values: %@", values);
+                        if (error == nil) {
+                            constexpr chip::CommandId responseId = chip::app::Clusters::Thermostat::Commands::AddThermostatSuggestionResponse::Id;
+                            RemoteDataModelLogger::LogCommandAsJSON(@(endpointId), @(clusterId), @(responseId), values);
+                        }
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            constexpr chip::CommandId responseId = chip::app::Clusters::Thermostat::Commands::AddThermostatSuggestionResponse::Id;
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(responseId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::AddThermostatSuggestion::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command RemoveThermostatSuggestion
+ */
+class ThermostatRemoveThermostatSuggestion : public ClusterCommand {
+public:
+    ThermostatRemoveThermostatSuggestion()
+        : ClusterCommand("remove-thermostat-suggestion")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("UniqueID", 0, UINT8_MAX, &mRequest.uniqueID);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::Thermostat::Commands::RemoveThermostatSuggestion::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRThermostatClusterRemoveThermostatSuggestionParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.uniqueID = [NSNumber numberWithUnsignedChar:mRequest.uniqueID];
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster removeThermostatSuggestionWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::Thermostat::Commands::RemoveThermostatSuggestion::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
 /*
  * Command AtomicRequest
  */
@@ -104054,6 +106929,347 @@ public:
         return CHIP_NO_ERROR;
     }
 };
+
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute MaxThermostatSuggestions
+ */
+class ReadThermostatMaxThermostatSuggestions : public ReadAttribute {
+public:
+    ReadThermostatMaxThermostatSuggestions()
+        : ReadAttribute("max-thermostat-suggestions")
+    {
+    }
+
+    ~ReadThermostatMaxThermostatSuggestions()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Thermostat::Attributes::MaxThermostatSuggestions::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeMaxThermostatSuggestionsWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Thermostat.MaxThermostatSuggestions response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Thermostat MaxThermostatSuggestions read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeThermostatMaxThermostatSuggestions : public SubscribeAttribute {
+public:
+    SubscribeAttributeThermostatMaxThermostatSuggestions()
+        : SubscribeAttribute("max-thermostat-suggestions")
+    {
+    }
+
+    ~SubscribeAttributeThermostatMaxThermostatSuggestions()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Thermostat::Attributes::MaxThermostatSuggestions::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMaxThermostatSuggestionsWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Thermostat.MaxThermostatSuggestions response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ThermostatSuggestions
+ */
+class ReadThermostatThermostatSuggestions : public ReadAttribute {
+public:
+    ReadThermostatThermostatSuggestions()
+        : ReadAttribute("thermostat-suggestions")
+    {
+    }
+
+    ~ReadThermostatThermostatSuggestions()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Thermostat::Attributes::ThermostatSuggestions::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeThermostatSuggestionsWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Thermostat.ThermostatSuggestions response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Thermostat ThermostatSuggestions read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeThermostatThermostatSuggestions : public SubscribeAttribute {
+public:
+    SubscribeAttributeThermostatThermostatSuggestions()
+        : SubscribeAttribute("thermostat-suggestions")
+    {
+    }
+
+    ~SubscribeAttributeThermostatThermostatSuggestions()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Thermostat::Attributes::ThermostatSuggestions::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeThermostatSuggestionsWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Thermostat.ThermostatSuggestions response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute CurrentThermostatSuggestion
+ */
+class ReadThermostatCurrentThermostatSuggestion : public ReadAttribute {
+public:
+    ReadThermostatCurrentThermostatSuggestion()
+        : ReadAttribute("current-thermostat-suggestion")
+    {
+    }
+
+    ~ReadThermostatCurrentThermostatSuggestion()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Thermostat::Attributes::CurrentThermostatSuggestion::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeCurrentThermostatSuggestionWithCompletion:^(MTRThermostatClusterThermostatSuggestionStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Thermostat.CurrentThermostatSuggestion response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Thermostat CurrentThermostatSuggestion read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeThermostatCurrentThermostatSuggestion : public SubscribeAttribute {
+public:
+    SubscribeAttributeThermostatCurrentThermostatSuggestion()
+        : SubscribeAttribute("current-thermostat-suggestion")
+    {
+    }
+
+    ~SubscribeAttributeThermostatCurrentThermostatSuggestion()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Thermostat::Attributes::CurrentThermostatSuggestion::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeCurrentThermostatSuggestionWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(MTRThermostatClusterThermostatSuggestionStruct * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Thermostat.CurrentThermostatSuggestion response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute ThermostatSuggestionNotFollowingReason
+ */
+class ReadThermostatThermostatSuggestionNotFollowingReason : public ReadAttribute {
+public:
+    ReadThermostatThermostatSuggestionNotFollowingReason()
+        : ReadAttribute("thermostat-suggestion-not-following-reason")
+    {
+    }
+
+    ~ReadThermostatThermostatSuggestionNotFollowingReason()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::Thermostat::Attributes::ThermostatSuggestionNotFollowingReason::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeThermostatSuggestionNotFollowingReasonWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"Thermostat.ThermostatSuggestionNotFollowingReason response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("Thermostat ThermostatSuggestionNotFollowingReason read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeThermostatThermostatSuggestionNotFollowingReason : public SubscribeAttribute {
+public:
+    SubscribeAttributeThermostatThermostatSuggestionNotFollowingReason()
+        : SubscribeAttribute("thermostat-suggestion-not-following-reason")
+    {
+    }
+
+    ~SubscribeAttributeThermostatThermostatSuggestionNotFollowingReason()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::Thermostat::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::Thermostat::Attributes::ThermostatSuggestionNotFollowingReason::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterThermostat alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeThermostatSuggestionNotFollowingReasonWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"Thermostat.ThermostatSuggestionNotFollowingReason response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
 
 /*
  * Attribute GeneratedCommandList
@@ -110574,47 +113790,6 @@ public:
     }
 };
 
-class WriteColorControlWhitePointX : public WriteAttribute {
-public:
-    WriteColorControlWhitePointX()
-        : WriteAttribute("white-point-x")
-    {
-        AddArgument("attr-name", "white-point-x");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlWhitePointX()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::WhitePointX::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeWhitePointXWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl WhitePointX write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
-};
-
 class SubscribeAttributeColorControlWhitePointX : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlWhitePointX()
@@ -110695,47 +113870,6 @@ public:
         }];
         return CHIP_NO_ERROR;
     }
-};
-
-class WriteColorControlWhitePointY : public WriteAttribute {
-public:
-    WriteColorControlWhitePointY()
-        : WriteAttribute("white-point-y")
-    {
-        AddArgument("attr-name", "white-point-y");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlWhitePointY()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::WhitePointY::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeWhitePointYWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl WhitePointY write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
 };
 
 class SubscribeAttributeColorControlWhitePointY : public SubscribeAttribute {
@@ -110820,47 +113954,6 @@ public:
     }
 };
 
-class WriteColorControlColorPointRX : public WriteAttribute {
-public:
-    WriteColorControlColorPointRX()
-        : WriteAttribute("color-point-rx")
-    {
-        AddArgument("attr-name", "color-point-rx");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointRX()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointRX::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointRXWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointRX write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
-};
-
 class SubscribeAttributeColorControlColorPointRX : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlColorPointRX()
@@ -110941,47 +114034,6 @@ public:
         }];
         return CHIP_NO_ERROR;
     }
-};
-
-class WriteColorControlColorPointRY : public WriteAttribute {
-public:
-    WriteColorControlColorPointRY()
-        : WriteAttribute("color-point-ry")
-    {
-        AddArgument("attr-name", "color-point-ry");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointRY()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointRY::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointRYWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointRY write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
 };
 
 class SubscribeAttributeColorControlColorPointRY : public SubscribeAttribute {
@@ -111066,50 +114118,6 @@ public:
     }
 };
 
-class WriteColorControlColorPointRIntensity : public WriteAttribute {
-public:
-    WriteColorControlColorPointRIntensity()
-        : WriteAttribute("color-point-rintensity")
-    {
-        AddArgument("attr-name", "color-point-rintensity");
-        AddArgument("attr-value", 0, UINT8_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointRIntensity()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointRIntensity::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nullable value = nil;
-        if (!mValue.IsNull()) {
-            value = [NSNumber numberWithUnsignedChar:mValue.Value()];
-        }
-
-        [cluster writeAttributeColorPointRIntensityWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointRIntensity write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    chip::app::DataModel::Nullable<uint8_t> mValue;
-};
-
 class SubscribeAttributeColorControlColorPointRIntensity : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlColorPointRIntensity()
@@ -111190,47 +114198,6 @@ public:
         }];
         return CHIP_NO_ERROR;
     }
-};
-
-class WriteColorControlColorPointGX : public WriteAttribute {
-public:
-    WriteColorControlColorPointGX()
-        : WriteAttribute("color-point-gx")
-    {
-        AddArgument("attr-name", "color-point-gx");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointGX()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointGX::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointGXWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointGX write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
 };
 
 class SubscribeAttributeColorControlColorPointGX : public SubscribeAttribute {
@@ -111315,47 +114282,6 @@ public:
     }
 };
 
-class WriteColorControlColorPointGY : public WriteAttribute {
-public:
-    WriteColorControlColorPointGY()
-        : WriteAttribute("color-point-gy")
-    {
-        AddArgument("attr-name", "color-point-gy");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointGY()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointGY::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointGYWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointGY write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
-};
-
 class SubscribeAttributeColorControlColorPointGY : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlColorPointGY()
@@ -111436,50 +114362,6 @@ public:
         }];
         return CHIP_NO_ERROR;
     }
-};
-
-class WriteColorControlColorPointGIntensity : public WriteAttribute {
-public:
-    WriteColorControlColorPointGIntensity()
-        : WriteAttribute("color-point-gintensity")
-    {
-        AddArgument("attr-name", "color-point-gintensity");
-        AddArgument("attr-value", 0, UINT8_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointGIntensity()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointGIntensity::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nullable value = nil;
-        if (!mValue.IsNull()) {
-            value = [NSNumber numberWithUnsignedChar:mValue.Value()];
-        }
-
-        [cluster writeAttributeColorPointGIntensityWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointGIntensity write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    chip::app::DataModel::Nullable<uint8_t> mValue;
 };
 
 class SubscribeAttributeColorControlColorPointGIntensity : public SubscribeAttribute {
@@ -111564,47 +114446,6 @@ public:
     }
 };
 
-class WriteColorControlColorPointBX : public WriteAttribute {
-public:
-    WriteColorControlColorPointBX()
-        : WriteAttribute("color-point-bx")
-    {
-        AddArgument("attr-name", "color-point-bx");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointBX()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointBX::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointBXWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointBX write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
-};
-
 class SubscribeAttributeColorControlColorPointBX : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlColorPointBX()
@@ -111687,47 +114528,6 @@ public:
     }
 };
 
-class WriteColorControlColorPointBY : public WriteAttribute {
-public:
-    WriteColorControlColorPointBY()
-        : WriteAttribute("color-point-by")
-    {
-        AddArgument("attr-name", "color-point-by");
-        AddArgument("attr-value", 0, UINT16_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointBY()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointBY::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nonnull value = [NSNumber numberWithUnsignedShort:mValue];
-
-        [cluster writeAttributeColorPointBYWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointBY write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    uint16_t mValue;
-};
-
 class SubscribeAttributeColorControlColorPointBY : public SubscribeAttribute {
 public:
     SubscribeAttributeColorControlColorPointBY()
@@ -111808,50 +114608,6 @@ public:
         }];
         return CHIP_NO_ERROR;
     }
-};
-
-class WriteColorControlColorPointBIntensity : public WriteAttribute {
-public:
-    WriteColorControlColorPointBIntensity()
-        : WriteAttribute("color-point-bintensity")
-    {
-        AddArgument("attr-name", "color-point-bintensity");
-        AddArgument("attr-value", 0, UINT8_MAX, &mValue);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteColorControlColorPointBIntensity()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ColorControl::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ColorControl::Attributes::ColorPointBIntensity::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterColorControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSNumber * _Nullable value = nil;
-        if (!mValue.IsNull()) {
-            value = [NSNumber numberWithUnsignedChar:mValue.Value()];
-        }
-
-        [cluster writeAttributeColorPointBIntensityWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ColorControl ColorPointBIntensity write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    chip::app::DataModel::Nullable<uint8_t> mValue;
 };
 
 class SubscribeAttributeColorControlColorPointBIntensity : public SubscribeAttribute {
@@ -148533,6 +151289,12 @@ public:
 | * UnblockUnratedContent                                             |   0x08 |
 | * SetOnDemandRatingThreshold                                        |   0x09 |
 | * SetScheduledContentRatingThreshold                                |   0x0A |
+| * AddBlockChannels                                                  |   0x0B |
+| * RemoveBlockChannels                                               |   0x0C |
+| * AddBlockApplications                                              |   0x0D |
+| * RemoveBlockApplications                                           |   0x0E |
+| * SetBlockContentTimeWindow                                         |   0x0F |
+| * RemoveBlockContentTimeWindow                                      |   0x10 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
 | * Enabled                                                           | 0x0000 |
@@ -148543,6 +151305,9 @@ public:
 | * ScreenDailyTime                                                   | 0x0005 |
 | * RemainingScreenTime                                               | 0x0006 |
 | * BlockUnrated                                                      | 0x0007 |
+| * BlockChannelList                                                  | 0x0008 |
+| * BlockApplicationList                                              | 0x0009 |
+| * BlockContentTimeWindow                                            | 0x000A |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -148551,6 +151316,7 @@ public:
 |------------------------------------------------------------------------------|
 | Events:                                                             |        |
 | * RemainingScreenTimeExpired                                        | 0x0000 |
+| * EnteringBlockContentTimeWindow                                    | 0x0001 |
 \*----------------------------------------------------------------------------*/
 
 #if MTR_ENABLE_PROVISIONAL
@@ -148583,11 +151349,7 @@ public:
         __auto_type * params = [[MTRContentControlClusterUpdatePINParams alloc] init];
         params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
 #if MTR_ENABLE_PROVISIONAL
-        if (mRequest.oldPIN.HasValue()) {
-            params.oldPIN = [[NSString alloc] initWithBytes:mRequest.oldPIN.Value().data() length:mRequest.oldPIN.Value().size() encoding:NSUTF8StringEncoding];
-        } else {
-            params.oldPIN = nil;
-        }
+        params.oldPIN = [[NSString alloc] initWithBytes:mRequest.oldPIN.data() length:mRequest.oldPIN.size() encoding:NSUTF8StringEncoding];
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         params.newPIN = [[NSString alloc] initWithBytes:mRequest.newPIN.data() length:mRequest.newPIN.size() encoding:NSUTF8StringEncoding];
@@ -148797,11 +151559,7 @@ public:
         }
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        if (mRequest.bonusTime.HasValue()) {
-            params.bonusTime = [NSNumber numberWithUnsignedInt:mRequest.bonusTime.Value()];
-        } else {
-            params.bonusTime = nil;
-        }
+        params.bonusTime = [NSNumber numberWithUnsignedInt:mRequest.bonusTime];
 #endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
@@ -149075,6 +151833,411 @@ public:
 
 private:
     chip::app::Clusters::ContentControl::Commands::SetScheduledContentRatingThreshold::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command AddBlockChannels
+ */
+class ContentControlAddBlockChannels : public ClusterCommand {
+public:
+    ContentControlAddBlockChannels()
+        : ClusterCommand("add-block-channels")
+        , mComplex_Channels(&mRequest.channels)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Channels", &mComplex_Channels);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::AddBlockChannels::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterAddBlockChannelsParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.channels) {
+                MTRContentControlClusterBlockChannelStruct * newElement_0;
+                newElement_0 = [MTRContentControlClusterBlockChannelStruct new];
+                if (entry_0.blockChannelIndex.IsNull()) {
+                    newElement_0.blockChannelIndex = nil;
+                } else {
+                    newElement_0.blockChannelIndex = [NSNumber numberWithUnsignedShort:entry_0.blockChannelIndex.Value()];
+                }
+                newElement_0.majorNumber = [NSNumber numberWithUnsignedShort:entry_0.majorNumber];
+                newElement_0.minorNumber = [NSNumber numberWithUnsignedShort:entry_0.minorNumber];
+                if (entry_0.identifier.HasValue()) {
+                    newElement_0.identifier = [[NSString alloc] initWithBytes:entry_0.identifier.Value().data() length:entry_0.identifier.Value().size() encoding:NSUTF8StringEncoding];
+                } else {
+                    newElement_0.identifier = nil;
+                }
+                [array_0 addObject:newElement_0];
+            }
+            params.channels = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster addBlockChannelsWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::AddBlockChannels::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::ContentControl::Structs::BlockChannelStruct::Type>> mComplex_Channels;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command RemoveBlockChannels
+ */
+class ContentControlRemoveBlockChannels : public ClusterCommand {
+public:
+    ContentControlRemoveBlockChannels()
+        : ClusterCommand("remove-block-channels")
+        , mComplex_ChannelIndexes(&mRequest.channelIndexes)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("ChannelIndexes", &mComplex_ChannelIndexes);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::RemoveBlockChannels::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterRemoveBlockChannelsParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.channelIndexes) {
+                NSNumber * newElement_0;
+                newElement_0 = [NSNumber numberWithUnsignedShort:entry_0];
+                [array_0 addObject:newElement_0];
+            }
+            params.channelIndexes = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster removeBlockChannelsWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::RemoveBlockChannels::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const uint16_t>> mComplex_ChannelIndexes;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command AddBlockApplications
+ */
+class ContentControlAddBlockApplications : public ClusterCommand {
+public:
+    ContentControlAddBlockApplications()
+        : ClusterCommand("add-block-applications")
+        , mComplex_Applications(&mRequest.applications)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Applications", &mComplex_Applications);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::AddBlockApplications::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterAddBlockApplicationsParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.applications) {
+                MTRContentControlClusterAppInfoStruct * newElement_0;
+                newElement_0 = [MTRContentControlClusterAppInfoStruct new];
+                newElement_0.catalogVendorID = [NSNumber numberWithUnsignedShort:entry_0.catalogVendorID];
+                newElement_0.applicationID = [[NSString alloc] initWithBytes:entry_0.applicationID.data() length:entry_0.applicationID.size() encoding:NSUTF8StringEncoding];
+                [array_0 addObject:newElement_0];
+            }
+            params.applications = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster addBlockApplicationsWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::AddBlockApplications::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::ContentControl::Structs::AppInfoStruct::Type>> mComplex_Applications;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command RemoveBlockApplications
+ */
+class ContentControlRemoveBlockApplications : public ClusterCommand {
+public:
+    ContentControlRemoveBlockApplications()
+        : ClusterCommand("remove-block-applications")
+        , mComplex_Applications(&mRequest.applications)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Applications", &mComplex_Applications);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::RemoveBlockApplications::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterRemoveBlockApplicationsParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.applications) {
+                MTRContentControlClusterAppInfoStruct * newElement_0;
+                newElement_0 = [MTRContentControlClusterAppInfoStruct new];
+                newElement_0.catalogVendorID = [NSNumber numberWithUnsignedShort:entry_0.catalogVendorID];
+                newElement_0.applicationID = [[NSString alloc] initWithBytes:entry_0.applicationID.data() length:entry_0.applicationID.size() encoding:NSUTF8StringEncoding];
+                [array_0 addObject:newElement_0];
+            }
+            params.applications = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster removeBlockApplicationsWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::RemoveBlockApplications::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::ContentControl::Structs::AppInfoStruct::Type>> mComplex_Applications;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command SetBlockContentTimeWindow
+ */
+class ContentControlSetBlockContentTimeWindow : public ClusterCommand {
+public:
+    ContentControlSetBlockContentTimeWindow()
+        : ClusterCommand("set-block-content-time-window")
+        , mComplex_TimeWindow(&mRequest.timeWindow)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("TimeWindow", &mComplex_TimeWindow);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::SetBlockContentTimeWindow::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterSetBlockContentTimeWindowParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.timeWindow = [MTRContentControlClusterTimeWindowStruct new];
+        if (mRequest.timeWindow.timeWindowIndex.IsNull()) {
+            params.timeWindow.timeWindowIndex = nil;
+        } else {
+            params.timeWindow.timeWindowIndex = [NSNumber numberWithUnsignedShort:mRequest.timeWindow.timeWindowIndex.Value()];
+        }
+        params.timeWindow.dayOfWeek = [NSNumber numberWithUnsignedChar:mRequest.timeWindow.dayOfWeek.Raw()];
+        { // Scope for our temporary variables
+            auto * array_1 = [NSMutableArray new];
+            for (auto & entry_1 : mRequest.timeWindow.timePeriod) {
+                MTRContentControlClusterTimePeriodStruct * newElement_1;
+                newElement_1 = [MTRContentControlClusterTimePeriodStruct new];
+                newElement_1.startHour = [NSNumber numberWithUnsignedChar:entry_1.startHour];
+                newElement_1.startMinute = [NSNumber numberWithUnsignedChar:entry_1.startMinute];
+                newElement_1.endHour = [NSNumber numberWithUnsignedChar:entry_1.endHour];
+                newElement_1.endMinute = [NSNumber numberWithUnsignedChar:entry_1.endMinute];
+                [array_1 addObject:newElement_1];
+            }
+            params.timeWindow.timePeriod = array_1;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster setBlockContentTimeWindowWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::SetBlockContentTimeWindow::Type mRequest;
+    TypedComplexArgument<chip::app::Clusters::ContentControl::Structs::TimeWindowStruct::Type> mComplex_TimeWindow;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command RemoveBlockContentTimeWindow
+ */
+class ContentControlRemoveBlockContentTimeWindow : public ClusterCommand {
+public:
+    ContentControlRemoveBlockContentTimeWindow()
+        : ClusterCommand("remove-block-content-time-window")
+        , mComplex_TimeWindowIndexes(&mRequest.timeWindowIndexes)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("TimeWindowIndexes", &mComplex_TimeWindowIndexes);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ContentControl::Commands::RemoveBlockContentTimeWindow::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRContentControlClusterRemoveBlockContentTimeWindowParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.timeWindowIndexes) {
+                NSNumber * newElement_0;
+                newElement_0 = [NSNumber numberWithUnsignedShort:entry_0];
+                [array_0 addObject:newElement_0];
+            }
+            params.timeWindowIndexes = array_0;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster removeBlockContentTimeWindowWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ContentControl::Commands::RemoveBlockContentTimeWindow::Type mRequest;
+    TypedComplexArgument<chip::app::DataModel::List<const uint16_t>> mComplex_TimeWindowIndexes;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -149746,6 +152909,261 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"ContentControl.BlockUnrated response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute BlockChannelList
+ */
+class ReadContentControlBlockChannelList : public ReadAttribute {
+public:
+    ReadContentControlBlockChannelList()
+        : ReadAttribute("block-channel-list")
+    {
+    }
+
+    ~ReadContentControlBlockChannelList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockChannelList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeBlockChannelListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ContentControl.BlockChannelList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ContentControl BlockChannelList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeContentControlBlockChannelList : public SubscribeAttribute {
+public:
+    SubscribeAttributeContentControlBlockChannelList()
+        : SubscribeAttribute("block-channel-list")
+    {
+    }
+
+    ~SubscribeAttributeContentControlBlockChannelList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockChannelList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeBlockChannelListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ContentControl.BlockChannelList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute BlockApplicationList
+ */
+class ReadContentControlBlockApplicationList : public ReadAttribute {
+public:
+    ReadContentControlBlockApplicationList()
+        : ReadAttribute("block-application-list")
+    {
+    }
+
+    ~ReadContentControlBlockApplicationList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockApplicationList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeBlockApplicationListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ContentControl.BlockApplicationList response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ContentControl BlockApplicationList read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeContentControlBlockApplicationList : public SubscribeAttribute {
+public:
+    SubscribeAttributeContentControlBlockApplicationList()
+        : SubscribeAttribute("block-application-list")
+    {
+    }
+
+    ~SubscribeAttributeContentControlBlockApplicationList()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockApplicationList::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeBlockApplicationListWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ContentControl.BlockApplicationList response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute BlockContentTimeWindow
+ */
+class ReadContentControlBlockContentTimeWindow : public ReadAttribute {
+public:
+    ReadContentControlBlockContentTimeWindow()
+        : ReadAttribute("block-content-time-window")
+    {
+    }
+
+    ~ReadContentControlBlockContentTimeWindow()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockContentTimeWindow::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeBlockContentTimeWindowWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ContentControl.BlockContentTimeWindow response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ContentControl BlockContentTimeWindow read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeContentControlBlockContentTimeWindow : public SubscribeAttribute {
+public:
+    SubscribeAttributeContentControlBlockContentTimeWindow()
+        : SubscribeAttribute("block-content-time-window")
+    {
+    }
+
+    ~SubscribeAttributeContentControlBlockContentTimeWindow()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ContentControl::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ContentControl::Attributes::BlockContentTimeWindow::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterContentControl alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeBlockContentTimeWindowWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ContentControl.BlockContentTimeWindow response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -150677,14 +154095,18 @@ public:
 | Commands:                                                           |        |
 | * CreateTwoDCartesianZone                                           |   0x00 |
 | * UpdateTwoDCartesianZone                                           |   0x02 |
-| * GetTwoDCartesianZone                                              |   0x03 |
-| * RemoveZone                                                        |   0x05 |
+| * RemoveZone                                                        |   0x03 |
+| * CreateOrUpdateTrigger                                             |   0x04 |
+| * RemoveTrigger                                                     |   0x05 |
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
-| * SupportedZoneSources                                              | 0x0000 |
-| * Zones                                                             | 0x0001 |
-| * Triggers                                                          | 0x0002 |
-| * Sensitivity                                                       | 0x0003 |
+| * MaxUserDefinedZones                                               | 0x0000 |
+| * MaxZones                                                          | 0x0001 |
+| * Zones                                                             | 0x0002 |
+| * Triggers                                                          | 0x0003 |
+| * SensitivityMax                                                    | 0x0004 |
+| * Sensitivity                                                       | 0x0005 |
+| * TwoDCartesianMax                                                  | 0x0006 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -150856,73 +154278,6 @@ private:
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
 /*
- * Command GetTwoDCartesianZone
- */
-class ZoneManagementGetTwoDCartesianZone : public ClusterCommand {
-public:
-    ZoneManagementGetTwoDCartesianZone()
-        : ClusterCommand("get-two-dcartesian-zone")
-    {
-#if MTR_ENABLE_PROVISIONAL
-        AddArgument("ZoneID", 0, UINT16_MAX, &mRequest.zoneID);
-#endif // MTR_ENABLE_PROVISIONAL
-        ClusterCommand::AddArguments();
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
-        constexpr chip::CommandId commandId = chip::app::Clusters::ZoneManagement::Commands::GetTwoDCartesianZone::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
-
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRZoneManagementClusterGetTwoDCartesianZoneParams alloc] init];
-        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-#if MTR_ENABLE_PROVISIONAL
-        if (mRequest.zoneID.HasValue()) {
-            if (mRequest.zoneID.Value().IsNull()) {
-                params.zoneID = nil;
-            } else {
-                params.zoneID = [NSNumber numberWithUnsignedShort:mRequest.zoneID.Value().Value()];
-            }
-        } else {
-            params.zoneID = nil;
-        }
-#endif // MTR_ENABLE_PROVISIONAL
-        uint16_t repeatCount = mRepeatCount.ValueOr(1);
-        uint16_t __block responsesNeeded = repeatCount;
-        while (repeatCount--) {
-            [cluster getTwoDCartesianZoneWithParams:params completion:
-                    ^(MTRZoneManagementClusterGetTwoDCartesianZoneResponseParams * _Nullable values, NSError * _Nullable error) {
-                        NSLog(@"Values: %@", values);
-                        if (error == nil) {
-                            constexpr chip::CommandId responseId = chip::app::Clusters::ZoneManagement::Commands::GetTwoDCartesianZoneResponse::Id;
-                            RemoteDataModelLogger::LogCommandAsJSON(@(endpointId), @(clusterId), @(responseId), values);
-                        }
-                        responsesNeeded--;
-                        if (error != nil) {
-                            mError = error;
-                            LogNSError("Error", error);
-                            constexpr chip::CommandId responseId = chip::app::Clusters::ZoneManagement::Commands::GetTwoDCartesianZoneResponse::Id;
-                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(responseId), error);
-                        }
-                        if (responsesNeeded == 0) {
-                            SetCommandExitStatus(mError);
-                        }
-                    }];
-        }
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    chip::app::Clusters::ZoneManagement::Commands::GetTwoDCartesianZone::Type mRequest;
-};
-
-#endif // MTR_ENABLE_PROVISIONAL
-#if MTR_ENABLE_PROVISIONAL
-/*
  * Command RemoveZone
  */
 class ZoneManagementRemoveZone : public ClusterCommand {
@@ -150974,38 +154329,156 @@ private:
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command CreateOrUpdateTrigger
+ */
+class ZoneManagementCreateOrUpdateTrigger : public ClusterCommand {
+public:
+    ZoneManagementCreateOrUpdateTrigger()
+        : ClusterCommand("create-or-update-trigger")
+        , mComplex_Trigger(&mRequest.trigger)
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Trigger", &mComplex_Trigger);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ZoneManagement::Commands::CreateOrUpdateTrigger::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRZoneManagementClusterCreateOrUpdateTriggerParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.trigger = [MTRZoneManagementClusterZoneTriggerControlStruct new];
+        params.trigger.zoneID = [NSNumber numberWithUnsignedShort:mRequest.trigger.zoneID];
+        params.trigger.initialDuration = [NSNumber numberWithUnsignedInt:mRequest.trigger.initialDuration];
+        params.trigger.augmentationDuration = [NSNumber numberWithUnsignedInt:mRequest.trigger.augmentationDuration];
+        params.trigger.maxDuration = [NSNumber numberWithUnsignedInt:mRequest.trigger.maxDuration];
+        params.trigger.blindDuration = [NSNumber numberWithUnsignedInt:mRequest.trigger.blindDuration];
+        if (mRequest.trigger.sensitivity.HasValue()) {
+            params.trigger.sensitivity = [NSNumber numberWithUnsignedChar:mRequest.trigger.sensitivity.Value()];
+        } else {
+            params.trigger.sensitivity = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster createOrUpdateTriggerWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ZoneManagement::Commands::CreateOrUpdateTrigger::Type mRequest;
+    TypedComplexArgument<chip::app::Clusters::ZoneManagement::Structs::ZoneTriggerControlStruct::Type> mComplex_Trigger;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command RemoveTrigger
+ */
+class ZoneManagementRemoveTrigger : public ClusterCommand {
+public:
+    ZoneManagementRemoveTrigger()
+        : ClusterCommand("remove-trigger")
+    {
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("ZoneID", 0, UINT16_MAX, &mRequest.zoneID);
+#endif // MTR_ENABLE_PROVISIONAL
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::ZoneManagement::Commands::RemoveTrigger::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRZoneManagementClusterRemoveTriggerParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+#if MTR_ENABLE_PROVISIONAL
+        params.zoneID = [NSNumber numberWithUnsignedShort:mRequest.zoneID];
+#endif // MTR_ENABLE_PROVISIONAL
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster removeTriggerWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    chip::app::Clusters::ZoneManagement::Commands::RemoveTrigger::Type mRequest;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
 
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute SupportedZoneSources
+ * Attribute MaxUserDefinedZones
  */
-class ReadZoneManagementSupportedZoneSources : public ReadAttribute {
+class ReadZoneManagementMaxUserDefinedZones : public ReadAttribute {
 public:
-    ReadZoneManagementSupportedZoneSources()
-        : ReadAttribute("supported-zone-sources")
+    ReadZoneManagementMaxUserDefinedZones()
+        : ReadAttribute("max-user-defined-zones")
     {
     }
 
-    ~ReadZoneManagementSupportedZoneSources()
+    ~ReadZoneManagementMaxUserDefinedZones()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::SupportedZoneSources::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::MaxUserDefinedZones::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeSupportedZoneSourcesWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"ZoneManagement.SupportedZoneSources response %@", [value description]);
+        [cluster readAttributeMaxUserDefinedZonesWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ZoneManagement.MaxUserDefinedZones response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("ZoneManagement SupportedZoneSources read Error", error);
+                LogNSError("ZoneManagement MaxUserDefinedZones read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -151014,21 +154487,21 @@ public:
     }
 };
 
-class SubscribeAttributeZoneManagementSupportedZoneSources : public SubscribeAttribute {
+class SubscribeAttributeZoneManagementMaxUserDefinedZones : public SubscribeAttribute {
 public:
-    SubscribeAttributeZoneManagementSupportedZoneSources()
-        : SubscribeAttribute("supported-zone-sources")
+    SubscribeAttributeZoneManagementMaxUserDefinedZones()
+        : SubscribeAttribute("max-user-defined-zones")
     {
     }
 
-    ~SubscribeAttributeZoneManagementSupportedZoneSources()
+    ~SubscribeAttributeZoneManagementMaxUserDefinedZones()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::ZoneManagement::Attributes::SupportedZoneSources::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ZoneManagement::Attributes::MaxUserDefinedZones::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -151043,10 +154516,95 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeSupportedZoneSourcesWithParams:params
+        [cluster subscribeAttributeMaxUserDefinedZonesWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"ZoneManagement.SupportedZoneSources response %@", [value description]);
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ZoneManagement.MaxUserDefinedZones response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute MaxZones
+ */
+class ReadZoneManagementMaxZones : public ReadAttribute {
+public:
+    ReadZoneManagementMaxZones()
+        : ReadAttribute("max-zones")
+    {
+    }
+
+    ~ReadZoneManagementMaxZones()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::MaxZones::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeMaxZonesWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ZoneManagement.MaxZones response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ZoneManagement MaxZones read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeZoneManagementMaxZones : public SubscribeAttribute {
+public:
+    SubscribeAttributeZoneManagementMaxZones()
+        : SubscribeAttribute("max-zones")
+    {
+    }
+
+    ~SubscribeAttributeZoneManagementMaxZones()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ZoneManagement::Attributes::MaxZones::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMaxZonesWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ZoneManagement.MaxZones response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -151184,67 +154742,6 @@ public:
     }
 };
 
-class WriteZoneManagementTriggers : public WriteAttribute {
-public:
-    WriteZoneManagementTriggers()
-        : WriteAttribute("triggers")
-        , mComplex(&mValue)
-    {
-        AddArgument("attr-name", "triggers");
-        AddArgument("attr-value", &mComplex);
-        WriteAttribute::AddArguments();
-    }
-
-    ~WriteZoneManagementTriggers()
-    {
-    }
-
-    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
-    {
-        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::Triggers::Id;
-
-        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
-        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
-        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRWriteParams alloc] init];
-        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
-        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        NSArray * _Nonnull value;
-        { // Scope for our temporary variables
-            auto * array_0 = [NSMutableArray new];
-            for (auto & entry_0 : mValue) {
-                MTRZoneManagementClusterZoneTriggerControlStruct * newElement_0;
-                newElement_0 = [MTRZoneManagementClusterZoneTriggerControlStruct new];
-                newElement_0.initialDuration = [NSNumber numberWithUnsignedShort:entry_0.initialDuration];
-                newElement_0.augmentationDuration = [NSNumber numberWithUnsignedShort:entry_0.augmentationDuration];
-                newElement_0.maxDuration = [NSNumber numberWithUnsignedInt:entry_0.maxDuration];
-                newElement_0.blindDuration = [NSNumber numberWithUnsignedShort:entry_0.blindDuration];
-                if (entry_0.sensitivity.HasValue()) {
-                    newElement_0.sensitivity = [NSNumber numberWithUnsignedChar:entry_0.sensitivity.Value()];
-                } else {
-                    newElement_0.sensitivity = nil;
-                }
-                [array_0 addObject:newElement_0];
-            }
-            value = array_0;
-        }
-
-        [cluster writeAttributeTriggersWithValue:value params:params completion:^(NSError * _Nullable error) {
-            if (error != nil) {
-                LogNSError("ZoneManagement Triggers write Error", error);
-                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
-            }
-            SetCommandExitStatus(error);
-        }];
-        return CHIP_NO_ERROR;
-    }
-
-private:
-    chip::app::DataModel::List<const chip::app::Clusters::ZoneManagement::Structs::ZoneTriggerControlStruct::Type> mValue;
-    TypedComplexArgument<chip::app::DataModel::List<const chip::app::Clusters::ZoneManagement::Structs::ZoneTriggerControlStruct::Type>> mComplex;
-};
-
 class SubscribeAttributeZoneManagementTriggers : public SubscribeAttribute {
 public:
     SubscribeAttributeZoneManagementTriggers()
@@ -151278,6 +154775,91 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"ZoneManagement.Triggers response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute SensitivityMax
+ */
+class ReadZoneManagementSensitivityMax : public ReadAttribute {
+public:
+    ReadZoneManagementSensitivityMax()
+        : ReadAttribute("sensitivity-max")
+    {
+    }
+
+    ~ReadZoneManagementSensitivityMax()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::SensitivityMax::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeSensitivityMaxWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ZoneManagement.SensitivityMax response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ZoneManagement SensitivityMax read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeZoneManagementSensitivityMax : public SubscribeAttribute {
+public:
+    SubscribeAttributeZoneManagementSensitivityMax()
+        : SubscribeAttribute("sensitivity-max")
+    {
+    }
+
+    ~SubscribeAttributeZoneManagementSensitivityMax()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ZoneManagement::Attributes::SensitivityMax::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeSensitivityMaxWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ZoneManagement.SensitivityMax response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -151404,6 +154986,91 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"ZoneManagement.Sensitivity response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute TwoDCartesianMax
+ */
+class ReadZoneManagementTwoDCartesianMax : public ReadAttribute {
+public:
+    ReadZoneManagementTwoDCartesianMax()
+        : ReadAttribute("two-dcartesian-max")
+    {
+    }
+
+    ~ReadZoneManagementTwoDCartesianMax()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::ZoneManagement::Attributes::TwoDCartesianMax::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeTwoDCartesianMaxWithCompletion:^(MTRZoneManagementClusterTwoDCartesianVertexStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"ZoneManagement.TwoDCartesianMax response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("ZoneManagement TwoDCartesianMax read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeZoneManagementTwoDCartesianMax : public SubscribeAttribute {
+public:
+    SubscribeAttributeZoneManagementTwoDCartesianMax()
+        : SubscribeAttribute("two-dcartesian-max")
+    {
+    }
+
+    ~SubscribeAttributeZoneManagementTwoDCartesianMax()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::ZoneManagement::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::ZoneManagement::Attributes::TwoDCartesianMax::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterZoneManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeTwoDCartesianMaxWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(MTRZoneManagementClusterTwoDCartesianVertexStruct * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"ZoneManagement.TwoDCartesianMax response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -151864,7 +155531,7 @@ public:
 | * MaxEncodedPixelRate                                               | 0x0001 |
 | * VideoSensorParams                                                 | 0x0002 |
 | * NightVisionUsesInfrared                                           | 0x0003 |
-| * MinViewport                                                       | 0x0004 |
+| * MinViewportResolution                                             | 0x0004 |
 | * RateDistortionTradeOffPoints                                      | 0x0005 |
 | * MaxContentBufferSize                                              | 0x0006 |
 | * MicrophoneCapabilities                                            | 0x0007 |
@@ -151878,7 +155545,7 @@ public:
 | * AllocatedVideoStreams                                             | 0x000F |
 | * AllocatedAudioStreams                                             | 0x0010 |
 | * AllocatedSnapshotStreams                                          | 0x0011 |
-| * RankedVideoStreamPrioritiesList                                   | 0x0012 |
+| * StreamUsagePriorities                                             | 0x0012 |
 | * SoftRecordingPrivacyModeEnabled                                   | 0x0013 |
 | * SoftLivestreamPrivacyModeEnabled                                  | 0x0014 |
 | * HardPrivacyModeOn                                                 | 0x0015 |
@@ -152088,10 +155755,7 @@ public:
         AddArgument("MaxBitRate", 0, UINT32_MAX, &mRequest.maxBitRate);
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        AddArgument("MinFragmentLen", 0, UINT16_MAX, &mRequest.minFragmentLen);
-#endif // MTR_ENABLE_PROVISIONAL
-#if MTR_ENABLE_PROVISIONAL
-        AddArgument("MaxFragmentLen", 0, UINT16_MAX, &mRequest.maxFragmentLen);
+        AddArgument("KeyFrameInterval", 0, UINT16_MAX, &mRequest.keyFrameInterval);
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("WatermarkEnabled", 0, 1, &mRequest.watermarkEnabled);
@@ -152142,10 +155806,7 @@ public:
         params.maxBitRate = [NSNumber numberWithUnsignedInt:mRequest.maxBitRate];
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        params.minFragmentLen = [NSNumber numberWithUnsignedShort:mRequest.minFragmentLen];
-#endif // MTR_ENABLE_PROVISIONAL
-#if MTR_ENABLE_PROVISIONAL
-        params.maxFragmentLen = [NSNumber numberWithUnsignedShort:mRequest.maxFragmentLen];
+        params.keyFrameInterval = [NSNumber numberWithUnsignedShort:mRequest.keyFrameInterval];
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         if (mRequest.watermarkEnabled.HasValue()) {
@@ -153036,34 +156697,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute MinViewport
+ * Attribute MinViewportResolution
  */
-class ReadCameraAvStreamManagementMinViewport : public ReadAttribute {
+class ReadCameraAvStreamManagementMinViewportResolution : public ReadAttribute {
 public:
-    ReadCameraAvStreamManagementMinViewport()
-        : ReadAttribute("min-viewport")
+    ReadCameraAvStreamManagementMinViewportResolution()
+        : ReadAttribute("min-viewport-resolution")
     {
     }
 
-    ~ReadCameraAvStreamManagementMinViewport()
+    ~ReadCameraAvStreamManagementMinViewportResolution()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvStreamManagement::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::MinViewport::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::MinViewportResolution::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterCameraAVStreamManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeMinViewportWithCompletion:^(MTRCameraAVStreamManagementClusterVideoResolutionStruct * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"CameraAVStreamManagement.MinViewport response %@", [value description]);
+        [cluster readAttributeMinViewportResolutionWithCompletion:^(MTRCameraAVStreamManagementClusterVideoResolutionStruct * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"CameraAVStreamManagement.MinViewportResolution response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("CameraAVStreamManagement MinViewport read Error", error);
+                LogNSError("CameraAVStreamManagement MinViewportResolution read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -153072,21 +156733,21 @@ public:
     }
 };
 
-class SubscribeAttributeCameraAvStreamManagementMinViewport : public SubscribeAttribute {
+class SubscribeAttributeCameraAvStreamManagementMinViewportResolution : public SubscribeAttribute {
 public:
-    SubscribeAttributeCameraAvStreamManagementMinViewport()
-        : SubscribeAttribute("min-viewport")
+    SubscribeAttributeCameraAvStreamManagementMinViewportResolution()
+        : SubscribeAttribute("min-viewport-resolution")
     {
     }
 
-    ~SubscribeAttributeCameraAvStreamManagementMinViewport()
+    ~SubscribeAttributeCameraAvStreamManagementMinViewportResolution()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvStreamManagement::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::MinViewport::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::MinViewportResolution::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -153101,10 +156762,10 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeMinViewportWithParams:params
+        [cluster subscribeAttributeMinViewportResolutionWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(MTRCameraAVStreamManagementClusterVideoResolutionStruct * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"CameraAVStreamManagement.MinViewport response %@", [value description]);
+                NSLog(@"CameraAVStreamManagement.MinViewportResolution response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -154267,34 +157928,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute RankedVideoStreamPrioritiesList
+ * Attribute StreamUsagePriorities
  */
-class ReadCameraAvStreamManagementRankedVideoStreamPrioritiesList : public ReadAttribute {
+class ReadCameraAvStreamManagementStreamUsagePriorities : public ReadAttribute {
 public:
-    ReadCameraAvStreamManagementRankedVideoStreamPrioritiesList()
-        : ReadAttribute("ranked-video-stream-priorities-list")
+    ReadCameraAvStreamManagementStreamUsagePriorities()
+        : ReadAttribute("stream-usage-priorities")
     {
     }
 
-    ~ReadCameraAvStreamManagementRankedVideoStreamPrioritiesList()
+    ~ReadCameraAvStreamManagementStreamUsagePriorities()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvStreamManagement::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::RankedVideoStreamPrioritiesList::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::StreamUsagePriorities::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterCameraAVStreamManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeRankedVideoStreamPrioritiesListWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"CameraAVStreamManagement.RankedVideoStreamPrioritiesList response %@", [value description]);
+        [cluster readAttributeStreamUsagePrioritiesWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"CameraAVStreamManagement.StreamUsagePriorities response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("CameraAVStreamManagement RankedVideoStreamPrioritiesList read Error", error);
+                LogNSError("CameraAVStreamManagement StreamUsagePriorities read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -154303,21 +157964,21 @@ public:
     }
 };
 
-class SubscribeAttributeCameraAvStreamManagementRankedVideoStreamPrioritiesList : public SubscribeAttribute {
+class SubscribeAttributeCameraAvStreamManagementStreamUsagePriorities : public SubscribeAttribute {
 public:
-    SubscribeAttributeCameraAvStreamManagementRankedVideoStreamPrioritiesList()
-        : SubscribeAttribute("ranked-video-stream-priorities-list")
+    SubscribeAttributeCameraAvStreamManagementStreamUsagePriorities()
+        : SubscribeAttribute("stream-usage-priorities")
     {
     }
 
-    ~SubscribeAttributeCameraAvStreamManagementRankedVideoStreamPrioritiesList()
+    ~SubscribeAttributeCameraAvStreamManagementStreamUsagePriorities()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvStreamManagement::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::RankedVideoStreamPrioritiesList::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::CameraAvStreamManagement::Attributes::StreamUsagePriorities::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -154332,10 +157993,10 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeRankedVideoStreamPrioritiesListWithParams:params
+        [cluster subscribeAttributeStreamUsagePrioritiesWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSArray * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"CameraAVStreamManagement.RankedVideoStreamPrioritiesList response %@", [value description]);
+                NSLog(@"CameraAVStreamManagement.StreamUsagePriorities response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -154963,7 +158624,7 @@ public:
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterCameraAVStreamManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeViewportWithCompletion:^(MTRCameraAVStreamManagementClusterViewportStruct * _Nullable value, NSError * _Nullable error) {
+        [cluster readAttributeViewportWithCompletion:^(MTRDataTypeViewportStruct * _Nullable value, NSError * _Nullable error) {
             NSLog(@"CameraAVStreamManagement.Viewport response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
@@ -155003,8 +158664,8 @@ public:
         __auto_type * params = [[MTRWriteParams alloc] init];
         params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
         params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
-        MTRCameraAVStreamManagementClusterViewportStruct * _Nonnull value;
-        value = [MTRCameraAVStreamManagementClusterViewportStruct new];
+        MTRDataTypeViewportStruct * _Nonnull value;
+        value = [MTRDataTypeViewportStruct new];
         value.x1 = [NSNumber numberWithUnsignedShort:mValue.x1];
         value.y1 = [NSNumber numberWithUnsignedShort:mValue.y1];
         value.x2 = [NSNumber numberWithUnsignedShort:mValue.x2];
@@ -155021,8 +158682,8 @@ public:
     }
 
 private:
-    chip::app::Clusters::CameraAvStreamManagement::Structs::ViewportStruct::Type mValue;
-    TypedComplexArgument<chip::app::Clusters::CameraAvStreamManagement::Structs::ViewportStruct::Type> mComplex;
+    chip::app::Clusters::Globals::Structs::ViewportStruct::Type mValue;
+    TypedComplexArgument<chip::app::Clusters::Globals::Structs::ViewportStruct::Type> mComplex;
 };
 
 class SubscribeAttributeCameraAvStreamManagementViewport : public SubscribeAttribute {
@@ -155056,7 +158717,7 @@ public:
         }
         [cluster subscribeAttributeViewportWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
-            reportHandler:^(MTRCameraAVStreamManagementClusterViewportStruct * _Nullable value, NSError * _Nullable error) {
+            reportHandler:^(MTRDataTypeViewportStruct * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"CameraAVStreamManagement.Viewport response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
@@ -157372,6 +161033,7 @@ public:
 | * TiltMax                                                           | 0x0006 |
 | * PanMin                                                            | 0x0007 |
 | * PanMax                                                            | 0x0008 |
+| * MovementState                                                     | 0x0009 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -157738,7 +161400,7 @@ public:
         params.videoStreamID = [NSNumber numberWithUnsignedShort:mRequest.videoStreamID];
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        params.viewport = [MTRCameraAVSettingsUserLevelManagementClusterViewportStruct new];
+        params.viewport = [MTRDataTypeViewportStruct new];
         params.viewport.x1 = [NSNumber numberWithUnsignedShort:mRequest.viewport.x1];
         params.viewport.y1 = [NSNumber numberWithUnsignedShort:mRequest.viewport.y1];
         params.viewport.x2 = [NSNumber numberWithUnsignedShort:mRequest.viewport.x2];
@@ -157765,7 +161427,7 @@ public:
 
 private:
     chip::app::Clusters::CameraAvSettingsUserLevelManagement::Commands::DPTZSetViewport::Type mRequest;
-    TypedComplexArgument<chip::app::Clusters::CameraAvSettingsUserLevelManagement::Structs::ViewportStruct::Type> mComplex_Viewport;
+    TypedComplexArgument<chip::app::Clusters::Globals::Structs::ViewportStruct::Type> mComplex_Viewport;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -158621,6 +162283,91 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
+ * Attribute MovementState
+ */
+class ReadCameraAvSettingsUserLevelManagementMovementState : public ReadAttribute {
+public:
+    ReadCameraAvSettingsUserLevelManagementMovementState()
+        : ReadAttribute("movement-state")
+    {
+    }
+
+    ~ReadCameraAvSettingsUserLevelManagementMovementState()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvSettingsUserLevelManagement::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::CameraAvSettingsUserLevelManagement::Attributes::MovementState::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterCameraAVSettingsUserLevelManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeMovementStateWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"CameraAVSettingsUserLevelManagement.MovementState response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("CameraAVSettingsUserLevelManagement MovementState read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeCameraAvSettingsUserLevelManagementMovementState : public SubscribeAttribute {
+public:
+    SubscribeAttributeCameraAvSettingsUserLevelManagementMovementState()
+        : SubscribeAttribute("movement-state")
+    {
+    }
+
+    ~SubscribeAttributeCameraAvSettingsUserLevelManagementMovementState()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::CameraAvSettingsUserLevelManagement::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::CameraAvSettingsUserLevelManagement::Attributes::MovementState::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterCameraAVSettingsUserLevelManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMovementStateWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"CameraAVSettingsUserLevelManagement.MovementState response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
  * Attribute GeneratedCommandList
  */
 class ReadCameraAvSettingsUserLevelManagementGeneratedCommandList : public ReadAttribute {
@@ -159075,6 +162822,7 @@ public:
     WebRTCTransportProviderSolicitOffer()
         : ClusterCommand("solicit-offer")
         , mComplex_ICEServers(&mRequest.ICEServers)
+        , mComplex_SFrameConfig(&mRequest.SFrameConfig)
     {
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("StreamUsage", 0, UINT8_MAX, &mRequest.streamUsage);
@@ -159096,6 +162844,9 @@ public:
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("MetadataEnabled", 0, 1, &mRequest.metadataEnabled);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("SFrameConfig", &mComplex_SFrameConfig);
 #endif // MTR_ENABLE_PROVISIONAL
         ClusterCommand::AddArguments();
     }
@@ -159192,6 +162943,16 @@ public:
             params.metadataEnabled = nil;
         }
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.SFrameConfig.HasValue()) {
+            params.sFrameConfig = [MTRWebRTCTransportProviderClusterSFrameStruct new];
+            params.sFrameConfig.cipherSuite = [NSNumber numberWithUnsignedShort:mRequest.SFrameConfig.Value().cipherSuite];
+            params.sFrameConfig.baseKey = [NSData dataWithBytes:mRequest.SFrameConfig.Value().baseKey.data() length:mRequest.SFrameConfig.Value().baseKey.size()];
+            params.sFrameConfig.kid = [NSData dataWithBytes:mRequest.SFrameConfig.Value().kid.data() length:mRequest.SFrameConfig.Value().kid.size()];
+        } else {
+            params.sFrameConfig = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
         while (repeatCount--) {
@@ -159220,6 +162981,7 @@ public:
 private:
     chip::app::Clusters::WebRTCTransportProvider::Commands::SolicitOffer::Type mRequest;
     TypedComplexArgument<chip::Optional<chip::app::DataModel::List<const chip::app::Clusters::Globals::Structs::ICEServerStruct::Type>>> mComplex_ICEServers;
+    TypedComplexArgument<chip::Optional<chip::app::Clusters::WebRTCTransportProvider::Structs::SFrameStruct::Type>> mComplex_SFrameConfig;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -159232,6 +162994,7 @@ public:
     WebRTCTransportProviderProvideOffer()
         : ClusterCommand("provide-offer")
         , mComplex_ICEServers(&mRequest.ICEServers)
+        , mComplex_SFrameConfig(&mRequest.SFrameConfig)
     {
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("WebRTCSessionID", 0, UINT16_MAX, &mRequest.webRTCSessionID);
@@ -159259,6 +163022,9 @@ public:
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("MetadataEnabled", 0, 1, &mRequest.metadataEnabled);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("SFrameConfig", &mComplex_SFrameConfig);
 #endif // MTR_ENABLE_PROVISIONAL
         ClusterCommand::AddArguments();
     }
@@ -159365,6 +163131,16 @@ public:
             params.metadataEnabled = nil;
         }
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.SFrameConfig.HasValue()) {
+            params.sFrameConfig = [MTRWebRTCTransportProviderClusterSFrameStruct new];
+            params.sFrameConfig.cipherSuite = [NSNumber numberWithUnsignedShort:mRequest.SFrameConfig.Value().cipherSuite];
+            params.sFrameConfig.baseKey = [NSData dataWithBytes:mRequest.SFrameConfig.Value().baseKey.data() length:mRequest.SFrameConfig.Value().baseKey.size()];
+            params.sFrameConfig.kid = [NSData dataWithBytes:mRequest.SFrameConfig.Value().kid.data() length:mRequest.SFrameConfig.Value().kid.size()];
+        } else {
+            params.sFrameConfig = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
         while (repeatCount--) {
@@ -159393,6 +163169,7 @@ public:
 private:
     chip::app::Clusters::WebRTCTransportProvider::Commands::ProvideOffer::Type mRequest;
     TypedComplexArgument<chip::Optional<chip::app::DataModel::List<const chip::app::Clusters::Globals::Structs::ICEServerStruct::Type>>> mComplex_ICEServers;
+    TypedComplexArgument<chip::Optional<chip::app::Clusters::WebRTCTransportProvider::Structs::SFrameStruct::Type>> mComplex_SFrameConfig;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -161032,7 +164809,7 @@ public:
         } else {
             params.transportOptions.audioStreamID = nil;
         }
-        params.transportOptions.endpointID = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.endpointID];
+        params.transportOptions.tlsEndpointID = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.TLSEndpointID];
         params.transportOptions.url = [[NSString alloc] initWithBytes:mRequest.transportOptions.url.data() length:mRequest.transportOptions.url.size() encoding:NSUTF8StringEncoding];
         params.transportOptions.triggerOptions = [MTRPushAVStreamTransportClusterTransportTriggerOptionsStruct new];
         params.transportOptions.triggerOptions.triggerType = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.triggerOptions.triggerType)];
@@ -161091,21 +164868,25 @@ public:
         params.transportOptions.containerOptions.containerType = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.containerOptions.containerType)];
         if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.HasValue()) {
             params.transportOptions.containerOptions.cmafContainerOptions = [MTRPushAVStreamTransportClusterCMAFContainerOptionsStruct new];
+            params.transportOptions.containerOptions.cmafContainerOptions.cmafInterface = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CMAFInterface)];
+            params.transportOptions.containerOptions.cmafContainerOptions.segmentDuration = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().segmentDuration];
             params.transportOptions.containerOptions.cmafContainerOptions.chunkDuration = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().chunkDuration];
+            params.transportOptions.containerOptions.cmafContainerOptions.sessionGroup = [NSNumber numberWithUnsignedChar:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().sessionGroup];
+            params.transportOptions.containerOptions.cmafContainerOptions.trackName = [[NSString alloc] initWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().trackName.data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().trackName.size() encoding:NSUTF8StringEncoding];
             if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.HasValue()) {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKey = [NSData dataWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.Value().data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.Value().size()];
             } else {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKey = nil;
             }
-            if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.HasValue()) {
-                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = [NSNumber numberWithBool:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.Value()];
-            } else {
-                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = nil;
-            }
             if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.HasValue()) {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKeyID = [NSData dataWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.Value().data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.Value().size()];
             } else {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKeyID = nil;
+            }
+            if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.HasValue()) {
+                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = [NSNumber numberWithBool:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.Value()];
+            } else {
+                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = nil;
             }
         } else {
             params.transportOptions.containerOptions.cmafContainerOptions = nil;
@@ -161254,7 +165035,7 @@ public:
         } else {
             params.transportOptions.audioStreamID = nil;
         }
-        params.transportOptions.endpointID = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.endpointID];
+        params.transportOptions.tlsEndpointID = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.TLSEndpointID];
         params.transportOptions.url = [[NSString alloc] initWithBytes:mRequest.transportOptions.url.data() length:mRequest.transportOptions.url.size() encoding:NSUTF8StringEncoding];
         params.transportOptions.triggerOptions = [MTRPushAVStreamTransportClusterTransportTriggerOptionsStruct new];
         params.transportOptions.triggerOptions.triggerType = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.triggerOptions.triggerType)];
@@ -161313,21 +165094,25 @@ public:
         params.transportOptions.containerOptions.containerType = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.containerOptions.containerType)];
         if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.HasValue()) {
             params.transportOptions.containerOptions.cmafContainerOptions = [MTRPushAVStreamTransportClusterCMAFContainerOptionsStruct new];
+            params.transportOptions.containerOptions.cmafContainerOptions.cmafInterface = [NSNumber numberWithUnsignedChar:chip::to_underlying(mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CMAFInterface)];
+            params.transportOptions.containerOptions.cmafContainerOptions.segmentDuration = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().segmentDuration];
             params.transportOptions.containerOptions.cmafContainerOptions.chunkDuration = [NSNumber numberWithUnsignedShort:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().chunkDuration];
+            params.transportOptions.containerOptions.cmafContainerOptions.sessionGroup = [NSNumber numberWithUnsignedChar:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().sessionGroup];
+            params.transportOptions.containerOptions.cmafContainerOptions.trackName = [[NSString alloc] initWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().trackName.data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().trackName.size() encoding:NSUTF8StringEncoding];
             if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.HasValue()) {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKey = [NSData dataWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.Value().data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKey.Value().size()];
             } else {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKey = nil;
             }
-            if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.HasValue()) {
-                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = [NSNumber numberWithBool:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.Value()];
-            } else {
-                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = nil;
-            }
             if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.HasValue()) {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKeyID = [NSData dataWithBytes:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.Value().data() length:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().CENCKeyID.Value().size()];
             } else {
                 params.transportOptions.containerOptions.cmafContainerOptions.cencKeyID = nil;
+            }
+            if (mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.HasValue()) {
+                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = [NSNumber numberWithBool:mRequest.transportOptions.containerOptions.CMAFContainerOptions.Value().metadataEnabled.Value()];
+            } else {
+                params.transportOptions.containerOptions.cmafContainerOptions.metadataEnabled = nil;
             }
         } else {
             params.transportOptions.containerOptions.cmafContainerOptions = nil;
@@ -161445,6 +165230,9 @@ public:
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("TimeControl", &mComplex_TimeControl);
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("UserDefined", &mRequest.userDefined);
+#endif // MTR_ENABLE_PROVISIONAL
         ClusterCommand::AddArguments();
     }
 
@@ -161474,6 +165262,13 @@ public:
             params.timeControl.blindDuration = [NSNumber numberWithUnsignedShort:mRequest.timeControl.Value().blindDuration];
         } else {
             params.timeControl = nil;
+        }
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.userDefined.HasValue()) {
+            params.userDefined = [NSData dataWithBytes:mRequest.userDefined.Value().data() length:mRequest.userDefined.Value().size()];
+        } else {
+            params.userDefined = nil;
         }
 #endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
@@ -161528,14 +165323,10 @@ public:
         __auto_type * params = [[MTRPushAVStreamTransportClusterFindTransportParams alloc] init];
         params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
 #if MTR_ENABLE_PROVISIONAL
-        if (mRequest.connectionID.HasValue()) {
-            if (mRequest.connectionID.Value().IsNull()) {
-                params.connectionID = nil;
-            } else {
-                params.connectionID = [NSNumber numberWithUnsignedShort:mRequest.connectionID.Value().Value()];
-            }
-        } else {
+        if (mRequest.connectionID.IsNull()) {
             params.connectionID = nil;
+        } else {
+            params.connectionID = [NSNumber numberWithUnsignedShort:mRequest.connectionID.Value()];
         }
 #endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
@@ -170402,7 +174193,7 @@ public:
 | * FindRootCertificate                                               |   0x02 |
 | * LookupRootCertificate                                             |   0x04 |
 | * RemoveRootCertificate                                             |   0x06 |
-| * TLSClientCSR                                                      |   0x07 |
+| * ClientCSR                                                         |   0x07 |
 | * ProvisionClientCertificate                                        |   0x09 |
 | * FindClientCertificate                                             |   0x0A |
 | * LookupClientCertificate                                           |   0x0C |
@@ -170668,15 +174459,18 @@ private:
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
 /*
- * Command TLSClientCSR
+ * Command ClientCSR
  */
-class TlsCertificateManagementTLSClientCSR : public ClusterCommand {
+class TlsCertificateManagementClientCSR : public ClusterCommand {
 public:
-    TlsCertificateManagementTLSClientCSR()
-        : ClusterCommand("tlsclient-csr")
+    TlsCertificateManagementClientCSR()
+        : ClusterCommand("client-csr")
     {
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("Nonce", &mRequest.nonce);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("Ccdid", 0, UINT16_MAX, &mRequest.ccdid);
 #endif // MTR_ENABLE_PROVISIONAL
         ClusterCommand::AddArguments();
     }
@@ -170684,32 +174478,39 @@ public:
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::TlsCertificateManagement::Id;
-        constexpr chip::CommandId commandId = chip::app::Clusters::TlsCertificateManagement::Commands::TLSClientCSR::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::TlsCertificateManagement::Commands::ClientCSR::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterTLSCertificateManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        __auto_type * params = [[MTRTLSCertificateManagementClusterTLSClientCSRParams alloc] init];
+        __auto_type * params = [[MTRTLSCertificateManagementClusterClientCSRParams alloc] init];
         params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
 #if MTR_ENABLE_PROVISIONAL
         params.nonce = [NSData dataWithBytes:mRequest.nonce.data() length:mRequest.nonce.size()];
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        if (mRequest.ccdid.IsNull()) {
+            params.ccdid = nil;
+        } else {
+            params.ccdid = [NSNumber numberWithUnsignedShort:mRequest.ccdid.Value()];
+        }
+#endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
         while (repeatCount--) {
-            [cluster TLSClientCSRWithParams:params completion:
-                    ^(MTRTLSCertificateManagementClusterTLSClientCSRResponseParams * _Nullable values, NSError * _Nullable error) {
+            [cluster clientCSRWithParams:params completion:
+                    ^(MTRTLSCertificateManagementClusterClientCSRResponseParams * _Nullable values, NSError * _Nullable error) {
                         NSLog(@"Values: %@", values);
                         if (error == nil) {
-                            constexpr chip::CommandId responseId = chip::app::Clusters::TlsCertificateManagement::Commands::TLSClientCSRResponse::Id;
+                            constexpr chip::CommandId responseId = chip::app::Clusters::TlsCertificateManagement::Commands::ClientCSRResponse::Id;
                             RemoteDataModelLogger::LogCommandAsJSON(@(endpointId), @(clusterId), @(responseId), values);
                         }
                         responsesNeeded--;
                         if (error != nil) {
                             mError = error;
                             LogNSError("Error", error);
-                            constexpr chip::CommandId responseId = chip::app::Clusters::TlsCertificateManagement::Commands::TLSClientCSRResponse::Id;
+                            constexpr chip::CommandId responseId = chip::app::Clusters::TlsCertificateManagement::Commands::ClientCSRResponse::Id;
                             RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(responseId), error);
                         }
                         if (responsesNeeded == 0) {
@@ -170721,7 +174522,7 @@ public:
     }
 
 private:
-    chip::app::Clusters::TlsCertificateManagement::Commands::TLSClientCSR::Type mRequest;
+    chip::app::Clusters::TlsCertificateManagement::Commands::ClientCSR::Type mRequest;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -170733,13 +174534,16 @@ class TlsCertificateManagementProvisionClientCertificate : public ClusterCommand
 public:
     TlsCertificateManagementProvisionClientCertificate()
         : ClusterCommand("provision-client-certificate")
-        , mComplex_ClientCertificateDetails(&mRequest.clientCertificateDetails)
+        , mComplex_IntermediateCertificates(&mRequest.intermediateCertificates)
     {
 #if MTR_ENABLE_PROVISIONAL
         AddArgument("Ccdid", 0, UINT16_MAX, &mRequest.ccdid);
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        AddArgument("ClientCertificateDetails", &mComplex_ClientCertificateDetails);
+        AddArgument("ClientCertificate", &mRequest.clientCertificate);
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        AddArgument("IntermediateCertificates", &mComplex_IntermediateCertificates);
 #endif // MTR_ENABLE_PROVISIONAL
         ClusterCommand::AddArguments();
     }
@@ -170759,27 +174563,18 @@ public:
         params.ccdid = [NSNumber numberWithUnsignedShort:mRequest.ccdid];
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        params.clientCertificateDetails = [MTRTLSCertificateManagementClusterTLSClientCertificateDetailStruct new];
-        params.clientCertificateDetails.ccdid = [NSNumber numberWithUnsignedShort:mRequest.clientCertificateDetails.ccdid];
-        if (mRequest.clientCertificateDetails.clientCertificate.HasValue()) {
-            params.clientCertificateDetails.clientCertificate = [NSData dataWithBytes:mRequest.clientCertificateDetails.clientCertificate.Value().data() length:mRequest.clientCertificateDetails.clientCertificate.Value().size()];
-        } else {
-            params.clientCertificateDetails.clientCertificate = nil;
-        }
-        if (mRequest.clientCertificateDetails.intermediateCertificates.HasValue()) {
-            { // Scope for our temporary variables
-                auto * array_2 = [NSMutableArray new];
-                for (auto & entry_2 : mRequest.clientCertificateDetails.intermediateCertificates.Value()) {
-                    NSData * newElement_2;
-                    newElement_2 = [NSData dataWithBytes:entry_2.data() length:entry_2.size()];
-                    [array_2 addObject:newElement_2];
-                }
-                params.clientCertificateDetails.intermediateCertificates = array_2;
+        params.clientCertificate = [NSData dataWithBytes:mRequest.clientCertificate.data() length:mRequest.clientCertificate.size()];
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        { // Scope for our temporary variables
+            auto * array_0 = [NSMutableArray new];
+            for (auto & entry_0 : mRequest.intermediateCertificates) {
+                NSData * newElement_0;
+                newElement_0 = [NSData dataWithBytes:entry_0.data() length:entry_0.size()];
+                [array_0 addObject:newElement_0];
             }
-        } else {
-            params.clientCertificateDetails.intermediateCertificates = nil;
+            params.intermediateCertificates = array_0;
         }
-        params.clientCertificateDetails.fabricIndex = [NSNumber numberWithUnsignedChar:mRequest.clientCertificateDetails.fabricIndex];
 #endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
@@ -170802,7 +174597,7 @@ public:
 
 private:
     chip::app::Clusters::TlsCertificateManagement::Commands::ProvisionClientCertificate::Type mRequest;
-    TypedComplexArgument<chip::app::Clusters::TlsCertificateManagement::Structs::TLSClientCertificateDetailStruct::Type> mComplex_ClientCertificateDetails;
+    TypedComplexArgument<chip::app::DataModel::List<const chip::ByteSpan>> mComplex_IntermediateCertificates;
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -171895,11 +175690,7 @@ public:
         __auto_type * params = [[MTRTLSClientManagementClusterFindEndpointParams alloc] init];
         params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
 #if MTR_ENABLE_PROVISIONAL
-        if (mRequest.endpointID.IsNull()) {
-            params.endpointID = nil;
-        } else {
-            params.endpointID = [NSNumber numberWithUnsignedShort:mRequest.endpointID.Value()];
-        }
+        params.endpointID = [NSNumber numberWithUnsignedShort:mRequest.endpointID];
 #endif // MTR_ENABLE_PROVISIONAL
         uint16_t repeatCount = mRepeatCount.ValueOr(1);
         uint16_t __block responsesNeeded = repeatCount;
@@ -172095,7 +175886,11 @@ public:
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterTLSClientManagement alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeProvisionedEndpointsWithCompletion:^(NSArray * _Nullable value, NSError * _Nullable error) {
+        __auto_type * params = [[MTRReadParams alloc] init];
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        [cluster readAttributeProvisionedEndpointsWithParams:params completion:^(NSArray * _Nullable value, NSError * _Nullable error) {
             NSLog(@"TLSClientManagement.ProvisionedEndpoints response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
@@ -173462,7 +177257,8 @@ public:
 | Attributes:                                                         |        |
 | * MeteredQuantity                                                   | 0x0000 |
 | * MeteredQuantityTimestamp                                          | 0x0001 |
-| * MeasurementType                                                   | 0x0002 |
+| * TariffUnit                                                        | 0x0002 |
+| * MaximumMeteredQuantities                                          | 0x0003 |
 | * GeneratedCommandList                                              | 0xFFF8 |
 | * AcceptedCommandList                                               | 0xFFF9 |
 | * AttributeList                                                     | 0xFFFB |
@@ -173645,34 +177441,34 @@ public:
 #if MTR_ENABLE_PROVISIONAL
 
 /*
- * Attribute MeasurementType
+ * Attribute TariffUnit
  */
-class ReadCommodityMeteringMeasurementType : public ReadAttribute {
+class ReadCommodityMeteringTariffUnit : public ReadAttribute {
 public:
-    ReadCommodityMeteringMeasurementType()
-        : ReadAttribute("measurement-type")
+    ReadCommodityMeteringTariffUnit()
+        : ReadAttribute("tariff-unit")
     {
     }
 
-    ~ReadCommodityMeteringMeasurementType()
+    ~ReadCommodityMeteringTariffUnit()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CommodityMetering::Id;
-        constexpr chip::AttributeId attributeId = chip::app::Clusters::CommodityMetering::Attributes::MeasurementType::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::CommodityMetering::Attributes::TariffUnit::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
 
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
         __auto_type * cluster = [[MTRBaseClusterCommodityMetering alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
-        [cluster readAttributeMeasurementTypeWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
-            NSLog(@"CommodityMetering.MeasurementType response %@", [value description]);
+        [cluster readAttributeTariffUnitWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"CommodityMetering.TariffUnit response %@", [value description]);
             if (error == nil) {
                 RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
             } else {
-                LogNSError("CommodityMetering MeasurementType read Error", error);
+                LogNSError("CommodityMetering TariffUnit read Error", error);
                 RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
             }
             SetCommandExitStatus(error);
@@ -173681,21 +177477,21 @@ public:
     }
 };
 
-class SubscribeAttributeCommodityMeteringMeasurementType : public SubscribeAttribute {
+class SubscribeAttributeCommodityMeteringTariffUnit : public SubscribeAttribute {
 public:
-    SubscribeAttributeCommodityMeteringMeasurementType()
-        : SubscribeAttribute("measurement-type")
+    SubscribeAttributeCommodityMeteringTariffUnit()
+        : SubscribeAttribute("tariff-unit")
     {
     }
 
-    ~SubscribeAttributeCommodityMeteringMeasurementType()
+    ~SubscribeAttributeCommodityMeteringTariffUnit()
     {
     }
 
     CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
     {
         constexpr chip::ClusterId clusterId = chip::app::Clusters::CommodityMetering::Id;
-        constexpr chip::CommandId attributeId = chip::app::Clusters::CommodityMetering::Attributes::MeasurementType::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::CommodityMetering::Attributes::TariffUnit::Id;
 
         ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
         dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
@@ -173710,10 +177506,95 @@ public:
         if (mAutoResubscribe.HasValue()) {
             params.resubscribeAutomatically = mAutoResubscribe.Value();
         }
-        [cluster subscribeAttributeMeasurementTypeWithParams:params
+        [cluster subscribeAttributeTariffUnitWithParams:params
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
-                NSLog(@"CommodityMetering.MeasurementType response %@", [value description]);
+                NSLog(@"CommodityMetering.TariffUnit response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute MaximumMeteredQuantities
+ */
+class ReadCommodityMeteringMaximumMeteredQuantities : public ReadAttribute {
+public:
+    ReadCommodityMeteringMaximumMeteredQuantities()
+        : ReadAttribute("maximum-metered-quantities")
+    {
+    }
+
+    ~ReadCommodityMeteringMaximumMeteredQuantities()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::CommodityMetering::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::CommodityMetering::Attributes::MaximumMeteredQuantities::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterCommodityMetering alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeMaximumMeteredQuantitiesWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"CommodityMetering.MaximumMeteredQuantities response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("CommodityMetering MaximumMeteredQuantities read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class SubscribeAttributeCommodityMeteringMaximumMeteredQuantities : public SubscribeAttribute {
+public:
+    SubscribeAttributeCommodityMeteringMaximumMeteredQuantities()
+        : SubscribeAttribute("maximum-metered-quantities")
+    {
+    }
+
+    ~SubscribeAttributeCommodityMeteringMaximumMeteredQuantities()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::CommodityMetering::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::CommodityMetering::Attributes::MaximumMeteredQuantities::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterCommodityMetering alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeMaximumMeteredQuantitiesWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"CommodityMetering.MaximumMeteredQuantities response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -174183,6 +178064,7 @@ public:
 | * TestSecondBatchHelperRequest                                      |   0x17 |
 | * StringEchoRequest                                                 |   0x18 |
 | * GlobalEchoRequest                                                 |   0x19 |
+| * TestCheckCommandFlags                                             |   0x1A |
 | * TestDifferentVendorMeiRequest                                     |   0xFFF200AA|
 |------------------------------------------------------------------------------|
 | Attributes:                                                         |        |
@@ -174235,6 +178117,7 @@ public:
 | * ClusterErrorBoolean                                               | 0x0032 |
 | * GlobalEnum                                                        | 0x0033 |
 | * GlobalStruct                                                      | 0x0034 |
+| * UnsupportedAttributeRequiringAdminPrivilege                       | 0x00FE |
 | * Unsupported                                                       | 0x00FF |
 | * ReadFailureCode                                                   | 0x3000 |
 | * FailureInt32U                                                     | 0x3001 |
@@ -176250,6 +180133,52 @@ public:
 private:
     chip::app::Clusters::UnitTesting::Commands::GlobalEchoRequest::Type mRequest;
     TypedComplexArgument<chip::app::Clusters::Globals::Structs::TestGlobalStruct::Type> mComplex_Field1;
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+/*
+ * Command TestCheckCommandFlags
+ */
+class UnitTestingTestCheckCommandFlags : public ClusterCommand {
+public:
+    UnitTestingTestCheckCommandFlags()
+        : ClusterCommand("test-check-command-flags")
+    {
+        ClusterCommand::AddArguments();
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId commandId = chip::app::Clusters::UnitTesting::Commands::TestCheckCommandFlags::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") command (0x%08" PRIX32 ") on endpoint %u", clusterId, commandId, endpointId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterUnitTesting alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRUnitTestingClusterTestCheckCommandFlagsParams alloc] init];
+        params.timedInvokeTimeoutMs = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+        uint16_t repeatCount = mRepeatCount.ValueOr(1);
+        uint16_t __block responsesNeeded = repeatCount;
+        while (repeatCount--) {
+            [cluster testCheckCommandFlagsWithParams:params completion:
+                    ^(NSError * _Nullable error) {
+                        responsesNeeded--;
+                        if (error != nil) {
+                            mError = error;
+                            LogNSError("Error", error);
+                            RemoteDataModelLogger::LogCommandErrorAsJSON(@(endpointId), @(clusterId), @(commandId), error);
+                        }
+                        if (responsesNeeded == 0) {
+                            SetCommandExitStatus(mError);
+                        }
+                    }];
+        }
+        return CHIP_NO_ERROR;
+    }
+
+private:
 };
 
 #endif // MTR_ENABLE_PROVISIONAL
@@ -182623,6 +186552,132 @@ public:
             subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
             reportHandler:^(MTRDataTypeTestGlobalStruct * _Nullable value, NSError * _Nullable error) {
                 NSLog(@"UnitTesting.GlobalStruct response %@", [value description]);
+                if (error == nil) {
+                    RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+                } else {
+                    RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+                }
+                SetCommandExitStatus(error);
+            }];
+
+        return CHIP_NO_ERROR;
+    }
+};
+
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+
+/*
+ * Attribute UnsupportedAttributeRequiringAdminPrivilege
+ */
+class ReadUnitTestingUnsupportedAttributeRequiringAdminPrivilege : public ReadAttribute {
+public:
+    ReadUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+        : ReadAttribute("unsupported-attribute-requiring-admin-privilege")
+    {
+    }
+
+    ~ReadUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::UnitTesting::Attributes::UnsupportedAttributeRequiringAdminPrivilege::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReadAttribute (0x%08" PRIX32 ") on endpoint %u", endpointId, clusterId, attributeId);
+
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterUnitTesting alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        [cluster readAttributeUnsupportedAttributeRequiringAdminPrivilegeWithCompletion:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+            NSLog(@"UnitTesting.UnsupportedAttributeRequiringAdminPrivilege response %@", [value description]);
+            if (error == nil) {
+                RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
+            } else {
+                LogNSError("UnitTesting UnsupportedAttributeRequiringAdminPrivilege read Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+};
+
+class WriteUnitTestingUnsupportedAttributeRequiringAdminPrivilege : public WriteAttribute {
+public:
+    WriteUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+        : WriteAttribute("unsupported-attribute-requiring-admin-privilege")
+    {
+        AddArgument("attr-name", "unsupported-attribute-requiring-admin-privilege");
+        AddArgument("attr-value", 0, 1, &mValue);
+        WriteAttribute::AddArguments();
+    }
+
+    ~WriteUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::AttributeId attributeId = chip::app::Clusters::UnitTesting::Attributes::UnsupportedAttributeRequiringAdminPrivilege::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") WriteAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterUnitTesting alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRWriteParams alloc] init];
+        params.timedWriteTimeout = mTimedInteractionTimeoutMs.HasValue() ? [NSNumber numberWithUnsignedShort:mTimedInteractionTimeoutMs.Value()] : nil;
+        params.dataVersion = mDataVersion.HasValue() ? [NSNumber numberWithUnsignedInt:mDataVersion.Value()] : nil;
+        NSNumber * _Nonnull value = [NSNumber numberWithBool:mValue];
+
+        [cluster writeAttributeUnsupportedAttributeRequiringAdminPrivilegeWithValue:value params:params completion:^(NSError * _Nullable error) {
+            if (error != nil) {
+                LogNSError("UnitTesting UnsupportedAttributeRequiringAdminPrivilege write Error", error);
+                RemoteDataModelLogger::LogAttributeErrorAsJSON(@(endpointId), @(clusterId), @(attributeId), error);
+            }
+            SetCommandExitStatus(error);
+        }];
+        return CHIP_NO_ERROR;
+    }
+
+private:
+    bool mValue;
+};
+
+class SubscribeAttributeUnitTestingUnsupportedAttributeRequiringAdminPrivilege : public SubscribeAttribute {
+public:
+    SubscribeAttributeUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+        : SubscribeAttribute("unsupported-attribute-requiring-admin-privilege")
+    {
+    }
+
+    ~SubscribeAttributeUnitTestingUnsupportedAttributeRequiringAdminPrivilege()
+    {
+    }
+
+    CHIP_ERROR SendCommand(MTRBaseDevice * device, chip::EndpointId endpointId) override
+    {
+        constexpr chip::ClusterId clusterId = chip::app::Clusters::UnitTesting::Id;
+        constexpr chip::CommandId attributeId = chip::app::Clusters::UnitTesting::Attributes::UnsupportedAttributeRequiringAdminPrivilege::Id;
+
+        ChipLogProgress(chipTool, "Sending cluster (0x%08" PRIX32 ") ReportAttribute (0x%08" PRIX32 ") on endpoint %u", clusterId, attributeId, endpointId);
+        dispatch_queue_t callbackQueue = dispatch_queue_create("com.chip.command", DISPATCH_QUEUE_SERIAL_WITH_AUTORELEASE_POOL);
+        __auto_type * cluster = [[MTRBaseClusterUnitTesting alloc] initWithDevice:device endpointID:@(endpointId) queue:callbackQueue];
+        __auto_type * params = [[MTRSubscribeParams alloc] initWithMinInterval:@(mMinInterval) maxInterval:@(mMaxInterval)];
+        if (mKeepSubscriptions.HasValue()) {
+            params.replaceExistingSubscriptions = !mKeepSubscriptions.Value();
+        }
+        if (mFabricFiltered.HasValue()) {
+            params.filterByFabric = mFabricFiltered.Value();
+        }
+        if (mAutoResubscribe.HasValue()) {
+            params.resubscribeAutomatically = mAutoResubscribe.Value();
+        }
+        [cluster subscribeAttributeUnsupportedAttributeRequiringAdminPrivilegeWithParams:params
+            subscriptionEstablished:^() { mSubscriptionEstablished = YES; }
+            reportHandler:^(NSNumber * _Nullable value, NSError * _Nullable error) {
+                NSLog(@"UnitTesting.UnsupportedAttributeRequiringAdminPrivilege response %@", [value description]);
                 if (error == nil) {
                     RemoteDataModelLogger::LogAttributeAsJSON(@(endpointId), @(clusterId), @(attributeId), value);
                 } else {
@@ -189125,6 +193180,10 @@ void registerClusterAccessControl(Commands & commands)
         make_unique<SubscribeAttributeAccessControlCommissioningARL>(), //
         make_unique<ReadAccessControlArl>(), //
         make_unique<SubscribeAttributeAccessControlArl>(), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadAccessControlAuxiliaryACL>(), //
+        make_unique<SubscribeAttributeAccessControlAuxiliaryACL>(), //
+#endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadAccessControlGeneratedCommandList>(), //
         make_unique<SubscribeAttributeAccessControlGeneratedCommandList>(), //
         make_unique<ReadAccessControlAcceptedCommandList>(), //
@@ -189591,6 +193650,18 @@ void registerClusterGeneralCommissioning(Commands & commands)
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadGeneralCommissioningTCUpdateDeadline>(), //
         make_unique<SubscribeAttributeGeneralCommissioningTCUpdateDeadline>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGeneralCommissioningRecoveryIdentifier>(), //
+        make_unique<SubscribeAttributeGeneralCommissioningRecoveryIdentifier>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGeneralCommissioningNetworkRecoveryReason>(), //
+        make_unique<SubscribeAttributeGeneralCommissioningNetworkRecoveryReason>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGeneralCommissioningIsCommissioningWithoutPower>(), //
+        make_unique<SubscribeAttributeGeneralCommissioningIsCommissioningWithoutPower>(), //
 #endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadGeneralCommissioningGeneratedCommandList>(), //
         make_unique<SubscribeAttributeGeneralCommissioningGeneratedCommandList>(), //
@@ -191255,6 +195326,66 @@ void registerClusterScenesManagement(Commands & commands)
     commands.RegisterCluster(clusterName, clusterCommands);
 #endif // MTR_ENABLE_PROVISIONAL
 }
+void registerClusterGroupcast(Commands & commands)
+{
+#if MTR_ENABLE_PROVISIONAL
+    using namespace chip::app::Clusters::Groupcast;
+
+    const char * clusterName = "Groupcast";
+
+    commands_list clusterCommands = {
+        make_unique<ClusterCommand>(Id), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<GroupcastJoinGroup>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<GroupcastLeaveGroup>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<GroupcastUpdateGroupKey>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<GroupcastExpireGracePeriod>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<GroupcastConfigureAuxiliaryACL>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+        make_unique<ReadAttribute>(Id), //
+        make_unique<WriteAttribute>(Id), //
+        make_unique<SubscribeAttribute>(Id), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastMembership>(), //
+        make_unique<SubscribeAttributeGroupcastMembership>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastMaxMembershipCount>(), //
+        make_unique<SubscribeAttributeGroupcastMaxMembershipCount>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastGeneratedCommandList>(), //
+        make_unique<SubscribeAttributeGroupcastGeneratedCommandList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastAcceptedCommandList>(), //
+        make_unique<SubscribeAttributeGroupcastAcceptedCommandList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastAttributeList>(), //
+        make_unique<SubscribeAttributeGroupcastAttributeList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastFeatureMap>(), //
+        make_unique<SubscribeAttributeGroupcastFeatureMap>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadGroupcastClusterRevision>(), //
+        make_unique<SubscribeAttributeGroupcastClusterRevision>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+#endif // MTR_ENABLE_PROVISIONAL
+}
 void registerClusterHepaFilterMonitoring(Commands & commands)
 {
     using namespace chip::app::Clusters::HepaFilterMonitoring;
@@ -191332,6 +195463,71 @@ void registerClusterActivatedCarbonFilterMonitoring(Commands & commands)
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
+}
+void registerClusterWaterTankLevelMonitoring(Commands & commands)
+{
+#if MTR_ENABLE_PROVISIONAL
+    using namespace chip::app::Clusters::WaterTankLevelMonitoring;
+
+    const char * clusterName = "WaterTankLevelMonitoring";
+
+    commands_list clusterCommands = {
+        make_unique<ClusterCommand>(Id), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<WaterTankLevelMonitoringResetCondition>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+        make_unique<ReadAttribute>(Id), //
+        make_unique<WriteAttribute>(Id), //
+        make_unique<SubscribeAttribute>(Id), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringCondition>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringCondition>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringDegradationDirection>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringDegradationDirection>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringChangeIndication>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringChangeIndication>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringInPlaceIndicator>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringInPlaceIndicator>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringLastChangedTime>(), //
+        make_unique<WriteWaterTankLevelMonitoringLastChangedTime>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringLastChangedTime>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringReplacementProductList>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringReplacementProductList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringGeneratedCommandList>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringGeneratedCommandList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringAcceptedCommandList>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringAcceptedCommandList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringAttributeList>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringAttributeList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringFeatureMap>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringFeatureMap>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadWaterTankLevelMonitoringClusterRevision>(), //
+        make_unique<SubscribeAttributeWaterTankLevelMonitoringClusterRevision>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+    };
+
+    commands.RegisterCluster(clusterName, clusterCommands);
+#endif // MTR_ENABLE_PROVISIONAL
 }
 void registerClusterBooleanStateConfiguration(Commands & commands)
 {
@@ -191893,6 +196089,11 @@ void registerClusterPowerTopology(Commands & commands)
         make_unique<SubscribeAttributePowerTopologyAvailableEndpoints>(), //
         make_unique<ReadPowerTopologyActiveEndpoints>(), //
         make_unique<SubscribeAttributePowerTopologyActiveEndpoints>(), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadPowerTopologyElectricalCircuitNodes>(), //
+        make_unique<WritePowerTopologyElectricalCircuitNodes>(), //
+        make_unique<SubscribeAttributePowerTopologyElectricalCircuitNodes>(), //
+#endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadPowerTopologyGeneratedCommandList>(), //
         make_unique<SubscribeAttributePowerTopologyGeneratedCommandList>(), //
         make_unique<ReadPowerTopologyAcceptedCommandList>(), //
@@ -192316,12 +196517,16 @@ void registerClusterClosureControl(Commands & commands)
         make_unique<SubscribeAttributeClosureControlCurrentErrorList>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadClosureControlOverallState>(), //
-        make_unique<SubscribeAttributeClosureControlOverallState>(), //
+        make_unique<ReadClosureControlOverallCurrentState>(), //
+        make_unique<SubscribeAttributeClosureControlOverallCurrentState>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadClosureControlOverallTarget>(), //
-        make_unique<SubscribeAttributeClosureControlOverallTarget>(), //
+        make_unique<ReadClosureControlOverallTargetState>(), //
+        make_unique<SubscribeAttributeClosureControlOverallTargetState>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadClosureControlLatchControlModes>(), //
+        make_unique<SubscribeAttributeClosureControlLatchControlModes>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadClosureControlGeneratedCommandList>(), //
@@ -192373,8 +196578,8 @@ void registerClusterClosureDimension(Commands & commands)
         make_unique<SubscribeAttributeClosureDimensionCurrentState>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadClosureDimensionTarget>(), //
-        make_unique<SubscribeAttributeClosureDimensionTarget>(), //
+        make_unique<ReadClosureDimensionTargetState>(), //
+        make_unique<SubscribeAttributeClosureDimensionTargetState>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadClosureDimensionResolution>(), //
@@ -192411,6 +196616,10 @@ void registerClusterClosureDimension(Commands & commands)
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadClosureDimensionModulationType>(), //
         make_unique<SubscribeAttributeClosureDimensionModulationType>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadClosureDimensionLatchControlModes>(), //
+        make_unique<SubscribeAttributeClosureDimensionLatchControlModes>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadClosureDimensionGeneratedCommandList>(), //
@@ -192567,6 +196776,12 @@ void registerClusterThermostat(Commands & commands)
         make_unique<ThermostatClearWeeklySchedule>(), //
         make_unique<ThermostatSetActiveScheduleRequest>(), //
         make_unique<ThermostatSetActivePresetRequest>(), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ThermostatAddThermostatSuggestion>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ThermostatRemoveThermostatSuggestion>(), //
+#endif // MTR_ENABLE_PROVISIONAL
         make_unique<ThermostatAtomicRequest>(), //
         make_unique<ReadAttribute>(Id), //
         make_unique<WriteAttribute>(Id), //
@@ -192720,6 +196935,22 @@ void registerClusterThermostat(Commands & commands)
         make_unique<SubscribeAttributeThermostatSchedules>(), //
         make_unique<ReadThermostatSetpointHoldExpiryTimestamp>(), //
         make_unique<SubscribeAttributeThermostatSetpointHoldExpiryTimestamp>(), //
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadThermostatMaxThermostatSuggestions>(), //
+        make_unique<SubscribeAttributeThermostatMaxThermostatSuggestions>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadThermostatThermostatSuggestions>(), //
+        make_unique<SubscribeAttributeThermostatThermostatSuggestions>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadThermostatCurrentThermostatSuggestion>(), //
+        make_unique<SubscribeAttributeThermostatCurrentThermostatSuggestion>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadThermostatThermostatSuggestionNotFollowingReason>(), //
+        make_unique<SubscribeAttributeThermostatThermostatSuggestionNotFollowingReason>(), //
+#endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadThermostatGeneratedCommandList>(), //
         make_unique<SubscribeAttributeThermostatGeneratedCommandList>(), //
         make_unique<ReadThermostatAcceptedCommandList>(), //
@@ -192730,6 +196961,8 @@ void registerClusterThermostat(Commands & commands)
         make_unique<SubscribeAttributeThermostatFeatureMap>(), //
         make_unique<ReadThermostatClusterRevision>(), //
         make_unique<SubscribeAttributeThermostatClusterRevision>(), //
+        make_unique<ReadEvent>(Id), //
+        make_unique<SubscribeEvent>(Id), //
     };
 
     commands.RegisterCluster(clusterName, clusterCommands);
@@ -192914,37 +197147,26 @@ void registerClusterColorControl(Commands & commands)
         make_unique<ReadColorControlPrimary6Intensity>(), //
         make_unique<SubscribeAttributeColorControlPrimary6Intensity>(), //
         make_unique<ReadColorControlWhitePointX>(), //
-        make_unique<WriteColorControlWhitePointX>(), //
         make_unique<SubscribeAttributeColorControlWhitePointX>(), //
         make_unique<ReadColorControlWhitePointY>(), //
-        make_unique<WriteColorControlWhitePointY>(), //
         make_unique<SubscribeAttributeColorControlWhitePointY>(), //
         make_unique<ReadColorControlColorPointRX>(), //
-        make_unique<WriteColorControlColorPointRX>(), //
         make_unique<SubscribeAttributeColorControlColorPointRX>(), //
         make_unique<ReadColorControlColorPointRY>(), //
-        make_unique<WriteColorControlColorPointRY>(), //
         make_unique<SubscribeAttributeColorControlColorPointRY>(), //
         make_unique<ReadColorControlColorPointRIntensity>(), //
-        make_unique<WriteColorControlColorPointRIntensity>(), //
         make_unique<SubscribeAttributeColorControlColorPointRIntensity>(), //
         make_unique<ReadColorControlColorPointGX>(), //
-        make_unique<WriteColorControlColorPointGX>(), //
         make_unique<SubscribeAttributeColorControlColorPointGX>(), //
         make_unique<ReadColorControlColorPointGY>(), //
-        make_unique<WriteColorControlColorPointGY>(), //
         make_unique<SubscribeAttributeColorControlColorPointGY>(), //
         make_unique<ReadColorControlColorPointGIntensity>(), //
-        make_unique<WriteColorControlColorPointGIntensity>(), //
         make_unique<SubscribeAttributeColorControlColorPointGIntensity>(), //
         make_unique<ReadColorControlColorPointBX>(), //
-        make_unique<WriteColorControlColorPointBX>(), //
         make_unique<SubscribeAttributeColorControlColorPointBX>(), //
         make_unique<ReadColorControlColorPointBY>(), //
-        make_unique<WriteColorControlColorPointBY>(), //
         make_unique<SubscribeAttributeColorControlColorPointBY>(), //
         make_unique<ReadColorControlColorPointBIntensity>(), //
-        make_unique<WriteColorControlColorPointBIntensity>(), //
         make_unique<SubscribeAttributeColorControlColorPointBIntensity>(), //
         make_unique<ReadColorControlEnhancedCurrentHue>(), //
         make_unique<SubscribeAttributeColorControlEnhancedCurrentHue>(), //
@@ -194369,6 +198591,24 @@ void registerClusterContentControl(Commands & commands)
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ContentControlSetScheduledContentRatingThreshold>(), //
 #endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlAddBlockChannels>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlRemoveBlockChannels>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlAddBlockApplications>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlRemoveBlockApplications>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlSetBlockContentTimeWindow>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ContentControlRemoveBlockContentTimeWindow>(), //
+#endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadAttribute>(Id), //
         make_unique<WriteAttribute>(Id), //
         make_unique<SubscribeAttribute>(Id), //
@@ -194403,6 +198643,18 @@ void registerClusterContentControl(Commands & commands)
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadContentControlBlockUnrated>(), //
         make_unique<SubscribeAttributeContentControlBlockUnrated>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadContentControlBlockChannelList>(), //
+        make_unique<SubscribeAttributeContentControlBlockChannelList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadContentControlBlockApplicationList>(), //
+        make_unique<SubscribeAttributeContentControlBlockApplicationList>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadContentControlBlockContentTimeWindow>(), //
+        make_unique<SubscribeAttributeContentControlBlockContentTimeWindow>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadContentControlGeneratedCommandList>(), //
@@ -194473,17 +198725,24 @@ void registerClusterZoneManagement(Commands & commands)
         make_unique<ZoneManagementUpdateTwoDCartesianZone>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ZoneManagementGetTwoDCartesianZone>(), //
+        make_unique<ZoneManagementRemoveZone>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ZoneManagementRemoveZone>(), //
+        make_unique<ZoneManagementCreateOrUpdateTrigger>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ZoneManagementRemoveTrigger>(), //
 #endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadAttribute>(Id), //
         make_unique<WriteAttribute>(Id), //
         make_unique<SubscribeAttribute>(Id), //
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadZoneManagementSupportedZoneSources>(), //
-        make_unique<SubscribeAttributeZoneManagementSupportedZoneSources>(), //
+        make_unique<ReadZoneManagementMaxUserDefinedZones>(), //
+        make_unique<SubscribeAttributeZoneManagementMaxUserDefinedZones>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadZoneManagementMaxZones>(), //
+        make_unique<SubscribeAttributeZoneManagementMaxZones>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadZoneManagementZones>(), //
@@ -194491,13 +198750,20 @@ void registerClusterZoneManagement(Commands & commands)
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadZoneManagementTriggers>(), //
-        make_unique<WriteZoneManagementTriggers>(), //
         make_unique<SubscribeAttributeZoneManagementTriggers>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadZoneManagementSensitivityMax>(), //
+        make_unique<SubscribeAttributeZoneManagementSensitivityMax>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadZoneManagementSensitivity>(), //
         make_unique<WriteZoneManagementSensitivity>(), //
         make_unique<SubscribeAttributeZoneManagementSensitivity>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadZoneManagementTwoDCartesianMax>(), //
+        make_unique<SubscribeAttributeZoneManagementTwoDCartesianMax>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadZoneManagementGeneratedCommandList>(), //
@@ -194585,8 +198851,8 @@ void registerClusterCameraAvStreamManagement(Commands & commands)
         make_unique<SubscribeAttributeCameraAvStreamManagementNightVisionUsesInfrared>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadCameraAvStreamManagementMinViewport>(), //
-        make_unique<SubscribeAttributeCameraAvStreamManagementMinViewport>(), //
+        make_unique<ReadCameraAvStreamManagementMinViewportResolution>(), //
+        make_unique<SubscribeAttributeCameraAvStreamManagementMinViewportResolution>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadCameraAvStreamManagementRateDistortionTradeOffPoints>(), //
@@ -194642,8 +198908,8 @@ void registerClusterCameraAvStreamManagement(Commands & commands)
         make_unique<SubscribeAttributeCameraAvStreamManagementAllocatedSnapshotStreams>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadCameraAvStreamManagementRankedVideoStreamPrioritiesList>(), //
-        make_unique<SubscribeAttributeCameraAvStreamManagementRankedVideoStreamPrioritiesList>(), //
+        make_unique<ReadCameraAvStreamManagementStreamUsagePriorities>(), //
+        make_unique<SubscribeAttributeCameraAvStreamManagementStreamUsagePriorities>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadCameraAvStreamManagementSoftRecordingPrivacyModeEnabled>(), //
@@ -194843,6 +199109,10 @@ void registerClusterCameraAvSettingsUserLevelManagement(Commands & commands)
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadCameraAvSettingsUserLevelManagementPanMax>(), //
         make_unique<SubscribeAttributeCameraAvSettingsUserLevelManagementPanMax>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadCameraAvSettingsUserLevelManagementMovementState>(), //
+        make_unique<SubscribeAttributeCameraAvSettingsUserLevelManagementMovementState>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadCameraAvSettingsUserLevelManagementGeneratedCommandList>(), //
@@ -195526,7 +199796,7 @@ void registerClusterTlsCertificateManagement(Commands & commands)
         make_unique<TlsCertificateManagementRemoveRootCertificate>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<TlsCertificateManagementTLSClientCSR>(), //
+        make_unique<TlsCertificateManagementClientCSR>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<TlsCertificateManagementProvisionClientCertificate>(), //
@@ -195716,8 +199986,12 @@ void registerClusterCommodityMetering(Commands & commands)
         make_unique<SubscribeAttributeCommodityMeteringMeteredQuantityTimestamp>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
-        make_unique<ReadCommodityMeteringMeasurementType>(), //
-        make_unique<SubscribeAttributeCommodityMeteringMeasurementType>(), //
+        make_unique<ReadCommodityMeteringTariffUnit>(), //
+        make_unique<SubscribeAttributeCommodityMeteringTariffUnit>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadCommodityMeteringMaximumMeteredQuantities>(), //
+        make_unique<SubscribeAttributeCommodityMeteringMaximumMeteredQuantities>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<ReadCommodityMeteringGeneratedCommandList>(), //
@@ -195785,6 +200059,9 @@ void registerClusterUnitTesting(Commands & commands)
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<UnitTestingGlobalEchoRequest>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<UnitTestingTestCheckCommandFlags>(), //
 #endif // MTR_ENABLE_PROVISIONAL
 #if MTR_ENABLE_PROVISIONAL
         make_unique<UnitTestingTestDifferentVendorMeiRequest>(), //
@@ -195942,6 +200219,11 @@ void registerClusterUnitTesting(Commands & commands)
         make_unique<ReadUnitTestingGlobalStruct>(), //
         make_unique<WriteUnitTestingGlobalStruct>(), //
         make_unique<SubscribeAttributeUnitTestingGlobalStruct>(), //
+#endif // MTR_ENABLE_PROVISIONAL
+#if MTR_ENABLE_PROVISIONAL
+        make_unique<ReadUnitTestingUnsupportedAttributeRequiringAdminPrivilege>(), //
+        make_unique<WriteUnitTestingUnsupportedAttributeRequiringAdminPrivilege>(), //
+        make_unique<SubscribeAttributeUnitTestingUnsupportedAttributeRequiringAdminPrivilege>(), //
 #endif // MTR_ENABLE_PROVISIONAL
         make_unique<ReadUnitTestingUnsupported>(), //
         make_unique<WriteUnitTestingUnsupported>(), //
@@ -196216,8 +200498,10 @@ void registerClusters(Commands & commands)
     registerClusterOperationalState(commands);
     registerClusterRvcOperationalState(commands);
     registerClusterScenesManagement(commands);
+    registerClusterGroupcast(commands);
     registerClusterHepaFilterMonitoring(commands);
     registerClusterActivatedCarbonFilterMonitoring(commands);
+    registerClusterWaterTankLevelMonitoring(commands);
     registerClusterBooleanStateConfiguration(commands);
     registerClusterValveConfigurationAndControl(commands);
     registerClusterElectricalPowerMeasurement(commands);

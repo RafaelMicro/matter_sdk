@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2022-2025 Rafael Microelectronics Inc. All rights reserved.
+ * 
+ * SPDX-License-Identifier: LicenseRef-RafaelMicro-Proprietary-1.0
+ *
+ */
+
 /** @file fota.c
  *
  * @brief
@@ -15,8 +22,8 @@
 #include "fota_define.h"
 #include "ble_fota.h"
 #include "ble_profile.h"
-#include "flashctl.h"
-#include "mcu.h"
+#include "hosal_flash.h"
+#include "hosal_status.h"
 
 /**************************************************************************************************
  *    MACROS
@@ -85,10 +92,11 @@ fota_timer_params_t fota_tmr_param            = {.timer_type = 0,
  * @param[in] data : The data to be programmed.
  *
  */
-static void fota_flash_program(uint32_t flash_addr, uint32_t data)
+static void fota_flash_program(uint32_t flash_addr, uint8_t *p_data)
 {
-    flash_write_byte(flash_addr, data);
-    while (flash_check_busy());
+    hosal_flash_write(HOSAL_FLASH_WRITE_BYTE, flash_addr, p_data);
+
+    while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
 }
 
 /** This function is used to flash erase for fota.
@@ -100,10 +108,10 @@ static uint8_t fota_flash_erase(uint32_t flash_addr)
 {
     uint8_t status;
 
-    status = flash_erase(FLASH_ERASE_SECTOR, flash_addr);
-    if (status == STATUS_SUCCESS)
+    status = hosal_flash_erase(HOSAL_FLASH_ERASE_SECTOR, flash_addr);
+    if (status == HOSAL_STATUS_SUCCESS)
     {
-        while (flash_check_busy());
+        while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
     }
 
     return status;
@@ -112,15 +120,12 @@ static uint8_t fota_flash_erase(uint32_t flash_addr)
 static void fota_program(uint32_t flash_addr, uint32_t data, uint32_t data_len)
 {
     uint8_t program_idx, data_idx = 0;
-    uint32_t pattern;
     uint8_t *p_data;
 
-    for (program_idx = 0; program_idx < data_len; program_idx++)
+    p_data = (uint8_t *)&data;
+    for (program_idx = 0; program_idx < data_len; program_idx += FLASH_PROGRAM_SIZE)
     {
-        p_data = (uint8_t *)&data;
-        memcpy((uint8_t *)(&pattern), p_data + data_idx, FLASH_PROGRAM_SIZE);
-
-        fota_flash_program((flash_addr + data_idx), pattern);
+        fota_flash_program((flash_addr + data_idx), p_data + data_idx);
         data_idx = data_idx + FLASH_PROGRAM_SIZE;
     }
 }
@@ -133,13 +138,13 @@ static void ble_fota_system_reboot(void)
 static uint32_t ble_fota_crc32checksum(uint32_t flash_addr, uint32_t data_len)
 {
     uint16_t k;
-    uint32_t i;
-    uint8_t *p_buf = ((uint8_t *)flash_addr);
-    uint32_t chk_sum = ~0, len = data_len;
+    uint8_t buff;
+    uint32_t i, chk_sum = ~0, len = data_len;
 
     for (i = 0; i < len; i ++ )
     {
-        chk_sum ^= *p_buf++;
+        hosal_flash_read(HOSAL_FLASH_READ_BYTE, flash_addr + i, &buff);
+        chk_sum ^= buff;
         for (k = 0; k < 8; k ++)
         {
             chk_sum = chk_sum & 1 ? (chk_sum >> 1) ^ 0xedb88320 : chk_sum >> 1;
@@ -192,7 +197,8 @@ static void ble_fota_timerexpiry(uint8_t host_id, fota_timer_t type)
 
     case OTA_TIMER_OTA_DISCONNECT:
     {
-        ble_fota_system_reboot();
+        ble_fota_timerstart(3, OTA_TIMER_OTA_COMPLETE);
+        ble_cmd_conn_terminate(host_id);
     }
     break;
 
@@ -217,21 +223,9 @@ static void ble_fota_step(fota_step_t action, uint32_t *p_expect_add)
     static uint32_t step_size = 0;
     static uint32_t curr_step = 0;
     uint32_t fota_bank_size;
-    uint32_t flash_size_value  = flash_size();
 
-    if (flash_size_value == FLASH_512K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_512K;
-    }
-    else if (flash_size_value == FLASH_1024K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_1MB;
-    }
-    else
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_2MB;
-    }
 
+    fota_bank_size = SIZE_OF_FOTA_BANK;
     if (action == OTA_STEP_INIT)
     {
         uint8_t *p_step = 0;
@@ -280,21 +274,21 @@ static void set_flash_erase(uint32_t flash_addr, uint32_t image_size)
         if (((image_size - ErasedSize) > 0x10000) &&
                 ( MULTIPLE_OF_64K(flash_addr + ErasedSize) ))
         {
-            flash_erase(FLASH_ERASE_64K, flash_addr + ErasedSize);
+            hosal_flash_erase(HOSAL_FLASH_ERASE_64K_SECTOR, flash_addr + ErasedSize);
             ErasedSize += 0x10000;
         }
         else if (((image_size - ErasedSize) > 0x8000) &&
                  ( MULTIPLE_OF_32K(flash_addr + ErasedSize) ))
         {
-            flash_erase(FLASH_ERASE_32K, flash_addr + ErasedSize);
+            hosal_flash_erase(HOSAL_FLASH_ERASE_32K_SECTOR, flash_addr + ErasedSize);
             ErasedSize += 0x8000;
         }
         else
         {
-            flash_erase(FLASH_ERASE_SECTOR, flash_addr + ErasedSize);
+            hosal_flash_erase(HOSAL_FLASH_ERASE_SECTOR, flash_addr + ErasedSize);
             ErasedSize += SIZE_OF_FLASH_SECTOR_ERASE;
         }
-        while (flash_check_busy());
+        while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
     }
 }
 
@@ -302,21 +296,8 @@ static void ble_fota_data_program(uint8_t length, uint8_t *data)
 {
     static uint32_t temp_data[FLASH_PROGRAM_SIZE_PAGE >> 2];
     uint32_t fota_update_fw_addr;
-    uint32_t flash_size_value = flash_size();
 
-    if (flash_size_value == FLASH_512K)
-    {
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_512K;
-    }
-    else if (flash_size_value == FLASH_1024K)
-    {
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB;
-    }
-    else
-    {
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
-    }
-
+    fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS;
     /*  ------  here buffering OTA data for flash page programming  ------ */
     if (fota_data_param.buffered_data_len == 0)/* no buffering OTA data */
     {
@@ -327,8 +308,8 @@ static void ble_fota_data_program(uint8_t length, uint8_t *data)
     {
         memcpy(((uint8_t *)&temp_data[0]) + fota_data_param.buffered_data_len, data, (FLASH_PROGRAM_SIZE_PAGE - fota_data_param.buffered_data_len));
 
-        flash_write_page((uint32_t)temp_data, (uint32_t)(fota_data_param.programed_addr + fota_update_fw_addr));
-        while (flash_check_busy());
+        hosal_flash_write(HOSAL_FLASH_WRITE_PAGE, (uint32_t)(fota_data_param.programed_addr + fota_update_fw_addr), (uint8_t *)&temp_data[0]);
+        while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
 
         fota_data_param.programed_addr += FLASH_PROGRAM_SIZE_PAGE;
         ble_fota_step(OTA_STEP_UPDATE, &fota_data_param.programed_addr);
@@ -349,8 +330,8 @@ static void ble_fota_data_program(uint8_t length, uint8_t *data)
         {
             memset((((uint8_t *)&temp_data[0]) + fota_data_param.buffered_data_len), 0xFF, (FLASH_PROGRAM_SIZE_PAGE - fota_data_param.buffered_data_len));
         }
-        flash_write_page((uint32_t)temp_data, (uint32_t)(fota_data_param.programed_addr + fota_update_fw_addr));
-        while (flash_check_busy());
+        hosal_flash_write(HOSAL_FLASH_WRITE_PAGE, (uint32_t)(fota_data_param.programed_addr + fota_update_fw_addr), (uint8_t *)&temp_data[0]);
+        while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
 
         fota_data_param.programed_addr += fota_data_param.buffered_data_len;
         ble_fota_step(OTA_STEP_UPDATE, &fota_data_param.programed_addr);
@@ -373,7 +354,7 @@ fota_timerstate_t ble_fota_timertick(void)
 {
     fota_tmr_param.curr_time++;
 
-    if ((fota_tmr_param.expiry_time != 0) && (fota_tmr_param.curr_time >= fota_tmr_param.expiry_time))
+    if ((fota_tmr_param.expiry_time != 0) && (fota_tmr_param.curr_time > fota_tmr_param.expiry_time))
     {
         fota_tmr_param.expiry_time = 0;
         return EXPIRED;
@@ -399,7 +380,6 @@ void ble_fota_fw_buffer_flash_check(void)
 {
     uint32_t page_idx = 0, fota_bank_size, fota_update_fw_addr;
     uint8_t page_program_cnt_0 = 0, page_program_cnt_1 = 0;
-    uint32_t flash_size_value = flash_size();
     uint32_t read_buf[FLASH_PROGRAM_SIZE_PAGE >> 2];
     uint8_t *p_verify_buf;
 
@@ -412,30 +392,17 @@ void ble_fota_fw_buffer_flash_check(void)
 
         if (p_verify_buf)
         {
-            if (flash_size_value == FLASH_512K)
-            {
-                fota_bank_size = SIZE_OF_FOTA_BANK_512K;
-                fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_512K;
-            }
-            else if (flash_size_value == FLASH_1024K)
-            {
-                fota_bank_size = SIZE_OF_FOTA_BANK_1MB;
-                fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB;
-            }
-            else
-            {
-                fota_bank_size = SIZE_OF_FOTA_BANK_2MB;
-                fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
-            }
+            fota_bank_size = SIZE_OF_FOTA_BANK;
+            fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS;
 
             for (page_idx = 0 ; page_idx < fota_bank_size ; page_idx += FLASH_PROGRAM_SIZE_PAGE)
             {
-                if (flash_read_page((uint32_t)read_buf, (fota_update_fw_addr + page_idx)) != STATUS_SUCCESS)
+                if (hosal_flash_read(HOSAL_FLASH_READ_PAGE, (fota_update_fw_addr + page_idx), (uint8_t *)&read_buf[0]) != HOSAL_STATUS_SUCCESS)
                 {
                     printf("Read flash failed!\n");
                     break;
                 }
-                while (flash_check_busy());
+                while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
 
                 memset(p_verify_buf, 0x00, sizeof(uint8_t) * FLASH_PROGRAM_SIZE_PAGE);
                 if (memcmp(read_buf, p_verify_buf, FLASH_PROGRAM_SIZE_PAGE) != 0)
@@ -480,8 +447,8 @@ void ble_fota_init(void)
         printf("FOTA Result = %d\n", p_fota_info->fota_result);
 
         set_flash_erase((uint32_t)p_fota_info->fotabank_startaddr, p_fota_info->fotabank_datalen);
-        flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
-        while (flash_check_busy());
+        hosal_flash_erase(HOSAL_FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
+        while (hosal_flash_ioctrl(HOSAL_FLASH_BUSY, NULL));
     }
 
     ble_fota_step(OTA_STEP_INIT, &fota_data_param.expectaddr);
@@ -526,24 +493,10 @@ void ble_fota_disconnect(void)
     else if (fota_upgrade_state == OTA_STATE_ERASING)
     {
         uint32_t page_idx = 0, fota_bank_size, fota_update_fw_addr;
-        uint32_t flash_size_value = flash_size();
         uint8_t status;
 
-        if (flash_size_value == FLASH_512K)
-        {
-            fota_bank_size = SIZE_OF_FOTA_BANK_512K;
-            fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_512K;
-        }
-        else if (flash_size_value == FLASH_1024K)
-        {
-            fota_bank_size = SIZE_OF_FOTA_BANK_1MB;
-            fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB;
-        }
-        else
-        {
-            fota_bank_size = SIZE_OF_FOTA_BANK_2MB;
-            fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
-        }
+        fota_bank_size = SIZE_OF_FOTA_BANK;
+        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS;
 
         fota_flash_erase(FOTA_UPDATE_BANK_INFO_ADDRESS);
         for (page_idx = 0 ; page_idx < fota_bank_size ; page_idx += SIZE_OF_FLASH_SECTOR_ERASE)
@@ -551,11 +504,11 @@ void ble_fota_disconnect(void)
             status = fota_flash_erase(fota_update_fw_addr + page_idx);
             if (status != STATUS_SUCCESS)
             {
+                printf("flash erase fail %d\n", status);
                 fota_program((uint32_t)(&p_fota_info->status), FOTABANK_STATUS_FLASH_ERASE_FAIL, 4);
                 break;
             }
         }
-        printf("flash erase status %d, restart ota process\n", status);
         ble_fota_step(OTA_STEP_RESET, &fota_data_param.expectaddr);
         ble_fota_init();
         fota_upgrade_state = OTA_STATE_IDLE;
@@ -585,26 +538,13 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
 {
     fota_cmd_param_t *p_fota_cmd = (fota_cmd_param_t *)p_data;
     uint8_t ind_len = sizeof(fota_errcode_t); /*first byte of indication always contains error code*/
+    ble_info_link0_t *p_profile_info;
     ble_gatt_data_param_t param;
     uint32_t fota_bank_size, fota_update_fw_addr;
-    uint32_t flash_size_value = flash_size();
     fota_idc_param_t fota_idc;
 
-    if (flash_size_value == FLASH_512K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_512K;
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_512K;
-    }
-    else if (flash_size_value == FLASH_1024K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_1MB;
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_1MB;
-    }
-    else
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_2MB;
-        fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS_2MB;
-    }
+    fota_bank_size = SIZE_OF_FOTA_BANK;
+    fota_update_fw_addr = FOTA_UPDATE_BUFFER_FW_ADDRESS;
 
     switch (p_fota_cmd->cmd_id)
     {
@@ -696,7 +636,7 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
                 fota_program((uint32_t)(&p_fota_info->fota_image_info), p_fota_cmd->cmd_param.start_cmd.fw_info, sizeof(p_fota_info->fota_image_info));
             }
 
-            flush_cache();
+            hosal_flash_ioctrl(HOSAL_FLASH_CACHE, NULL);
         }
         printf("fota start %d, ExpectAddr: 0x%08x interval %d\n", fota_idc.err_code, fota_data_param.expectaddr, fota_data_param.notify_interval);
 
@@ -716,7 +656,7 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
         fota_idc.err_code = OTA_ERR_CODE_NO_ERR;
         fota_upgrade_state = OTA_STATE_ERASING;
         ble_fota_timerstart(1, OTA_TIMER_OTA_ERASING);
-        printf("fota erase, disconnect to clean legacy FW\r\n");
+        printf("fota erase, disconnect to clean legacy FW\n");
     }
     break;
 
@@ -739,7 +679,7 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
         else
         {
             fota_upgrade_state = OTA_STATE_COMPLETE;
-            //flush_cache();
+
             chk_sum = ble_fota_crc32checksum((uint32_t)fota_update_fw_addr, p_fota_info->fotabank_datalen);
             printf("ChkSum 0x%08x 0x%08x\n", chk_sum,  p_fota_info->fotabank_crc);
             if (fota_data_param.currlen != p_fota_info->fotabank_datalen) /*Check if receiving FW length matched FOTA start command*/
@@ -773,11 +713,11 @@ void ble_fota_cmd(uint8_t host_id, uint8_t length, uint8_t *p_data)
         break;
     }
 
-    ble_info_link0_t *p_profile_info;
     p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-    param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
+
     // set parameters
     param.host_id = host_id;
+    param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_command;
     param.length = ind_len;
     param.p_data = (uint8_t *)&fota_idc;
 
@@ -803,21 +743,10 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
     ble_err_t status;
     uint8_t notify_len = sizeof(fota_notify_t);
     uint32_t fota_bank_size;
-    uint32_t flash_size_value = flash_size();
     fota_notify_param_t fota_notify;
 
-    if (flash_size_value == FLASH_512K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_512K;
-    }
-    else if (flash_size_value == FLASH_1024K)
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_1MB;
-    }
-    else
-    {
-        fota_bank_size = SIZE_OF_FOTA_BANK_2MB;
-    }
+
+    fota_bank_size = SIZE_OF_FOTA_BANK;
 
     /* FOTA data format.
     _____________________________________
@@ -864,12 +793,11 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
     if (fota_notify.notify_code != OTA_DATA_NOTIFY_NONE)/*Check if notification needs to send*/
     {
         ble_gatt_data_param_t param;
-        ble_info_link0_t *p_profile_info;
-        p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-        param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
+        ble_info_link0_t *p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
 
         // set parameters
         param.host_id = host_id;
+        param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
         param.length = notify_len;
         param.p_data = (uint8_t *)&fota_notify;
 
@@ -891,9 +819,7 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
         if (fota_data_param.expectaddr >= (fota_data_param.notify_interval + fota_data_param.last_notify_addr))
         {
             ble_gatt_data_param_t param;
-            ble_info_link0_t *p_profile_info;
-            p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-            param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
+            ble_info_link0_t *p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
 
             fota_data_param.last_notify_addr = fota_data_param.expectaddr;
 
@@ -903,6 +829,7 @@ void ble_fota_data(uint8_t host_id, uint8_t length, uint8_t *p_data)
 
             // set parameters
             param.host_id = host_id;
+            param.handle_num = p_profile_info->svcs_info_fotas.server_info.handles.hdl_data;
             param.length = notify_len;
             param.p_data = (uint8_t *)&fota_notify;
 

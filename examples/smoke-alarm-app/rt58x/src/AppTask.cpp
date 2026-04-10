@@ -29,12 +29,12 @@
 #include <app-common/zap-generated/callback.h>
 #include <app-common/zap-generated/cluster-objects.h>
 #include <app-common/zap-generated/ids/Commands.h>
-//#include <app-common/zap-generated/enums.h>
 
-#include <app-common/zap-generated/attribute-type.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/clusters/smoke-co-alarm-server/smoke-co-alarm-server.h>
+#include <app/clusters/smoke-co-alarm-server/SmokeCOTestEventTriggerHandler.h>
 #include <app/clusters/identify-server/identify-server.h>
+#include <app/TestEventTriggerDelegate.h>
 #include <app/server/OnboardingCodesUtil.h>
 #include <app/server/Server.h>
 #include <app/server/Dnssd.h>
@@ -57,7 +57,6 @@
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
-#include <lib/core/CHIPError.h>
 #include <lib/core/CHIPError.h>
 
 #define APP_ENABLE_COMMISSIONING_TIMING 1
@@ -112,11 +111,10 @@ static StaticTask_t appTaskStruct;
 
 // NOTE! This key is for test/certification only and should not be available in production devices!
 // If CONFIG_CHIP_FACTORY_DATA is enabled, this value is read from the factory data.
-static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLength] 
+static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLength]
                 = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
                     0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
-Clusters::Identify::EffectIdentifierEnum sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
 #if APP_ENABLE_COMMISSIONING_TIMING
 static chip::System::Clock::Timestamp sCommissioningStartTimestamp;
 static bool sCommissioningStartValid = false;
@@ -134,75 +132,8 @@ static bool sBootToServerReadyTimingValid = false;
 static bool sOperationalResumeIndicatorActive = false;
 #endif
 static DeviceInfoProviderImpl gExampleDeviceInfoProvider;
-/**********************************************************
- * Identify Callbacks
- *********************************************************/
-
-namespace {
-void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
-{
-    ChipLogProgress(Zcl, "Trigger Identify Complete");
-    sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
-}
 } // namespace
 
-void IdentifyToggleOnOff(bool onoff)
-{
-    //turn on/off led indicator
-    if(onoff)
-    {
-        hosal_gpio_pin_clear(20);
-    }
-    else
-    {
-        hosal_gpio_pin_set(20);
-    }
-}
-void OnTriggerIdentifyEffect(Identify * identify)
-{
-    sIdentifyEffect = identify->mCurrentEffectIdentifier;
-
-    if (identify->mCurrentEffectIdentifier == Clusters::Identify::EffectIdentifierEnum::kChannelChange)
-    {
-        ChipLogProgress(Zcl, "IDENTIFY_EFFECT_IDENTIFIER_CHANNEL_CHANGE - Not supported, use effect varriant %d",
-                        to_underlying(identify->mEffectVariant));
-        sIdentifyEffect = static_cast<Clusters::Identify::EffectIdentifierEnum>(identify->mEffectVariant);
-    }
-
-    switch (sIdentifyEffect)
-    {
-    case Clusters::Identify::EffectIdentifierEnum::kBlink:
-    case Clusters::Identify::EffectIdentifierEnum::kBreathe:
-    case Clusters::Identify::EffectIdentifierEnum::kOkay:
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(5), OnTriggerIdentifyEffectCompleted,
-                                                           identify);
-        break;
-    case Clusters::Identify::EffectIdentifierEnum::kFinishEffect:
-        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
-        (void) chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Seconds16(1), OnTriggerIdentifyEffectCompleted,
-                                                           identify);
-        break;
-    case Clusters::Identify::EffectIdentifierEnum::kStopEffect:
-        (void) chip::DeviceLayer::SystemLayer().CancelTimer(OnTriggerIdentifyEffectCompleted, identify);
-        sIdentifyEffect = Clusters::Identify::EffectIdentifierEnum::kStopEffect;
-        break;
-    default:
-        ChipLogProgress(Zcl, "No identifier effect");
-    }
-}
-Identify gIdentify = {
-    chip::EndpointId{ 1 },
-    AppTask::IdentifyStartHandler,
-    AppTask::IdentifyStopHandler,
-    Clusters::Identify::IdentifyTypeEnum::kVisibleIndicator,
-    OnTriggerIdentifyEffect,
-};
-
-} // namespace
-
-constexpr EndpointId kNetworkCommissioningEndpointSecondary = 0xFFFE;
-using namespace chip::TLV;
-using namespace ::chip::DeviceLayer;
 AppTask AppTask::sAppTask;
 
 void LockOpenThreadTask(void)
@@ -215,56 +146,22 @@ void UnlockOpenThreadTask(void)
     chip::DeviceLayer::ThreadStackMgr().UnlockThreadStack();
 }
 
-void AppTask::IdentifyStartHandler(Identify *)
+static void IdentifyToggleOnOff(uint8_t onoff)
 {
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Identify_Start;
-    event.Handler            = IdentifyHandleOp;
-    sAppTask.PostEvent(&event);
-}
-
-void AppTask::IdentifyStopHandler(Identify *)
-{
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Identify_Stop;
-    event.Handler            = IdentifyHandleOp;
-    sAppTask.PostEvent(&event);
-}
-
-void AppTask::PostAppIdentify()
-{
-    AppEvent event;
-    event.Type               = AppEvent::kEventType_Identify_Identify;
-    event.Handler            = IdentifyHandleOp;
-    sAppTask.PostEvent(&event);    
-}
-
-void AppTask::IdentifyHandleOp(AppEvent * aEvent)
-{
-    static uint32_t identifyState = 0;
-    static bool identify_onoff = 0;
-
-    // ChipLogProgress(NotSpecified, "identify effect = %x", aEvent->Type);
-
-    if (aEvent->Type == AppEvent::kEventType_Identify_Start)
+    //turn on/off led indicator
+    if (onoff)
     {
-        identifyState = 1;
-        identify_onoff = 0;
-        ChipLogProgress(NotSpecified, "Identify Start");
+        hosal_gpio_pin_clear(20);
     }
-
-    else if (aEvent->Type == AppEvent::kEventType_Identify_Identify && identifyState)
+    else
     {
-        identify_onoff = !identify_onoff;
-        IdentifyToggleOnOff(identify_onoff);
+        hosal_gpio_pin_set(20);
     }
-
-    else if (aEvent->Type == AppEvent::kEventType_Identify_Stop)
-    {
-        identifyState = 0;
-        IdentifyToggleOnOff(0);
-        ChipLogProgress(NotSpecified, "Identify Stop");
-    }
+}
+static void IdentifyStop(void)
+{
+    ChipLogProgress(Zcl, "Identify Complete");
+    hosal_gpio_pin_set(20);
 }
 void AppTask::InitServer(intptr_t arg)
 {
@@ -282,10 +179,16 @@ void AppTask::InitServer(intptr_t arg)
     nativeParams.openThreadInstancePtr = chip::DeviceLayer::ThreadStackMgrImpl().OTInstance();
     initParams.endpointNativeParams    = static_cast<void *>(&nativeParams);
 
+    static SimpleTestEventTriggerDelegate sTestEventTriggerDelegate{};
+    static SmokeCOTestEventTriggerHandler sSmokeCOTestEventTriggerHandler{};
+    VerifyOrDie(sTestEventTriggerDelegate.Init(ByteSpan(sTestEventTriggerEnableKey)) == CHIP_NO_ERROR);
+    VerifyOrDie(sTestEventTriggerDelegate.AddHandler(&sSmokeCOTestEventTriggerHandler) == CHIP_NO_ERROR);
+    initParams.testEventTriggerDelegate = &sTestEventTriggerDelegate;
+
     err = chip::Server::GetInstance().Init(initParams);
-    if(err != CHIP_NO_ERROR)
+    if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "chip::Server::init faild %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "chip::Server::init failed %s", ErrorStr(err));
     }
 
 #ifdef CHIP_CONFIG_USE_SUBSCRIPTION_CALLBACKS
@@ -301,13 +204,18 @@ void AppTask::InitServer(intptr_t arg)
     }
     else
     {
-        chip::app::DnssdServer::Instance().StartServer();   
+        chip::app::DnssdServer::Instance().StartServer();
         sCommissioned = true;
-		#if APP_ENABLE_COMMISSIONING_TIMING
+        #if APP_ENABLE_COMMISSIONING_TIMING
         sOperationalResumeStartTimestamp = chip::System::SystemClock().GetMonotonicTimestamp();
         sOperationalResumeTimingValid    = true;
         sOperationalResumeIndicatorActive = true;
         #endif
+    }
+    err = IdentifyInit(IdentifyToggleOnOff, IdentifyStop);
+    if (err != CHIP_NO_ERROR)
+    {
+        ChipLogError(NotSpecified, "IdentifyInit failed");
     }
     err = SmokeMgr().Init();
     if (err != CHIP_NO_ERROR)
@@ -341,7 +249,6 @@ void AppTask::UpdateStatusLED()
 
 void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg */)
 {
-    //ChipLogProgress(NotSpecified, "ChipEventHandler: %x", aEvent->Type);
     switch (aEvent->Type)
     {
     case DeviceEventType::kCHIPoBLEAdvertisingChange:
@@ -378,7 +285,7 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
         break;
 #endif
     case DeviceEventType::kServerReady:
-        if(sCommissioned)
+        if (sCommissioned)
         {
             UpdateStatusLED();
 #if APP_ENABLE_COMMISSIONING_TIMING
@@ -453,29 +360,29 @@ void AppTask::ChipEventHandler(const ChipDeviceEvent * aEvent, intptr_t /* arg *
             if (sCommissioningStartValid && sPaseStageInProgress)
             {
                 const auto paseDuration = now - sCommissioningStartTimestamp;
-             ChipLogProgress(
-                     NotSpecified,
-                     "PASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
-                     static_cast<uint64_t>(sCommissioningStartTimestamp.count()), static_cast<uint64_t>(now.count()),
-                                static_cast<uint64_t>(paseDuration.count()));
+                ChipLogProgress(
+                        NotSpecified,
+                        "PASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                        static_cast<uint64_t>(sCommissioningStartTimestamp.count()), static_cast<uint64_t>(now.count()),
+                        static_cast<uint64_t>(paseDuration.count()));
             }
             sPaseEndTimestamp    = now;
             sPaseTimingValid     = true;
             sPaseStageInProgress = false;
             sCaseStartTimestamp  = now;
             sCaseStageInProgress = true;
-             ChipLogProgress(NotSpecified, "CASE stage started (tick=%" PRIu64 " ms)", static_cast<uint64_t>(now.count()));
+            ChipLogProgress(NotSpecified, "CASE stage started (tick=%" PRIu64 " ms)", static_cast<uint64_t>(now.count()));
         }
         else if (sessionType == chip::Transport::SecureSession::Type::kCASE)
         {
             if (sCaseStageInProgress)
             {
                 const auto caseDuration = now - sCaseStartTimestamp;
-             ChipLogProgress(
-                     NotSpecified,
-                     "CASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
-                     static_cast<uint64_t>(sCaseStartTimestamp.count()), static_cast<uint64_t>(now.count()),
-                                static_cast<uint64_t>(caseDuration.count()));
+                ChipLogProgress(
+                        NotSpecified,
+                        "CASE session complete (start=%" PRIu64 " ms, end=%" PRIu64 " ms, duration=%" PRIu64 " ms)",
+                        static_cast<uint64_t>(sCaseStartTimestamp.count()), static_cast<uint64_t>(now.count()),
+                        static_cast<uint64_t>(caseDuration.count()));
             }
             sCaseEndTimestamp   = now;
             sCaseTimingValid    = true;
@@ -495,7 +402,8 @@ CHIP_ERROR AppTask::Init()
     MatterFotaInit();
     CHIP_ERROR err;
     ChipLogProgress(NotSpecified, "Current Software Version: %s", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION_STRING);
-    
+    MatterNetworkInit();
+
     err = ThreadStackMgr().InitThreadStack();
     if (err != CHIP_NO_ERROR)
     {
@@ -515,12 +423,12 @@ CHIP_ERROR AppTask::Init()
     err = ThreadStackMgr().StartThreadTask();
     if (err != CHIP_NO_ERROR)
     {
-        ChipLogError(NotSpecified, "ThreadStackMgr().InitThreadStack() failed");
+        ChipLogError(NotSpecified, "ThreadStackMgr().StartThreadTask() failed");
     }
 
     if (PlatformMgr().StartEventLoopTask() != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
+        ChipLogError(NotSpecified, "Error during PlatformMgr().StartEventLoopTask();");
     }
     PlatformMgr().ScheduleWork(InitServer, 0);
     PlatformMgr().AddEventHandler(ChipEventHandler, 0);
@@ -548,7 +456,7 @@ CHIP_ERROR AppTask::StartAppTask()
         hosal_gpio_int_enable(i);
     }
 
-    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent), 
+    sAppEventQueue = xQueueCreateStatic(APP_EVENT_QUEUE_SIZE, sizeof(AppEvent),
                                     sAppEventQueueBuffer, &sAppEventQueueStruct);
     if (sAppEventQueue == nullptr)
     {
@@ -557,7 +465,7 @@ CHIP_ERROR AppTask::StartAppTask()
     }
 
     // Start App task.
-    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME, 
+    sAppTaskHandle = xTaskCreateStatic(AppTaskMain, APP_TASK_NAME,
                                     MATTER_ARRAY_SIZE(appStack), nullptr, 1, appStack, &appTaskStruct);
     if (sAppTaskHandle == nullptr)
     {
@@ -568,7 +476,7 @@ CHIP_ERROR AppTask::StartAppTask()
     ReturnErrorOnFailure(mFactoryDataProvider.Init());
     SetDeviceInstanceInfoProvider(&mFactoryDataProvider);
     SetCommissionableDataProvider(&mFactoryDataProvider);
-    SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);    
+    SetDeviceAttestationCredentialsProvider(&mFactoryDataProvider);
 #else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
@@ -598,7 +506,6 @@ void AppTask::StartTimer(uint32_t aTimeoutInMs)
 {
     CHIP_ERROR err;
 
-    //chip::DeviceLayer::SystemLayer().CancelTimer(TimerEventHandler, this);
     PlatformMgr().LockChipStack();
     err = chip::DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(aTimeoutInMs), TimerEventHandler, this);
     PlatformMgr().UnlockChipStack();
@@ -618,6 +525,7 @@ void AppTask::PostEvent(const AppEvent * aEvent)
     {
         if (!xQueueSend(sAppEventQueue, aEvent, 1))
         {
+            ChipLogError(NotSpecified, "Failed to post event to app event queue");
         }
     }
 }
@@ -643,14 +551,15 @@ void AppTask::FunctionTimerEventHandler(AppEvent * aEvent)
 
     // If we reached here, the button was held past FACTORY_RESET_TRIGGER_TIMEOUT,
     // initiate factory reset
-    else if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
+    if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
     {
         // Actually trigger Factory Reset
         sAppTask.mFunction = kFunction_NoneSelected;
-        vTaskSuspendAll();
-        efd_env_set_default();
-        sys_software_reset();
-        vTaskSuspendAll();
+        sAppTask.mFunctionTimerActive = false;
+        ChipLogProgress(NotSpecified, "Performing Factory Reset");
+        sCommissioned = false;
+        UpdateStatusLED();
+        chip::DeviceLayer::PlatformMgr().ScheduleWork(DoFactoryReset, 0);
     }
 }
 
@@ -665,9 +574,9 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             {
                 ChipLogProgress(NotSpecified, "[BTN] Hold to select function:");
                 ChipLogProgress(NotSpecified, "[BTN] - Factory Reset (>6s)");
-    
+
                 sAppTask.StartTimer(FACTORY_RESET_TRIGGER_TIMEOUT);
-    
+
                 sAppTask.mFunction = kFunction_FactoryReset;
             }
         }
@@ -676,14 +585,15 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
             if (sAppTask.mFunctionTimerActive && sAppTask.mFunction == kFunction_FactoryReset)
             {
                 sAppTask.CancelTimer();
-    
+
                 // Change the function to none selected since factory reset has been
                 // canceled.
                 sAppTask.mFunction = kFunction_NoneSelected;
-    
+
                 ChipLogProgress(NotSpecified, "[BTN] Factory Reset has been Canceled");
             }
         }
+        break;
 
       case (AppEvent::AppActionTypes::kActionTypes_Switch_1):
         if (aEvent->ButtonEvent.Action == true)
@@ -703,9 +613,9 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
                 chip::DeviceLayer::PlatformMgr().UnlockChipStack();
                 if (!success)
                 {
-                    ChipLogProgress(Zcl,"Manual self-test failed");
+                    ChipLogProgress(Zcl, "Manual self-test failed");
                 }
-           
+
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }
@@ -724,7 +634,7 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_2)
             {
-                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kWarning);
+                SmokeMgr().ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum::kWarning);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }
@@ -743,23 +653,23 @@ void AppTask::FunctionHandler(AppEvent * aEvent)
         {
             if (sAppTask.mFunctionSwitchActive && sAppTask.mFunction == kFunction_Switch_3)
             {
-                SmokeMgr().ToggleSmokeState(AlarmStateEnum::kNormal);
+                SmokeMgr().ToggleSmokeState(chip::app::Clusters::SmokeCoAlarm::AlarmStateEnum::kNormal);
                 sAppTask.mFunction = kFunction_NoneSelected;
                 sAppTask.mFunctionSwitchActive = false;
             }
         }
         break;
       default:
-         break;
+        break;
     }
 }
 
 
-void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param) 
+void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
 {
     uint32_t pin_status;
     hosal_gpio_pin_get(pin, &pin_status);
-    ChipLogProgress(NotSpecified, "ButtonEventHandler pin %d %d", pin, pin_status);
+    ChipLogProgress(NotSpecified, "ButtonEventHandler pin %ld %ld", pin, pin_status);
     switch (pin)
     {
     case (0):
@@ -772,7 +682,7 @@ void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
             button_event.Handler = FunctionHandler;
             xQueueSendFromISR(sAppEventQueue, &button_event, NULL);
         }
-        break;    
+        break;
     case (1):
         {
             AppEvent button_event              = {};
@@ -810,18 +720,17 @@ void AppTask::ButtonEventHandler(uint32_t pin, void* isr_param)
 void AppTask::AppTaskMain(void * pvParameter)
 {
     AppEvent event;
-    //QueueHandle_t sAppEventQueue = *(static_cast<QueueHandle_t *>(pvParameter));
 
     CHIP_ERROR err = sAppTask.Init();
     if (err != CHIP_NO_ERROR)
     {
-        return ;
+        return;
     }
 
     while (true)
-    {       
+    {
         BaseType_t eventReceived = xQueueReceive(sAppEventQueue, &event, portMAX_DELAY);
-       
+
         while (eventReceived == pdTRUE)
         {
             sAppTask.DispatchEvent(&event);

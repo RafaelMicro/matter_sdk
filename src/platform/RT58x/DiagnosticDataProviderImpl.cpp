@@ -84,6 +84,41 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetRebootCount(uint16_t & rebootCount)
     return err;
 }
 
+CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** netifpp)
+{
+    NetworkInterface * ifp = new NetworkInterface();
+
+    const char * threadNetworkName = otThreadGetNetworkName(ThreadStackMgrImpl().OTInstance());
+    ifp->name                      = Span<const char>(threadNetworkName, strlen(threadNetworkName));
+    ifp->type                      = InterfaceTypeEnum::kThread;
+    ifp->isOperational             = ThreadStackMgrImpl().IsThreadAttached();
+    ifp->offPremiseServicesReachableIPv4.SetNull();
+    ifp->offPremiseServicesReachableIPv6.SetNull();
+
+    ThreadStackMgrImpl().GetPrimary802154MACAddress(ifp->MacAddress);
+    ifp->hardwareAddress = ByteSpan(ifp->MacAddress, kMaxHardwareAddrSize);
+
+    // The Thread implementation has only 1 interface and is IPv6-only
+    Inet::InterfaceAddressIterator interfaceAddressIterator;
+    uint8_t ipv6AddressesCount = 0;
+    while (interfaceAddressIterator.HasCurrent() && ipv6AddressesCount < kMaxIPv6AddrCount)
+    {
+        Inet::IPAddress ipv6Address;
+        if (interfaceAddressIterator.GetAddress(ipv6Address) == CHIP_NO_ERROR)
+        {
+            memcpy(ifp->Ipv6AddressesBuffer[ipv6AddressesCount], ipv6Address.Addr, kMaxIPv6AddrSize);
+            ifp->Ipv6AddressSpans[ipv6AddressesCount] = ByteSpan(ifp->Ipv6AddressesBuffer[ipv6AddressesCount]);
+            ipv6AddressesCount++;
+        }
+        interfaceAddressIterator.Next();
+    }
+
+    ifp->IPv6Addresses = app::DataModel::List<ByteSpan>(ifp->Ipv6AddressSpans, ipv6AddressesCount);
+
+    *netifpp = ifp;
+
+    return CHIP_NO_ERROR;
+}
 CHIP_ERROR DiagnosticDataProviderImpl::GetBootReason(BootReasonType & bootReason)
 {
     uint32_t reason = 1;

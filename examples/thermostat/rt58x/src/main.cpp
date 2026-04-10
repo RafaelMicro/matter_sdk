@@ -20,14 +20,13 @@
 #include <AppTask.h>
 
 #include "AppConfig.h"
-#include "init_rt58x_platform.h"
+#include "RT58xConfig.h"
 #include "init_device_environment.h"
-#include <DeviceInfoProviderImpl.h>
+#include "init_rt58x_platform.h"
 
+#include <DeviceInfoProviderImpl.h>
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
-#include "RT58xConfig.h"
-
 #include <lib/core/CHIPError.h>
 
 #if ENABLE_CHIP_SHELL
@@ -40,9 +39,6 @@ using namespace ::chip::DeviceLayer;
 using namespace ::chip::Credentials;
 using namespace ::chip::DeviceLayer::Internal;
 
-// ================================================================================
-// Main Code
-// ================================================================================
 int main(void)
 {
     CHIP_ERROR err;
@@ -54,11 +50,14 @@ int main(void)
     if (err != CHIP_NO_ERROR)
     {
         ChipLogError(NotSpecified, "Platform::MemoryInit() failed");
-        return 0; 
+        return 0;
     }
+
     ChipLogProgress(NotSpecified, "=============================================================================");
-    ChipLogProgress(NotSpecified, "Rafael-Thermostat-example(Matter 1.4) starting Version %d", CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
+    ChipLogProgress(NotSpecified, "Rafael-Thermostat-example(Matter 1.5) starting Version %d",
+                    CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION);
     ChipLogProgress(NotSpecified, "=============================================================================");
+
     err = PlatformMgr().InitChipStack();
     if (err != CHIP_NO_ERROR)
     {
@@ -69,14 +68,15 @@ int main(void)
     err = GetAppTask().StartAppTask();
     if (err != CHIP_NO_ERROR)
     {
-       ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
+        ChipLogError(NotSpecified, "GetAppTask().StartAppTask() failed %s", ErrorStr(err));
     }
 
 #if (ENABLE_CHIP_SHELL && (CONFIG_HOSAL_SOC_IDLE_SLEEP == 0))
     startShellTask();
 #endif
+
     vTaskStartScheduler();
 
-exit:    
+exit:
     return 0;
 }

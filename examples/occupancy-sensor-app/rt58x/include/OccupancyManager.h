@@ -26,25 +26,29 @@
 #include "FreeRTOS.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app-common/zap-generated/attributes/Accessors.h>
+#include <app/clusters/occupancy-sensor-server/occupancy-sensor-server.h>
 
 #include <lib/core/CHIPError.h>
-
-using namespace chip;
 
 class OccupancyManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
+    void AttributeChangeHandler(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value, uint16_t size);
     int16_t GetCurrentTemp();
     CHIP_ERROR ToggleOccupancy();
 
 private:
     friend OccupancyManager & OccuMgr();
 
+    static void HoldTimerEventHandler(TimerHandle_t xTimer);
+
     uint8_t mOccupancy;
     int16_t mOccupancySensorType;
     int16_t mOccupancySensorTypeBitmap;
+
+    TimerHandle_t mHoldTimer;
+    StaticTimer_t mStaticHoldTimerStruct;
 
     static OccupancyManager sOccuMgr;
 };

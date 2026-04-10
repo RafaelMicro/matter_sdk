@@ -30,8 +30,6 @@
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
 #include "LightSwitchMgr.h"
-#include "BindingHandler.h"
-// #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
@@ -67,7 +65,7 @@ public:
         INVALID_ACTION
     };
 
-    enum ButtonEvent: uint8_t
+    enum ButtonEvent : uint8_t
     {
         kButtonReleaseEvent = 0,
         kButtonPushEvent,
@@ -75,11 +73,6 @@ public:
 
     void PostLightActionRequest(int32_t aActor, AppTask::Action_t aAction);
     void PostEvent(const AppEvent * event);
-    void UpdateClusterState();
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
 
 private:
     friend AppTask & GetAppTask(void);
@@ -88,12 +81,10 @@ private:
     static void InitServer(intptr_t arg);
     static void OpenCommissioning(intptr_t arg);
     static void ChipEventHandler(const chip::DeviceLayer::ChipDeviceEvent * event, intptr_t arg);
-    static void ActionInitiated(AppTask::Action_t aActio, int32_t aActor);
-    static void ActionCompleted(AppTask::Action_t aAction);
     void DispatchEvent(AppEvent * event);
     static void SwitchActionEventHandler(AppEvent * aEvent);
 
-    static void ButtonEventHandler(uint32_t pin, void* isr_param) ;
+    static void ButtonEventHandler(uint32_t pin, void * isr_param);
 
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
@@ -106,24 +97,24 @@ private:
 
     enum Function_t
     {
-        kFunction_NoneSelected   = 0,
-        kFunction_FactoryReset   = 1,
-        kFunction_Switch_1       = 2,
+        kFunction_NoneSelected = 0,
+        kFunction_FactoryReset = 1,
+        kFunction_Switch_LongPress = 2,
 
         kFunction_Invalid
     } Function;
 
     Function_t mFunction;
-    bool mFunctionTimerActive;
-    bool mFunctionSwitchActive;
-    bool mSyncClusterToButtonAction;
+    bool       mFunctionTimerActive;
+    bool mIsLongPressTriggered = false;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;
 #endif
 };
+
 inline AppTask & GetAppTask(void)
 {
     return AppTask::sAppTask;

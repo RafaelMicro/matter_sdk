@@ -29,8 +29,6 @@
 
 #include <lib/core/CHIPError.h>
 
-using namespace chip;
-
 class TemperatureManager
 {
 public:

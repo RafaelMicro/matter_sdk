@@ -69,7 +69,7 @@ exit:
 CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
 {
     softwareVer = CHIP_DEVICE_CONFIG_DEVICE_SOFTWARE_VERSION;
-    ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
+    ChipLogProgress(SoftwareUpdate, "Software Version = %ld", softwareVer);
 
     return CHIP_NO_ERROR;
 }
@@ -77,7 +77,7 @@ CHIP_ERROR ConfigurationManagerImpl::GetSoftwareVersion(uint32_t & softwareVer)
 CHIP_ERROR ConfigurationManagerImpl::StoreSoftwareVersion(uint32_t softwareVer)
 {
     RT58xConfig::WriteConfigValue(RT58xConfig::kConfigKey_SoftwareVersion, softwareVer);
-    // ChipLogProgress(SoftwareUpdate, "Software Version = %d", softwareVer);
+    // ChipLogProgress(SoftwareUpdate, "Software Version = %ld", softwareVer);
     return CHIP_NO_ERROR;
 }
 

@@ -22,6 +22,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #include <assert.h>
 #include <string.h>
 
@@ -34,12 +35,11 @@ static void init_pin_mux(void)
     hosal_gpio_cfg_output(21);
     hosal_gpio_pin_set(20);
     hosal_gpio_pin_set(21);
-    return;
 }
 
 void init_device_environment(void)
 {
-    init_pin_mux(); 
+    init_pin_mux();
 }
 
 #ifdef __cplusplus

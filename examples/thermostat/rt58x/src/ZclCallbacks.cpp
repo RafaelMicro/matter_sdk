@@ -39,11 +39,7 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     AttributeId attributeId = attributePath.mAttributeId;
     ChipLogProgress(Zcl, "Cluster callback: " ChipLogFormatMEI, ChipLogValueMEI(clusterId));
 
-    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-    {
-        GetAppTask().PostAppIdentify();
-    }
-    else if (clusterId == Thermostat::Id)
+    if (clusterId == Thermostat::Id)
     {
         TempMgr().AttributeChangeHandler(attributePath.mEndpointId, attributeId, value, size);
     }

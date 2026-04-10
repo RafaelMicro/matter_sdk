@@ -10,8 +10,10 @@
 
 # Build System
 out/
+/examples/virtual-device-app/android/App/buildSrc/build/
 /src/test_driver/nrfconnect/build/
 /src/darwin/Framework/build/
+/src/python_testing/matter_testing_infrastructure/build/
 
 # Pigweed Environment
 .environment*/
@@ -44,8 +46,12 @@ TAGS
 
 # Python bytecodes
 __pycache__
-*.pyc
+*.py[cod]
 *.egg-info
+
+# Python generated modules
+scripts/py_matter_yamltests/build/
+scripts/py_matter_idl/build/
 
 # Doxygen outputs
 docs/html
@@ -84,3 +90,5 @@ examples/*/esp32/dependencies.lock
 # jupyter temporary files
 .ipynb_checkpoints
 
+#Rafael debugger tools
+toolchain/

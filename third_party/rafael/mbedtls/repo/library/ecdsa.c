@@ -692,9 +692,6 @@ muladd:
      */
     if (mbedtls_mpi_cmp_mpi(&R.X, r) != 0)
     {
-        /* for Debug */
-        mbedtls_mpi_copy(s, &R.X);
-        /*************/
         ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
         goto cleanup;
     }
@@ -738,7 +735,6 @@ int mbedtls_ecdsa_verify(mbedtls_ecp_group * grp, const unsigned char * buf, siz
                                        (uint8_t *) Q->Y.p)) != 0)
         ret = MBEDTLS_ERR_ECP_VERIFY_FAILED;
 
-cleanup:
     return (ret);
 
 #endif /* !defined(RT583_HW_CRYPTO_ENGINE_ENABLE) */

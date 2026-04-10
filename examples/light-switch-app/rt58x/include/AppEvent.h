@@ -27,10 +27,10 @@ struct AppEvent
     enum AppEventTypes
     {
         kEventType_Button = 0,
-        kEventType_Button_ON,
-        kEventType_Button_OFF,
-        kEventType_Button_Func_Pressed,
-        kEventType_Button_Func_Released,
+        kEventType_Button_Func_InitialPressed,
+        kEventType_Button_Func_ShortReleased,
+        kEventType_Button_Func_LongPressed,
+        kEventType_Button_Func_LongReleased,
         kEventType_Timer,
         kEventType_Light,
         kEventType_Install,
@@ -53,7 +53,6 @@ struct AppEvent
         {
             uint8_t Action;
             uint8_t ButtonIdx;
-
         } ButtonEvent;
         struct
         {

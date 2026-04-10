@@ -245,8 +245,8 @@ enum ThreeLevelAutoEnum : enum8 {
 }
 
 enum WebRTCEndReasonEnum : enum8 {
-  kIceFailed = 0;
-  kIceTimeout = 1;
+  kICEFailed = 0;
+  kICETimeout = 1;
   kUserHangup = 2;
   kUserBusy = 3;
   kReplaced = 4;
@@ -256,7 +256,8 @@ enum WebRTCEndReasonEnum : enum8 {
   kOutOfResources = 8;
   kMediaTimeout = 9;
   kLowPower = 10;
-  kUnknownReason = 11;
+  kPrivacyMode = 11;
+  kUnknownReason = 12;
 }
 
 bitmap TestGlobalBitmap : bitmap32 {
@@ -323,10 +324,24 @@ struct PowerThresholdStruct {
   nullable PowerThresholdSourceEnum powerThresholdSource = 2;
 }
 
+struct SemanticTagStruct {
+  nullable vendor_id mfgCode = 0;
+  enum8 namespaceID = 1;
+  enum8 tag = 2;
+  optional nullable char_string<64> label = 3;
+}
+
 struct TestGlobalStruct {
   char_string<128> name = 0;
   nullable TestGlobalBitmap myBitmap = 1;
   optional nullable TestGlobalEnum myEnum = 2;
+}
+
+struct ViewportStruct {
+  int16u x1 = 0;
+  int16u y1 = 1;
+  int16u x2 = 2;
+  int16u y2 = 3;
 }
 
 fabric_scoped struct WebRTCSessionStruct {
@@ -336,253 +351,57 @@ fabric_scoped struct WebRTCSessionStruct {
   StreamUsageEnum streamUsage = 3;
   nullable int16u videoStreamID = 4;
   nullable int16u audioStreamID = 5;
-  optional boolean metadataEnabled = 6;
+  boolean metadataEnabled = 6;
   fabric_idx fabricIndex = 254;
 }
 
 /** Attributes and commands for putting a device into Identification mode (e.g. flashing a light). */
 cluster Identify = 3 {
-  revision 4;
-
-  enum EffectIdentifierEnum : enum8 {
-    kBlink = 0;
-    kBreathe = 1;
-    kOkay = 2;
-    kChannelChange = 11;
-    kFinishEffect = 254;
-    kStopEffect = 255;
-  }
-
-  enum EffectVariantEnum : enum8 {
-    kDefault = 0;
-  }
-
-  enum IdentifyTypeEnum : enum8 {
-    kNone = 0;
-    kLightOutput = 1;
-    kVisibleIndicator = 2;
-    kAudibleBeep = 3;
-    kDisplay = 4;
-    kActuator = 5;
-  }
-
-  attribute int16u identifyTime = 0;
-  readonly attribute IdentifyTypeEnum identifyType = 1;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  request struct IdentifyRequest {
-    int16u identifyTime = 0;
-  }
-
-  request struct TriggerEffectRequest {
-    EffectIdentifierEnum effectIdentifier = 0;
-    EffectVariantEnum effectVariant = 1;
-  }
-
-  /** Command description for Identify */
-  command access(invoke: manage) Identify(IdentifyRequest): DefaultSuccess = 0;
-  /** Command description for TriggerEffect */
-  command access(invoke: manage) TriggerEffect(TriggerEffectRequest): DefaultSuccess = 64;
-}
-
-/** Attributes and commands for putting a device into Identification mode (e.g. flashing a light). */
-cluster Identify = 3 {
-  revision 4;
-
-  enum EffectIdentifierEnum : enum8 {
-    kBlink = 0;
-    kBreathe = 1;
-    kOkay = 2;
-    kChannelChange = 11;
-    kFinishEffect = 254;
-    kStopEffect = 255;
-  }
-
-  enum EffectVariantEnum : enum8 {
-    kDefault = 0;
-  }
-
-  enum IdentifyTypeEnum : enum8 {
-    kNone = 0;
-    kLightOutput = 1;
-    kVisibleIndicator = 2;
-    kAudibleBeep = 3;
-    kDisplay = 4;
-    kActuator = 5;
-  }
-
-  attribute int16u identifyTime = 0;
-  readonly attribute IdentifyTypeEnum identifyType = 1;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  request struct IdentifyRequest {
-    int16u identifyTime = 0;
-  }
-
-  request struct TriggerEffectRequest {
-    EffectIdentifierEnum effectIdentifier = 0;
-    EffectVariantEnum effectVariant = 1;
-  }
-
-  /** Command description for Identify */
-  command access(invoke: manage) Identify(IdentifyRequest): DefaultSuccess = 0;
-  /** Command description for TriggerEffect */
-  command access(invoke: manage) TriggerEffect(TriggerEffectRequest): DefaultSuccess = 64;
-}
-
-/** Attributes and commands for group configuration and manipulation. */
-cluster Groups = 4 {
-  revision 4;
-
-  bitmap Feature : bitmap32 {
-    kGroupNames = 0x1;
-  }
-
-  bitmap NameSupportBitmap : bitmap8 {
-    kGroupNames = 0x80;
-  }
-
-  readonly attribute NameSupportBitmap nameSupport = 0;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  request struct AddGroupRequest {
-    group_id groupID = 0;
-    char_string<16> groupName = 1;
-  }
-
-  response struct AddGroupResponse = 0 {
-    enum8 status = 0;
-    group_id groupID = 1;
-  }
-
-  request struct ViewGroupRequest {
-    group_id groupID = 0;
-  }
-
-  response struct ViewGroupResponse = 1 {
-    enum8 status = 0;
-    group_id groupID = 1;
-    char_string<16> groupName = 2;
-  }
-
-  request struct GetGroupMembershipRequest {
-    group_id groupList[] = 0;
-  }
-
-  response struct GetGroupMembershipResponse = 2 {
-    nullable int8u capacity = 0;
-    group_id groupList[] = 1;
-  }
-
-  request struct RemoveGroupRequest {
-    group_id groupID = 0;
-  }
-
-  response struct RemoveGroupResponse = 3 {
-    enum8 status = 0;
-    group_id groupID = 1;
-  }
-
-  request struct AddGroupIfIdentifyingRequest {
-    group_id groupID = 0;
-    char_string<16> groupName = 1;
-  }
-
-  /** The AddGroup command allows a client to add group membership in a particular group for the server endpoint. */
-  fabric command access(invoke: manage) AddGroup(AddGroupRequest): AddGroupResponse = 0;
-  /** The ViewGroup command allows a client to request that the server responds with a ViewGroupResponse command containing the name string for a particular group. */
-  fabric command ViewGroup(ViewGroupRequest): ViewGroupResponse = 1;
-  /** The GetGroupMembership command allows a client to inquire about the group membership of the server endpoint, in a number of ways. */
-  fabric command GetGroupMembership(GetGroupMembershipRequest): GetGroupMembershipResponse = 2;
-  /** The RemoveGroup command allows a client to request that the server removes the membership for the server endpoint, if any, in a particular group. */
-  fabric command access(invoke: manage) RemoveGroup(RemoveGroupRequest): RemoveGroupResponse = 3;
-  /** The RemoveAllGroups command allows a client to direct the server to remove all group associations for the server endpoint. */
-  fabric command access(invoke: manage) RemoveAllGroups(): DefaultSuccess = 4;
-  /** The AddGroupIfIdentifying command allows a client to add group membership in a particular group for the server endpoint, on condition that the endpoint is identifying itself. */
-  fabric command access(invoke: manage) AddGroupIfIdentifying(AddGroupIfIdentifyingRequest): DefaultSuccess = 5;
-}
-
-/** Attributes and commands for switching devices between 'On' and 'Off' states. */
-cluster OnOff = 6 {
   revision 6;
 
-  enum DelayedAllOffEffectVariantEnum : enum8 {
-    kDelayedOffFastFade = 0;
-    kNoFade = 1;
-    kDelayedOffSlowFade = 2;
-  }
-
-  enum DyingLightEffectVariantEnum : enum8 {
-    kDyingLightFadeOff = 0;
-  }
-
   enum EffectIdentifierEnum : enum8 {
-    kDelayedAllOff = 0;
-    kDyingLight = 1;
+    kBlink = 0;
+    kBreathe = 1;
+    kOkay = 2;
+    kChannelChange = 11;
+    kFinishEffect = 254;
+    kStopEffect = 255;
   }
 
-  enum StartUpOnOffEnum : enum8 {
-    kOff = 0;
-    kOn = 1;
-    kToggle = 2;
+  enum EffectVariantEnum : enum8 {
+    kDefault = 0;
   }
 
-  bitmap Feature : bitmap32 {
-    kLighting = 0x1;
-    kDeadFrontBehavior = 0x2;
-    kOffOnly = 0x4;
+  enum IdentifyTypeEnum : enum8 {
+    kNone = 0;
+    kLightOutput = 1;
+    kVisibleIndicator = 2;
+    kAudibleBeep = 3;
+    kDisplay = 4;
+    kActuator = 5;
   }
 
-  bitmap OnOffControlBitmap : bitmap8 {
-    kAcceptOnlyWhenOn = 0x1;
-  }
-
-  readonly attribute boolean onOff = 0;
-  readonly attribute optional boolean globalSceneControl = 16384;
-  attribute optional int16u onTime = 16385;
-  attribute optional int16u offWaitTime = 16386;
-  attribute access(write: manage) optional nullable StartUpOnOffEnum startUpOnOff = 16387;
+  attribute int16u identifyTime = 0;
+  readonly attribute IdentifyTypeEnum identifyType = 1;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
   readonly attribute bitmap32 featureMap = 65532;
   readonly attribute int16u clusterRevision = 65533;
 
-  request struct OffWithEffectRequest {
+  request struct IdentifyRequest {
+    int16u identifyTime = 0;
+  }
+
+  request struct TriggerEffectRequest {
     EffectIdentifierEnum effectIdentifier = 0;
-    enum8 effectVariant = 1;
+    EffectVariantEnum effectVariant = 1;
   }
 
-  request struct OnWithTimedOffRequest {
-    OnOffControlBitmap onOffControl = 0;
-    int16u onTime = 1;
-    int16u offWaitTime = 2;
-  }
-
-  /** On receipt of this command, a device SHALL enter its ‘Off’ state. This state is device dependent, but it is recommended that it is used for power off or similar functions. On receipt of the Off command, the OnTime attribute SHALL be set to 0. */
-  command Off(): DefaultSuccess = 0;
-  /** On receipt of this command, a device SHALL enter its ‘On’ state. This state is device dependent, but it is recommended that it is used for power on or similar functions. On receipt of the On command, if the value of the OnTime attribute is equal to 0, the device SHALL set the OffWaitTime attribute to 0. */
-  command On(): DefaultSuccess = 1;
-  /** On receipt of this command, if a device is in its ‘Off’ state it SHALL enter its ‘On’ state. Otherwise, if it is in its ‘On’ state it SHALL enter its ‘Off’ state. On receipt of the Toggle command, if the value of the OnOff attribute is equal to FALSE and if the value of the OnTime attribute is equal to 0, the device SHALL set the OffWaitTime attribute to 0. If the value of the OnOff attribute is equal to TRUE, the OnTime attribute SHALL be set to 0. */
-  command Toggle(): DefaultSuccess = 2;
-  /** The OffWithEffect command allows devices to be turned off using enhanced ways of fading. */
-  command OffWithEffect(OffWithEffectRequest): DefaultSuccess = 64;
-  /** The OnWithRecallGlobalScene command allows the recall of the settings when the device was turned off. */
-  command OnWithRecallGlobalScene(): DefaultSuccess = 65;
-  /** The OnWithTimedOff command allows devices to be turned on for a specific duration with a guarded off duration so that SHOULD the device be subsequently switched off, further OnWithTimedOff commands, received during this time, are prevented from turning the devices back on. */
-  command OnWithTimedOff(OnWithTimedOffRequest): DefaultSuccess = 66;
+  /** This command starts or stops the receiving device identifying itself. */
+  command access(invoke: manage) Identify(IdentifyRequest): DefaultSuccess = 0;
+  /** This command allows the support of feedback to the user, such as a certain light effect. */
+  command access(invoke: manage) TriggerEffect(TriggerEffectRequest): DefaultSuccess = 64;
 }
 
 /** The Descriptor Cluster is meant to replace the support from the Zigbee Device Object (ZDO) for describing a node, its endpoints and clusters. */
@@ -598,13 +417,6 @@ cluster Descriptor = 29 {
     int16u revision = 1;
   }
 
-  struct SemanticTagStruct {
-    nullable vendor_id mfgCode = 0;
-    enum8 namespaceID = 1;
-    enum8 tag = 2;
-    optional nullable char_string<64> label = 3;
-  }
-
   readonly attribute DeviceTypeStruct deviceTypeList[] = 0;
   readonly attribute cluster_id serverList[] = 1;
   readonly attribute cluster_id clientList[] = 2;
@@ -618,32 +430,17 @@ cluster Descriptor = 29 {
   readonly attribute int16u clusterRevision = 65533;
 }
 
-/** The Binding Cluster is meant to replace the support from the Zigbee Device Object (ZDO) for supporting the binding table. */
-cluster Binding = 30 {
-  revision 1;
-
-  fabric_scoped struct TargetStruct {
-    optional node_id node = 1;
-    optional group_id group = 2;
-    optional endpoint_no endpoint = 3;
-    optional cluster_id cluster = 4;
-    fabric_idx fabricIndex = 254;
-  }
-
-  attribute access(write: manage) TargetStruct binding[] = 0;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-}
-
 /** The Access Control Cluster exposes a data model view of a
       Node's Access Control List (ACL), which codifies the rules used to manage
       and enforce Access Control for the Node's endpoints and their associated
       cluster instances. */
 cluster AccessControl = 31 {
-  revision 2;
+  revision 3;
+
+  enum AccessControlAuxiliaryTypeEnum : enum8 {
+    kSystem = 0;
+    kGroupcast = 1;
+  }
 
   enum AccessControlEntryAuthModeEnum : enum8 {
     kPASE = 1 [spec_name = "PASE"];
@@ -675,6 +472,7 @@ cluster AccessControl = 31 {
   bitmap Feature : bitmap32 {
     kExtension = 0x1;
     kManagedDevice = 0x2;
+    kAuxiliary = 0x4;
   }
 
   struct AccessRestrictionStruct {
@@ -706,6 +504,7 @@ cluster AccessControl = 31 {
     fabric_sensitive AccessControlEntryAuthModeEnum authMode = 2;
     nullable fabric_sensitive int64u subjects[] = 3;
     nullable fabric_sensitive AccessControlTargetStruct targets[] = 4;
+    optional fabric_sensitive AccessControlAuxiliaryTypeEnum auxiliaryType = 5;
     fabric_idx fabricIndex = 254;
   }
 
@@ -737,6 +536,11 @@ cluster AccessControl = 31 {
     fabric_idx fabricIndex = 254;
   }
 
+  fabric_sensitive info event access(read: administer) AuxiliaryAccessUpdated = 3 {
+    nullable node_id adminNodeID = 0;
+    fabric_idx fabricIndex = 254;
+  }
+
   attribute access(read: administer, write: administer) AccessControlEntryStruct acl[] = 0;
   attribute access(read: administer, write: administer) optional AccessControlExtensionStruct extension[] = 1;
   readonly attribute int16u subjectsPerAccessControlEntry = 2;
@@ -744,6 +548,7 @@ cluster AccessControl = 31 {
   readonly attribute int16u accessControlEntriesPerFabric = 4;
   readonly attribute optional CommissioningAccessRestrictionEntryStruct commissioningARL[] = 5;
   readonly attribute optional AccessRestrictionEntryStruct arl[] = 6;
+  readonly attribute access(read: administer) optional AccessControlEntryStruct auxiliaryACL[] = 7;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
@@ -849,7 +654,7 @@ cluster BasicInformation = 40 {
   readonly attribute optional ProductAppearanceStruct productAppearance = 20;
   readonly attribute int32u specificationVersion = 21;
   readonly attribute int16u maxPathsPerInvoke = 22;
-  readonly attribute int32u configurationVersion = 24;
+  provisional readonly attribute int32u configurationVersion = 24;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
@@ -1008,7 +813,7 @@ cluster OtaSoftwareUpdateRequestor = 42 {
   }
 
   /** Announce the presence of an OTA Provider */
-  command AnnounceOTAProvider(AnnounceOTAProviderRequest): DefaultSuccess = 0;
+  command access(invoke: administer) AnnounceOTAProvider(AnnounceOTAProviderRequest): DefaultSuccess = 0;
 }
 
 /** Nodes should be expected to be deployed to any and all regions of the world. These global regions
@@ -1042,6 +847,12 @@ cluster GeneralCommissioning = 48 {
     kTCMinVersionNotMet = 7;
   }
 
+  enum NetworkRecoveryReasonEnum : enum8 {
+    kUnspecified = 0;
+    kAuth = 1;
+    kVisibility = 2;
+  }
+
   enum RegulatoryLocationTypeEnum : enum8 {
     kIndoor = 0;
     kOutdoor = 1;
@@ -1050,6 +861,7 @@ cluster GeneralCommissioning = 48 {
 
   bitmap Feature : bitmap32 {
     kTermsAndConditions = 0x1;
+    kNetworkRecovery = 0x2;
   }
 
   struct BasicCommissioningInfo {
@@ -1062,11 +874,14 @@ cluster GeneralCommissioning = 48 {
   readonly attribute RegulatoryLocationTypeEnum regulatoryConfig = 2;
   readonly attribute RegulatoryLocationTypeEnum locationCapability = 3;
   readonly attribute boolean supportsConcurrentConnection = 4;
-  provisional readonly attribute access(read: administer) optional int16u TCAcceptedVersion = 5;
-  provisional readonly attribute access(read: administer) optional int16u TCMinRequiredVersion = 6;
-  provisional readonly attribute access(read: administer) optional bitmap16 TCAcknowledgements = 7;
-  provisional readonly attribute access(read: administer) optional boolean TCAcknowledgementsRequired = 8;
-  provisional readonly attribute access(read: administer) optional nullable int32u TCUpdateDeadline = 9;
+  readonly attribute access(read: administer) optional int16u TCAcceptedVersion = 5;
+  readonly attribute access(read: administer) optional int16u TCMinRequiredVersion = 6;
+  readonly attribute access(read: administer) optional bitmap16 TCAcknowledgements = 7;
+  readonly attribute access(read: administer) optional boolean TCAcknowledgementsRequired = 8;
+  readonly attribute access(read: administer) optional nullable int32u TCUpdateDeadline = 9;
+  provisional readonly attribute access(read: manage) optional octet_string<8> recoveryIdentifier = 10;
+  provisional readonly attribute access(read: manage) optional nullable NetworkRecoveryReasonEnum networkRecoveryReason = 11;
+  provisional readonly attribute optional boolean isCommissioningWithoutPower = 12;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
@@ -1108,19 +923,19 @@ cluster GeneralCommissioning = 48 {
     CommissioningErrorEnum errorCode = 0;
   }
 
-  /** Arm the persistent fail-safe timer with an expiry time of now + ExpiryLengthSeconds using device clock */
+  /** This command is used to arm or disarm the fail-safe timer. */
   command access(invoke: administer) ArmFailSafe(ArmFailSafeRequest): ArmFailSafeResponse = 0;
-  /** Set the regulatory configuration to be used during commissioning */
+  /** This command is used to set the regulatory configuration for the device. */
   command access(invoke: administer) SetRegulatoryConfig(SetRegulatoryConfigRequest): SetRegulatoryConfigResponse = 2;
-  /** Signals the Server that the Client has successfully completed all steps of Commissioning/Recofiguration needed during fail-safe period. */
+  /** This command is used to indicate that the commissioning process is complete. */
   fabric command access(invoke: administer) CommissioningComplete(): CommissioningCompleteResponse = 4;
-  /** This command sets the user acknowledgements received in the Enhanced Setup Flow Terms and Conditions into the node. */
+  /** This command is used to set the user acknowledgements received in the Enhanced Setup Flow Terms & Conditions into the node. */
   command access(invoke: administer) SetTCAcknowledgements(SetTCAcknowledgementsRequest): SetTCAcknowledgementsResponse = 6;
 }
 
 /** Functionality to configure, enable, disable network credentials and access on a Matter device. */
 cluster NetworkCommissioning = 49 {
-  revision 1; // NOTE: Default/not specifically set
+  revision 2;
 
   enum NetworkCommissioningStatusEnum : enum8 {
     kSuccess = 0;
@@ -1206,9 +1021,9 @@ cluster NetworkCommissioning = 49 {
   readonly attribute access(read: administer) nullable NetworkCommissioningStatusEnum lastNetworkingStatus = 5;
   readonly attribute access(read: administer) nullable octet_string<32> lastNetworkID = 6;
   readonly attribute access(read: administer) nullable int32s lastConnectErrorValue = 7;
-  provisional readonly attribute optional WiFiBandEnum supportedWiFiBands[] = 8;
-  provisional readonly attribute optional ThreadCapabilitiesBitmap supportedThreadFeatures = 9;
-  provisional readonly attribute optional int16u threadVersion = 10;
+  readonly attribute optional WiFiBandEnum supportedWiFiBands[] = 8;
+  readonly attribute optional ThreadCapabilitiesBitmap supportedThreadFeatures = 9;
+  readonly attribute optional int16u threadVersion = 10;
   readonly attribute command_id generatedCommandList[] = 65528;
   readonly attribute command_id acceptedCommandList[] = 65529;
   readonly attribute attrib_id attributeList[] = 65531;
@@ -1473,42 +1288,6 @@ cluster GeneralDiagnostics = 51 {
   command access(invoke: manage) PayloadTestRequest(PayloadTestRequestRequest): PayloadTestResponse = 3;
 }
 
-/** The Software Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
-cluster SoftwareDiagnostics = 52 {
-  revision 1;
-
-  bitmap Feature : bitmap32 {
-    kWatermarks = 0x1;
-  }
-
-  struct ThreadMetricsStruct {
-    int64u id = 0;
-    optional char_string<8> name = 1;
-    optional int32u stackFreeCurrent = 2;
-    optional int32u stackFreeMinimum = 3;
-    optional int32u stackSize = 4;
-  }
-
-  info event SoftwareFault = 0 {
-    int64u id = 0;
-    optional char_string name = 1;
-    optional long_octet_string faultRecording = 2;
-  }
-
-  readonly attribute optional ThreadMetricsStruct threadMetrics[] = 0;
-  readonly attribute optional int64u currentHeapFree = 1;
-  readonly attribute optional int64u currentHeapUsed = 2;
-  readonly attribute optional int64u currentHeapHighWatermark = 3;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  /** This command is used to reset the high watermarks for heap and stack memory. */
-  command access(invoke: manage) ResetWatermarks(): DefaultSuccess = 0;
-}
-
 /** The Thread Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems */
 cluster ThreadNetworkDiagnostics = 53 {
   revision 3;
@@ -1733,7 +1512,7 @@ cluster Switch = 59 {
 
 /** Commands to trigger a Node to allow a new Administrator to commission it. */
 cluster AdministratorCommissioning = 60 {
-  revision 1; // NOTE: Default/not specifically set
+  revision 1;
 
   enum CommissioningWindowStatusEnum : enum8 {
     kWindowNotOpen = 0;
@@ -1762,7 +1541,7 @@ cluster AdministratorCommissioning = 60 {
 
   request struct OpenCommissioningWindowRequest {
     int16u commissioningTimeout = 0;
-    octet_string PAKEPasscodeVerifier = 1;
+    octet_string<97> PAKEPasscodeVerifier = 1;
     int16u discriminator = 2;
     int32u iterations = 3;
     octet_string<32> salt = 4;
@@ -1772,11 +1551,11 @@ cluster AdministratorCommissioning = 60 {
     int16u commissioningTimeout = 0;
   }
 
-  /** This command is used by a current Administrator to instruct a Node to go into commissioning mode using enhanced commissioning method. */
+  /** This command is used by a current Administrator to instruct a Node to go into commissioning mode. */
   timed command access(invoke: administer) OpenCommissioningWindow(OpenCommissioningWindowRequest): DefaultSuccess = 0;
-  /** This command is used by a current Administrator to instruct a Node to go into commissioning mode using basic commissioning method, if the node supports it. */
+  /** This command MAY be used by a current Administrator to instruct a Node to go into commissioning mode, if the node supports the Basic Commissioning Method. */
   timed command access(invoke: administer) OpenBasicCommissioningWindow(OpenBasicCommissioningWindowRequest): DefaultSuccess = 1;
-  /** This command is used by a current Administrator to instruct a Node to revoke any active Open Commissioning Window or Open Basic Commissioning Window command. */
+  /** This command is used by a current Administrator to instruct a Node to revoke any active OpenCommissioningWindow or OpenBasicCommissioningWindow command. */
   timed command access(invoke: administer) RevokeCommissioning(): DefaultSuccess = 2;
 }
 
@@ -1930,7 +1709,7 @@ cluster OperationalCredentials = 62 {
 
 /** The Group Key Management Cluster is the mechanism by which group keys are managed. */
 cluster GroupKeyManagement = 63 {
-  revision 1; // NOTE: Default/not specifically set
+  revision 2;
 
   enum GroupKeySecurityPolicyEnum : enum8 {
     kTrustFirst = 0;
@@ -2094,339 +1873,12 @@ cluster IcdManagement = 70 {
     int32u promisedActiveDuration = 0;
   }
 
-  /** Register a client to the end device */
+  /** This command allows a client to register itself with the ICD to be notified when the device is available for communication. */
   fabric command access(invoke: manage) RegisterClient(RegisterClientRequest): RegisterClientResponse = 0;
-  /** Unregister a client from an end device */
+  /** This command allows a client to unregister itself with the ICD. */
   fabric command access(invoke: manage) UnregisterClient(UnregisterClientRequest): DefaultSuccess = 2;
-  /** Request the end device to stay in Active Mode for an additional ActiveModeThreshold */
-  command access(invoke: manage) StayActiveRequest(StayActiveRequestRequest): StayActiveResponse = 3;
-}
-
-/** Attributes and commands for controlling the color properties of a color-capable light. */
-cluster ColorControl = 768 {
-  revision 7;
-
-  enum ColorLoopActionEnum : enum8 {
-    kDeactivate = 0;
-    kActivateFromColorLoopStartEnhancedHue = 1;
-    kActivateFromEnhancedCurrentHue = 2;
-  }
-
-  enum ColorLoopDirectionEnum : enum8 {
-    kDecrement = 0;
-    kIncrement = 1;
-  }
-
-  enum ColorModeEnum : enum8 {
-    kCurrentHueAndCurrentSaturation = 0;
-    kCurrentXAndCurrentY = 1;
-    kColorTemperatureMireds = 2;
-  }
-
-  enum DirectionEnum : enum8 {
-    kShortest = 0;
-    kLongest = 1;
-    kUp = 2;
-    kDown = 3;
-  }
-
-  enum DriftCompensationEnum : enum8 {
-    kNone = 0;
-    kOtherOrUnknown = 1;
-    kTemperatureMonitoring = 2;
-    kOpticalLuminanceMonitoringAndFeedback = 3;
-    kOpticalColorMonitoringAndFeedback = 4;
-  }
-
-  enum EnhancedColorModeEnum : enum8 {
-    kCurrentHueAndCurrentSaturation = 0;
-    kCurrentXAndCurrentY = 1;
-    kColorTemperatureMireds = 2;
-    kEnhancedCurrentHueAndCurrentSaturation = 3;
-  }
-
-  enum MoveModeEnum : enum8 {
-    kStop = 0;
-    kUp = 1;
-    kDown = 3;
-  }
-
-  enum StepModeEnum : enum8 {
-    kUp = 1;
-    kDown = 3;
-  }
-
-  bitmap ColorCapabilitiesBitmap : bitmap16 {
-    kHueSaturation = 0x1;
-    kEnhancedHue = 0x2;
-    kColorLoop = 0x4;
-    kXY = 0x8 [spec_name = "XY"];
-    kColorTemperature = 0x10;
-  }
-
-  bitmap Feature : bitmap32 {
-    kHueAndSaturation = 0x1;
-    kEnhancedHue = 0x2;
-    kColorLoop = 0x4;
-    kXY = 0x8 [spec_name = "XY"];
-    kColorTemperature = 0x10;
-  }
-
-  bitmap OptionsBitmap : bitmap8 {
-    kExecuteIfOff = 0x1;
-  }
-
-  bitmap UpdateFlagsBitmap : bitmap8 {
-    kUpdateAction = 0x1;
-    kUpdateDirection = 0x2;
-    kUpdateTime = 0x4;
-    kUpdateStartHue = 0x8;
-  }
-
-  readonly attribute optional int8u currentHue = 0;
-  readonly attribute optional int8u currentSaturation = 1;
-  readonly attribute optional int16u remainingTime = 2;
-  readonly attribute optional int16u currentX = 3;
-  readonly attribute optional int16u currentY = 4;
-  readonly attribute optional DriftCompensationEnum driftCompensation = 5;
-  readonly attribute optional char_string<254> compensationText = 6;
-  readonly attribute optional int16u colorTemperatureMireds = 7;
-  readonly attribute ColorModeEnum colorMode = 8;
-  attribute OptionsBitmap options = 15;
-  readonly attribute nullable int8u numberOfPrimaries = 16;
-  readonly attribute optional int16u primary1X = 17;
-  readonly attribute optional int16u primary1Y = 18;
-  readonly attribute optional nullable int8u primary1Intensity = 19;
-  readonly attribute optional int16u primary2X = 21;
-  readonly attribute optional int16u primary2Y = 22;
-  readonly attribute optional nullable int8u primary2Intensity = 23;
-  readonly attribute optional int16u primary3X = 25;
-  readonly attribute optional int16u primary3Y = 26;
-  readonly attribute optional nullable int8u primary3Intensity = 27;
-  readonly attribute optional int16u primary4X = 32;
-  readonly attribute optional int16u primary4Y = 33;
-  readonly attribute optional nullable int8u primary4Intensity = 34;
-  readonly attribute optional int16u primary5X = 36;
-  readonly attribute optional int16u primary5Y = 37;
-  readonly attribute optional nullable int8u primary5Intensity = 38;
-  readonly attribute optional int16u primary6X = 40;
-  readonly attribute optional int16u primary6Y = 41;
-  readonly attribute optional nullable int8u primary6Intensity = 42;
-  attribute access(write: manage) optional int16u whitePointX = 48;
-  attribute access(write: manage) optional int16u whitePointY = 49;
-  attribute access(write: manage) optional int16u colorPointRX = 50;
-  attribute access(write: manage) optional int16u colorPointRY = 51;
-  attribute access(write: manage) optional nullable int8u colorPointRIntensity = 52;
-  attribute access(write: manage) optional int16u colorPointGX = 54;
-  attribute access(write: manage) optional int16u colorPointGY = 55;
-  attribute access(write: manage) optional nullable int8u colorPointGIntensity = 56;
-  attribute access(write: manage) optional int16u colorPointBX = 58;
-  attribute access(write: manage) optional int16u colorPointBY = 59;
-  attribute access(write: manage) optional nullable int8u colorPointBIntensity = 60;
-  readonly attribute optional int16u enhancedCurrentHue = 16384;
-  readonly attribute EnhancedColorModeEnum enhancedColorMode = 16385;
-  readonly attribute optional int8u colorLoopActive = 16386;
-  readonly attribute optional int8u colorLoopDirection = 16387;
-  readonly attribute optional int16u colorLoopTime = 16388;
-  readonly attribute optional int16u colorLoopStartEnhancedHue = 16389;
-  readonly attribute optional int16u colorLoopStoredEnhancedHue = 16390;
-  readonly attribute ColorCapabilitiesBitmap colorCapabilities = 16394;
-  readonly attribute optional int16u colorTempPhysicalMinMireds = 16395;
-  readonly attribute optional int16u colorTempPhysicalMaxMireds = 16396;
-  readonly attribute optional int16u coupleColorTempToLevelMinMireds = 16397;
-  attribute access(write: manage) optional nullable int16u startUpColorTemperatureMireds = 16400;
-  readonly attribute command_id generatedCommandList[] = 65528;
-  readonly attribute command_id acceptedCommandList[] = 65529;
-  readonly attribute attrib_id attributeList[] = 65531;
-  readonly attribute bitmap32 featureMap = 65532;
-  readonly attribute int16u clusterRevision = 65533;
-
-  request struct MoveToHueRequest {
-    int8u hue = 0;
-    DirectionEnum direction = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveHueRequest {
-    MoveModeEnum moveMode = 0;
-    int8u rate = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct StepHueRequest {
-    StepModeEnum stepMode = 0;
-    int8u stepSize = 1;
-    int8u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveToSaturationRequest {
-    int8u saturation = 0;
-    int16u transitionTime = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct MoveSaturationRequest {
-    MoveModeEnum moveMode = 0;
-    int8u rate = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct StepSaturationRequest {
-    StepModeEnum stepMode = 0;
-    int8u stepSize = 1;
-    int8u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveToHueAndSaturationRequest {
-    int8u hue = 0;
-    int8u saturation = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveToColorRequest {
-    int16u colorX = 0;
-    int16u colorY = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveColorRequest {
-    int16s rateX = 0;
-    int16s rateY = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct StepColorRequest {
-    int16s stepX = 0;
-    int16s stepY = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct MoveToColorTemperatureRequest {
-    int16u colorTemperatureMireds = 0;
-    int16u transitionTime = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct EnhancedMoveToHueRequest {
-    int16u enhancedHue = 0;
-    DirectionEnum direction = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct EnhancedMoveHueRequest {
-    MoveModeEnum moveMode = 0;
-    int16u rate = 1;
-    OptionsBitmap optionsMask = 2;
-    OptionsBitmap optionsOverride = 3;
-  }
-
-  request struct EnhancedStepHueRequest {
-    StepModeEnum stepMode = 0;
-    int16u stepSize = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct EnhancedMoveToHueAndSaturationRequest {
-    int16u enhancedHue = 0;
-    int8u saturation = 1;
-    int16u transitionTime = 2;
-    OptionsBitmap optionsMask = 3;
-    OptionsBitmap optionsOverride = 4;
-  }
-
-  request struct ColorLoopSetRequest {
-    UpdateFlagsBitmap updateFlags = 0;
-    ColorLoopActionEnum action = 1;
-    ColorLoopDirectionEnum direction = 2;
-    int16u time = 3;
-    int16u startHue = 4;
-    OptionsBitmap optionsMask = 5;
-    OptionsBitmap optionsOverride = 6;
-  }
-
-  request struct StopMoveStepRequest {
-    OptionsBitmap optionsMask = 0;
-    OptionsBitmap optionsOverride = 1;
-  }
-
-  request struct MoveColorTemperatureRequest {
-    MoveModeEnum moveMode = 0;
-    int16u rate = 1;
-    int16u colorTemperatureMinimumMireds = 2;
-    int16u colorTemperatureMaximumMireds = 3;
-    OptionsBitmap optionsMask = 4;
-    OptionsBitmap optionsOverride = 5;
-  }
-
-  request struct StepColorTemperatureRequest {
-    StepModeEnum stepMode = 0;
-    int16u stepSize = 1;
-    int16u transitionTime = 2;
-    int16u colorTemperatureMinimumMireds = 3;
-    int16u colorTemperatureMaximumMireds = 4;
-    OptionsBitmap optionsMask = 5;
-    OptionsBitmap optionsOverride = 6;
-  }
-
-  /** Move to specified hue. */
-  command MoveToHue(MoveToHueRequest): DefaultSuccess = 0;
-  /** Move hue up or down at specified rate. */
-  command MoveHue(MoveHueRequest): DefaultSuccess = 1;
-  /** Step hue up or down by specified size at specified rate. */
-  command StepHue(StepHueRequest): DefaultSuccess = 2;
-  /** Move to specified saturation. */
-  command MoveToSaturation(MoveToSaturationRequest): DefaultSuccess = 3;
-  /** Move saturation up or down at specified rate. */
-  command MoveSaturation(MoveSaturationRequest): DefaultSuccess = 4;
-  /** Step saturation up or down by specified size at specified rate. */
-  command StepSaturation(StepSaturationRequest): DefaultSuccess = 5;
-  /** Move to hue and saturation. */
-  command MoveToHueAndSaturation(MoveToHueAndSaturationRequest): DefaultSuccess = 6;
-  /** Move to specified color. */
-  command MoveToColor(MoveToColorRequest): DefaultSuccess = 7;
-  /** Moves the color. */
-  command MoveColor(MoveColorRequest): DefaultSuccess = 8;
-  /** Steps the lighting to a specific color. */
-  command StepColor(StepColorRequest): DefaultSuccess = 9;
-  /** Move to a specific color temperature. */
-  command MoveToColorTemperature(MoveToColorTemperatureRequest): DefaultSuccess = 10;
-  /** Command description for EnhancedMoveToHue */
-  command EnhancedMoveToHue(EnhancedMoveToHueRequest): DefaultSuccess = 64;
-  /** Command description for EnhancedMoveHue */
-  command EnhancedMoveHue(EnhancedMoveHueRequest): DefaultSuccess = 65;
-  /** Command description for EnhancedStepHue */
-  command EnhancedStepHue(EnhancedStepHueRequest): DefaultSuccess = 66;
-  /** Command description for EnhancedMoveToHueAndSaturation */
-  command EnhancedMoveToHueAndSaturation(EnhancedMoveToHueAndSaturationRequest): DefaultSuccess = 67;
-  /** Command description for ColorLoopSet */
-  command ColorLoopSet(ColorLoopSetRequest): DefaultSuccess = 68;
-  /** Command description for StopMoveStep */
-  command StopMoveStep(StopMoveStepRequest): DefaultSuccess = 71;
-  /** Command description for MoveColorTemperature */
-  command MoveColorTemperature(MoveColorTemperatureRequest): DefaultSuccess = 75;
-  /** Command description for StepColorTemperature */
-  command StepColorTemperature(StepColorTemperatureRequest): DefaultSuccess = 76;
+  /** This command allows a client to request that the server stays in active mode for at least a given time duration (in milliseconds) from when this command is received. */
+  command StayActiveRequest(StayActiveRequestRequest): StayActiveResponse = 3;
 }
 
 endpoint 0 {
@@ -2443,17 +1895,9 @@ endpoint 0 {
     callback attribute clusterRevision;
   }
 
-  server cluster Binding {
-    callback attribute binding;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
-  }
-
   server cluster AccessControl {
     emits event AccessControlEntryChanged;
-    emits event AccessControlExtensionChanged;
     callback attribute acl;
-    callback attribute extension;
     callback attribute subjectsPerAccessControlEntry;
     callback attribute targetsPerAccessControlEntry;
     callback attribute accessControlEntriesPerFabric;
@@ -2466,24 +1910,31 @@ endpoint 0 {
     emits event StartUp;
     emits event ShutDown;
     emits event Leave;
+    emits event ReachableChanged;
     callback attribute dataModelRevision;
     callback attribute vendorName;
     callback attribute vendorID;
     callback attribute productName;
     callback attribute productID;
-    persist  attribute nodeLabel;
+    callback attribute nodeLabel;
     callback attribute location;
     callback attribute hardwareVersion;
     callback attribute hardwareVersionString;
     callback attribute softwareVersion;
     callback attribute softwareVersionString;
+    callback attribute manufacturingDate;
+    callback attribute partNumber;
+    callback attribute productURL;
+    callback attribute productLabel;
     callback attribute serialNumber;
+    callback attribute localConfigDisabled;
     callback attribute uniqueID;
     callback attribute capabilityMinima;
     callback attribute specificationVersion;
     callback attribute maxPathsPerInvoke;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 3;
+    callback attribute configurationVersion;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
   }
 
   server cluster OtaSoftwareUpdateRequestor {
@@ -2503,18 +1954,21 @@ endpoint 0 {
   server cluster LocalizationConfiguration {
     ram      attribute activeLocale;
     callback attribute supportedLocales;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
     ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
+    callback attribute clusterRevision;
   }
 
   server cluster GeneralCommissioning {
-    ram      attribute breadcrumb default = 0x0000000000000000;
+    callback attribute breadcrumb;
     callback attribute basicCommissioningInfo;
     callback attribute regulatoryConfig;
     callback attribute locationCapability;
     callback attribute supportsConcurrentConnection;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
 
     handle command ArmFailSafe;
     handle command ArmFailSafeResponse;
@@ -2525,20 +1979,21 @@ endpoint 0 {
   }
 
   server cluster NetworkCommissioning {
-    ram      attribute maxNetworks;
+    callback attribute maxNetworks;
     callback attribute networks;
-    ram      attribute scanMaxTimeSeconds;
-    ram      attribute connectMaxTimeSeconds;
-    ram      attribute interfaceEnabled;
-    ram      attribute lastNetworkingStatus;
-    ram      attribute lastNetworkID;
-    ram      attribute lastConnectErrorValue;
-    ram      attribute featureMap default = 2;
-    ram      attribute clusterRevision default = 1;
+    callback attribute scanMaxTimeSeconds;
+    callback attribute connectMaxTimeSeconds;
+    callback attribute interfaceEnabled;
+    callback attribute lastNetworkingStatus;
+    callback attribute lastNetworkID;
+    callback attribute lastConnectErrorValue;
+    callback attribute supportedThreadFeatures;
+    callback attribute threadVersion;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
 
     handle command ScanNetworks;
     handle command ScanNetworksResponse;
-    handle command AddOrUpdateWiFiNetwork;
     handle command AddOrUpdateThreadNetwork;
     handle command RemoveNetwork;
     handle command NetworkConfigResponse;
@@ -2548,11 +2003,8 @@ endpoint 0 {
   }
 
   server cluster DiagnosticLogs {
-    callback attribute generatedCommandList;
-    callback attribute acceptedCommandList;
-    callback attribute attributeList;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
 
     handle command RetrieveLogsRequest;
     handle command RetrieveLogsResponse;
@@ -2563,11 +2015,6 @@ endpoint 0 {
     callback attribute networkInterfaces;
     callback attribute rebootCount;
     callback attribute upTime;
-    callback attribute totalOperationalHours;
-    callback attribute bootReason;
-    callback attribute activeHardwareFaults;
-    callback attribute activeRadioFaults;
-    callback attribute activeNetworkFaults;
     callback attribute testEventTriggersEnabled default = false;
     callback attribute featureMap;
     callback attribute clusterRevision;
@@ -2577,18 +2024,6 @@ endpoint 0 {
     handle command TimeSnapshotResponse;
   }
 
-  server cluster SoftwareDiagnostics {
-    callback attribute threadMetrics;
-    callback attribute currentHeapFree;
-    callback attribute currentHeapUsed;
-    callback attribute currentHeapHighWatermark;
-    callback attribute generatedCommandList;
-    callback attribute acceptedCommandList;
-    callback attribute attributeList;
-    callback attribute featureMap;
-    callback attribute clusterRevision;
-  }
-
   server cluster ThreadNetworkDiagnostics {
     callback attribute channel;
     callback attribute routingRole;
@@ -2596,6 +2031,7 @@ endpoint 0 {
     callback attribute panId;
     callback attribute extendedPanId;
     callback attribute meshLocalPrefix;
+    callback attribute overrunCount;
     callback attribute neighborTable;
     callback attribute routeTable;
     callback attribute partitionId;
@@ -2603,22 +2039,72 @@ endpoint 0 {
     callback attribute dataVersion;
     callback attribute stableDataVersion;
     callback attribute leaderRouterId;
+    callback attribute detachedRoleCount;
+    callback attribute childRoleCount;
+    callback attribute routerRoleCount;
+    callback attribute leaderRoleCount;
+    callback attribute attachAttemptCount;
+    callback attribute partitionIdChangeCount;
+    callback attribute betterPartitionAttachAttemptCount;
+    callback attribute parentChangeCount;
+    callback attribute txTotalCount;
+    callback attribute txUnicastCount;
+    callback attribute txBroadcastCount;
+    callback attribute txAckRequestedCount;
+    callback attribute txAckedCount;
+    callback attribute txNoAckRequestedCount;
+    callback attribute txDataCount;
+    callback attribute txDataPollCount;
+    callback attribute txBeaconCount;
+    callback attribute txBeaconRequestCount;
+    callback attribute txOtherCount;
+    callback attribute txRetryCount;
+    callback attribute txDirectMaxRetryExpiryCount;
+    callback attribute txIndirectMaxRetryExpiryCount;
+    callback attribute txErrCcaCount;
+    callback attribute txErrAbortCount;
+    callback attribute txErrBusyChannelCount;
+    callback attribute rxTotalCount;
+    callback attribute rxUnicastCount;
+    callback attribute rxBroadcastCount;
+    callback attribute rxDataCount;
+    callback attribute rxDataPollCount;
+    callback attribute rxBeaconCount;
+    callback attribute rxBeaconRequestCount;
+    callback attribute rxOtherCount;
+    callback attribute rxAddressFilteredCount;
+    callback attribute rxDestAddrFilteredCount;
+    callback attribute rxDuplicatedCount;
+    callback attribute rxErrNoFrameCount;
+    callback attribute rxErrUnknownNeighborCount;
+    callback attribute rxErrInvalidSrcAddrCount;
+    callback attribute rxErrSecCount;
+    callback attribute rxErrFcsCount;
+    callback attribute rxErrOtherCount;
+    callback attribute activeTimestamp;
+    callback attribute pendingTimestamp;
+    callback attribute delay;
     callback attribute securityPolicy;
     callback attribute channelPage0Mask;
     callback attribute operationalDatasetComponents;
     callback attribute activeNetworkFaultsList;
+    callback attribute extAddress;
+    callback attribute rloc16;
     ram      attribute featureMap default = 0x000F;
-    ram      attribute clusterRevision default = 2;
+    callback attribute clusterRevision;
+
+    handle command ResetCounts;
   }
 
   server cluster AdministratorCommissioning {
     callback attribute windowStatus;
     callback attribute adminFabricIndex;
     callback attribute adminVendorId;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
+    ram      attribute featureMap default = 1;
+    callback attribute clusterRevision;
 
     handle command OpenCommissioningWindow;
+    handle command OpenBasicCommissioningWindow;
     handle command RevokeCommissioning;
   }
 
@@ -2629,8 +2115,8 @@ endpoint 0 {
     callback attribute commissionedFabrics;
     callback attribute trustedRootCertificates;
     callback attribute currentFabricIndex;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
 
     handle command AttestationRequest;
     handle command AttestationResponse;
@@ -2644,6 +2130,9 @@ endpoint 0 {
     handle command UpdateFabricLabel;
     handle command RemoveFabric;
     handle command AddTrustedRootCertificate;
+    handle command SetVIDVerificationStatement;
+    handle command SignVIDVerificationRequest;
+    handle command SignVIDVerificationResponse;
   }
 
   server cluster GroupKeyManagement {
@@ -2666,73 +2155,25 @@ endpoint 0 {
     callback attribute idleModeDuration;
     callback attribute activeModeDuration;
     callback attribute activeModeThreshold;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
     callback attribute featureMap;
     ram      attribute clusterRevision default = 2;
   }
 }
 endpoint 1 {
-  device type ma_onofflightswitch = 259, version 1;
-
-  binding cluster Identify;
-  binding cluster OnOff;
-  binding cluster ColorControl;
-
-  server cluster Identify {
-    ram      attribute identifyTime default = 0x0000;
-    ram      attribute identifyType default = 0x0;
-    callback attribute attributeList;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 4;
-
-    handle command Identify;
-    handle command TriggerEffect;
-  }
-
-  server cluster Groups {
-    ram      attribute nameSupport;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 4;
-
-    handle command AddGroup;
-    handle command AddGroupResponse;
-    handle command ViewGroup;
-    handle command ViewGroupResponse;
-    handle command GetGroupMembership;
-    handle command GetGroupMembershipResponse;
-    handle command RemoveGroup;
-    handle command RemoveGroupResponse;
-    handle command RemoveAllGroups;
-    handle command AddGroupIfIdentifying;
-  }
-
-  server cluster Descriptor {
-    callback attribute deviceTypeList;
-    callback attribute serverList;
-    callback attribute clientList;
-    callback attribute partsList;
-    callback attribute attributeList;
-    callback attribute featureMap;
-    callback attribute clusterRevision;
-  }
-
-  server cluster Binding {
-    callback attribute binding;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 1;
-  }
-}
-endpoint 2 {
   device type ma_genericswitch = 15, version 1;
 
 
   server cluster Identify {
-    ram      attribute identifyTime default = 0x0;
-    ram      attribute identifyType default = 0x0;
+    callback attribute identifyTime;
+    callback attribute identifyType;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
-    ram      attribute featureMap default = 0;
-    ram      attribute clusterRevision default = 2;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
 
     handle command Identify;
     handle command TriggerEffect;
@@ -2752,12 +2193,15 @@ endpoint 2 {
 
   server cluster Switch {
     emits event InitialPress;
+    emits event LongPress;
+    emits event ShortRelease;
+    emits event LongRelease;
     ram      attribute numberOfPositions default = 2;
     ram      attribute currentPosition default = 0;
     callback attribute generatedCommandList;
     callback attribute acceptedCommandList;
     callback attribute attributeList;
-    ram      attribute featureMap default = 2;
+    ram      attribute featureMap default = 14;
     ram      attribute clusterRevision default = 1;
   }
 }

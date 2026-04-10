@@ -36,15 +36,16 @@ public:
     struct GenericSwitchEventData
     {
         chip::EndpointId endpoint;
-        chip::EventId event;
+        chip::EventId    event;
     };
 
-    CHIP_ERROR Init(chip::EndpointId lightSwitchEndpoint, chip::EndpointId genericSwitchEndpoint);
+    CHIP_ERROR Init(chip::EndpointId genericSwitchEndpoint);
 
     void GenericSwitchOnInitialPress();
     void GenericSwitchOnShortRelease();
+    void GenericSwitchOnLongPress();
+    void GenericSwitchOnLongRelease();
 
-    void TriggerLightSwitchAction(LightSwitchAction action, bool isGroupCommand = false);
 
     static LightSwitchMgr & GetInstance() { return sSwitch; }
 
@@ -53,6 +54,5 @@ private:
 
     static void GenericSwitchWorkerFunction(intptr_t context);
 
-    chip::EndpointId mLightSwitchEndpoint   = chip::kInvalidEndpointId;
     chip::EndpointId mGenericSwitchEndpoint = chip::kInvalidEndpointId;
 };

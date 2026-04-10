@@ -399,6 +399,11 @@ void ColorControlServer::timerCallback(System::Layer *, void * callbackContext)
 
 void ColorControlServer::scheduleTimerCallbackMs(EmberEventControl * control, uint32_t delayMs)
 {
+    if(delayMs == 0)
+    {
+        timerCallback(nullptr, reinterpret_cast<void *>(control));
+        return;
+    }
     CHIP_ERROR err = DeviceLayer::SystemLayer().StartTimer(chip::System::Clock::Milliseconds32(delayMs), timerCallback, control);
 
     if (err != CHIP_NO_ERROR)
@@ -489,6 +494,10 @@ Status ColorControlServer::stopMoveStepCommand(EndpointId endpoint, const Comman
     if (shouldExecuteIfOff(endpoint, commandData.optionsMask, commandData.optionsOverride) && !isColorLoopActive)
     {
         status = stopAllColorTransitions(endpoint);
+        if (status == Status::Success)
+        {
+            SetQuietReportRemainingTime(endpoint, 0, false /* isNewTransition */);
+        }
 
 #ifdef MATTER_DM_PLUGIN_COLOR_CONTROL_SERVER_HSV
         // Because Hue and Saturation have separate transitions and can be kicked separately,
@@ -1633,7 +1642,7 @@ Status ColorControlServer::moveToHueAndSaturationCommand(EndpointId endpoint, ui
     VerifyOrReturnValue(transitionTime <= kMaxTransitionTime, Status::ConstraintError);
 
     VerifyOrReturnValue(shouldExecuteIfOff(endpoint, optionsMask, optionsOverride), Status::Success);
-
+    printf("@@@Move to hue %u and saturation %u\r\n", hue, saturation);
     Status status = moveToHueAndSaturation(endpoint, hue, saturation, transitionTime, isEnhanced);
 #ifdef MATTER_DM_PLUGIN_SCENES_MANAGEMENT
     ScenesManagement::ScenesServer::Instance().MakeSceneInvalidForAllFabrics(endpoint);
@@ -3095,6 +3104,7 @@ Status ColorControlServer::SetQuietReportRemainingTime(EndpointId endpoint, uint
 bool emberAfColorControlClusterMoveHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::MoveHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveHueCommand(commandPath.mEndpointId, commandData.moveMode, commandData.rate,
                                                                   commandData.optionsMask, commandData.optionsOverride, false);
     commandObj->AddStatus(commandPath, status);
@@ -3105,6 +3115,7 @@ bool emberAfColorControlClusterMoveSaturationCallback(app::CommandHandler * comm
                                                       const app::ConcreteCommandPath & commandPath,
                                                       const Commands::MoveSaturation::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveSaturationCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3113,6 +3124,7 @@ bool emberAfColorControlClusterMoveSaturationCallback(app::CommandHandler * comm
 bool emberAfColorControlClusterMoveToHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::MoveToHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToHueCommand(commandPath.mEndpointId, commandData.hue, commandData.direction,
                                                                     commandData.transitionTime, commandData.optionsMask,
                                                                     commandData.optionsOverride, false);
@@ -3124,6 +3136,7 @@ bool emberAfColorControlClusterMoveToSaturationCallback(app::CommandHandler * co
                                                         const app::ConcreteCommandPath & commandPath,
                                                         const Commands::MoveToSaturation::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToSaturationCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3133,6 +3146,7 @@ bool emberAfColorControlClusterMoveToHueAndSaturationCallback(app::CommandHandle
                                                               const app::ConcreteCommandPath & commandPath,
                                                               const Commands::MoveToHueAndSaturation::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToHueAndSaturationCommand(
         commandPath.mEndpointId, commandData.hue, commandData.saturation, commandData.transitionTime, commandData.optionsMask,
         commandData.optionsOverride, false);
@@ -3143,6 +3157,7 @@ bool emberAfColorControlClusterMoveToHueAndSaturationCallback(app::CommandHandle
 bool emberAfColorControlClusterStepHueCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                const Commands::StepHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stepHueCommand(commandPath.mEndpointId, commandData.stepMode,
                                                                   commandData.stepSize, commandData.transitionTime,
                                                                   commandData.optionsMask, commandData.optionsOverride, false);
@@ -3154,6 +3169,7 @@ bool emberAfColorControlClusterStepSaturationCallback(app::CommandHandler * comm
                                                       const app::ConcreteCommandPath & commandPath,
                                                       const Commands::StepSaturation::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stepSaturationCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3163,6 +3179,7 @@ bool emberAfColorControlClusterEnhancedMoveHueCallback(app::CommandHandler * com
                                                        const app::ConcreteCommandPath & commandPath,
                                                        const Commands::EnhancedMoveHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveHueCommand(commandPath.mEndpointId, commandData.moveMode, commandData.rate,
                                                                   commandData.optionsMask, commandData.optionsOverride, true);
     commandObj->AddStatus(commandPath, status);
@@ -3173,6 +3190,7 @@ bool emberAfColorControlClusterEnhancedMoveToHueCallback(app::CommandHandler * c
                                                          const app::ConcreteCommandPath & commandPath,
                                                          const Commands::EnhancedMoveToHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToHueCommand(commandPath.mEndpointId, commandData.enhancedHue,
                                                                     commandData.direction, commandData.transitionTime,
                                                                     commandData.optionsMask, commandData.optionsOverride, true);
@@ -3184,6 +3202,7 @@ bool emberAfColorControlClusterEnhancedMoveToHueAndSaturationCallback(
     app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
     const Commands::EnhancedMoveToHueAndSaturation::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToHueAndSaturationCommand(
         commandPath.mEndpointId, commandData.enhancedHue, commandData.saturation, commandData.transitionTime,
         commandData.optionsMask, commandData.optionsOverride, true);
@@ -3195,6 +3214,7 @@ bool emberAfColorControlClusterEnhancedStepHueCallback(app::CommandHandler * com
                                                        const app::ConcreteCommandPath & commandPath,
                                                        const Commands::EnhancedStepHue::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stepHueCommand(commandPath.mEndpointId, commandData.stepMode,
                                                                   commandData.stepSize, commandData.transitionTime,
                                                                   commandData.optionsMask, commandData.optionsOverride, true);
@@ -3205,6 +3225,7 @@ bool emberAfColorControlClusterEnhancedStepHueCallback(app::CommandHandler * com
 bool emberAfColorControlClusterColorLoopSetCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                     const Commands::ColorLoopSet::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().colorLoopCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3217,6 +3238,7 @@ bool emberAfColorControlClusterColorLoopSetCallback(app::CommandHandler * comman
 bool emberAfColorControlClusterMoveToColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                    const Commands::MoveToColor::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToColorCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3225,6 +3247,7 @@ bool emberAfColorControlClusterMoveToColorCallback(app::CommandHandler * command
 bool emberAfColorControlClusterMoveColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::MoveColor::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveColorCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3233,6 +3256,7 @@ bool emberAfColorControlClusterMoveColorCallback(app::CommandHandler * commandOb
 bool emberAfColorControlClusterStepColorCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                  const Commands::StepColor::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stepColorCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3246,6 +3270,7 @@ bool emberAfColorControlClusterMoveToColorTemperatureCallback(app::CommandHandle
                                                               const app::ConcreteCommandPath & commandPath,
                                                               const Commands::MoveToColorTemperature::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveToColorTempCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3255,6 +3280,7 @@ bool emberAfColorControlClusterMoveColorTemperatureCallback(app::CommandHandler 
                                                             const app::ConcreteCommandPath & commandPath,
                                                             const Commands::MoveColorTemperature::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().moveColorTempCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3264,6 +3290,7 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(app::CommandHandler 
                                                             const app::ConcreteCommandPath & commandPath,
                                                             const Commands::StepColorTemperature::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stepColorTempCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;
@@ -3271,6 +3298,7 @@ bool emberAfColorControlClusterStepColorTemperatureCallback(app::CommandHandler 
 
 void emberAfPluginLevelControlCoupledColorTempChangeCallback(EndpointId endpoint)
 {
+    printf("%s\r\n", __func__);
     ColorControlServer::Instance().levelControlColorTempChangeCommand(endpoint);
 }
 
@@ -3279,6 +3307,7 @@ void emberAfPluginLevelControlCoupledColorTempChangeCallback(EndpointId endpoint
 bool emberAfColorControlClusterStopMoveStepCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
                                                     const Commands::StopMoveStep::DecodableType & commandData)
 {
+    printf("%s\r\n", __func__);
     Status status = ColorControlServer::Instance().stopMoveStepCommand(commandPath.mEndpointId, commandData);
     commandObj->AddStatus(commandPath, status);
     return true;

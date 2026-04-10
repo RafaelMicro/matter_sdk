@@ -46,10 +46,13 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     EndpointId endpoint     = attributePath.mEndpointId;
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
+    ChipLogProgress(Zcl, "Attribute changed. Cluster=%" PRIx32 ", Attribute=%" PRIx32 ", Type=%d, Size=%d", clusterId,
+                    attributeId, type, size);
+
     switch (clusterId)
     {
     case OnOff::Id:
-        if (attributeId == OnOff::Attributes::OnOff::Id) 
+        if (attributeId == OnOff::Attributes::OnOff::Id)
         {
             LightMgr().InitiateAction(*value ? LightingManager::ON_ACTION : LightingManager::OFF_ACTION, value);
         }
@@ -63,22 +66,28 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     case ColorControl::Id:
         if (attributeId == ColorControl::Attributes::ColorMode::Id)
         {
-            chip::app::Clusters::ColorControl::ColorModeEnum ColorMode = *reinterpret_cast<chip::app::Clusters::ColorControl::ColorModeEnum *>(value);
+            ColorControl::ColorModeEnum ColorMode = *reinterpret_cast<ColorControl::ColorModeEnum *>(value);
             LightMgr().SetColorMode(ColorMode);
             return;
         }
-        else if (attributeId == ColorControl::Attributes::CurrentX::Id || 
+        else if (attributeId == ColorControl::Attributes::CurrentX::Id ||
                  attributeId == ColorControl::Attributes::CurrentY::Id)
         {
+            XyColor_t xy;
+            ColorControl::Attributes::CurrentX::Get(1, &xy.x);
+            ColorControl::Attributes::CurrentY::Get(1, &xy.y);
             LightMgr().SetColorMode(ColorControl::ColorModeEnum::kCurrentXAndCurrentY);
-            SystemLayer().StartTimer(Clock::Milliseconds32(100), LightMgr().DelayedXYAction, nullptr);
+            LightMgr().InitiateAction(LightingManager::COLOR_ACTION_XY, (uint8_t *)&xy);
         }
-        else if (attributeId == ColorControl::Attributes::CurrentHue::Id         ||
-                 attributeId == ColorControl::Attributes::CurrentSaturation::Id  ||
+        else if (attributeId == ColorControl::Attributes::CurrentHue::Id        ||
+                 attributeId == ColorControl::Attributes::CurrentSaturation::Id ||
                  attributeId == ColorControl::Attributes::EnhancedCurrentHue::Id)
         {
+            HsvColor_t hsv = {.h = 0, .s = 0, .v = 0};
+            ColorControl::Attributes::CurrentHue::Get(1, &hsv.h);
+            ColorControl::Attributes::CurrentSaturation::Get(1, &hsv.s);
             LightMgr().SetColorMode(ColorControl::ColorModeEnum::kCurrentHueAndCurrentSaturation);
-            SystemLayer().StartTimer(Clock::Milliseconds32(100), LightMgr().DelayedHSVAction, nullptr);
+            LightMgr().InitiateAction(LightingManager::COLOR_ACTION_HSV, (uint8_t *)&hsv);
         }
         else if (attributeId == ColorControl::Attributes::ColorTemperatureMireds::Id)
         {
@@ -89,12 +98,8 @@ void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & 
     default:
         break;
     }
-
-    if (clusterId == Identify::Id && attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-    {
-        GetAppTask().PostAppIdentify();
-    }
 }
+
 /** @brief OnOff Cluster Init
  *
  * This function is called when a specific cluster is initialized. It gives the

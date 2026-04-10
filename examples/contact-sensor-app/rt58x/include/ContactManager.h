@@ -22,26 +22,23 @@
 #include <stdint.h>
 
 #include "AppEvent.h"
-
 #include "FreeRTOS.h"
-#include "timers.h" // provides FreeRTOS timer support
+#include "timers.h"
+
 #include <app-common/zap-generated/attributes/Accessors.h>
-
+#include <app/clusters/boolean-state-server/boolean-state-cluster.h>
+#include <app/clusters/boolean-state-server/CodegenIntegration.h>
 #include <lib/core/CHIPError.h>
-
-using namespace chip;
 
 class ContactManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
-    CHIP_ERROR ToggleStateValue();
+    void AttributeChangeHandler(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value, uint16_t size);
+    static void ToggleStateValue(bool val);
 
 private:
     friend ContactManager & ContMgr();
-
-    bool mStateValue;
 
     static ContactManager sContMgr;
 };

@@ -2,25 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "ISP flash tool",
-            "command": "/mnt/c/Users/nesti/OneDrive/桌面/isp_download_cmd/isp_download_tool.exe -a ${workspaceFolder}/out/${input:exampleproject}/${input:board}/chip-rt58x-${input:exampleproject}-example.bin -p COM${input:COMPort}",
-            "type": "shell",
-            "isBackground": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "launchJLink",
-            "command": "'/mnt/c/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe' -if swd -device ARMCM3 -nolocalhostonly",
-            "type": "shell",
-            "isBackground": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "postDebugKill",
-            "command": "echo ${input:terminate}",
-            "type": "shell"
-        },
-        {
             "label": "RT matter dev setup",
             "type": "shell",
             "command": "echo 'Env setup finished'",
@@ -81,7 +62,7 @@
             "type": "pickString",
             "id": "board",
             "description": "Rafael board type",
-            "options": ["RT583", "RT584H", "RT584L"],
+            "options": ["RT583", "RT584H", "RT584L", "RT584HA4"],
             "default": "RT583"
         },
         {
@@ -104,12 +85,6 @@
             "description": "Use attestation credentials?",
             "options": ["yes", "dac-only", "no"],
             "default": "no"
-        },
-        {
-            "type": "promptString",
-            "id": "COMPort",
-            "description": "Which COM port's number do you want to flash? (input the number of port number)",
-            "default": ""
         }
     ]
 }

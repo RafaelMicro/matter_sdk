@@ -39,7 +39,7 @@ HOSAL_UART_DEV_DECL(uart0_dev,
     0,   /* Port */
     17,  /* Tx Pin*/
     16,  /* Rx Pin*/
-    UART_BAUDRATE_115200
+    UART_BAUDRATE_2000000
 )
 //=============================================================================
 //                Functions

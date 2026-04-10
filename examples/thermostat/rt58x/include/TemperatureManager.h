@@ -30,8 +30,6 @@
 
 #include <lib/core/CHIPError.h>
 
-using namespace chip;
-
 // AppCluster Spec Table 85.
 enum ThermMode
 {
@@ -46,7 +44,7 @@ class TemperatureManager
 {
 public:
     CHIP_ERROR Init();
-    void AttributeChangeHandler(EndpointId endpointId, AttributeId attributeId, uint8_t * value, uint16_t size);
+    void AttributeChangeHandler(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value, uint16_t size);
     uint8_t GetMode();
     int16_t GetCurrentTemp();
     int16_t GetHeatingSetPoint();

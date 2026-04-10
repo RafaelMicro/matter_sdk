@@ -24,23 +24,12 @@
 #include "AppTask.h"
 #include "WindowControl.h"
 #include "WindowManager.h"
-#include "init_rt58x_platform.h"
-#include "init_device_environment.h"
 
-#include <app-common/zap-generated/attributes/Accessors.h>
-#include <app-common/zap-generated/callback.h>
-#include <app-common/zap-generated/cluster-objects.h>
-#include <app-common/zap-generated/ids/Attributes.h>
-#include <app-common/zap-generated/ids/Clusters.h>
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 #include <app/ConcreteAttributePath.h>
-#include <app/CommandHandler.h>
-#include <app/ConcreteCommandPath.h>
 #include <app/clusters/window-covering-server/window-covering-server.h>
-#include <app/util/af-types.h>
-#include <assert.h>
 #include <lib/support/logging/CHIPLogging.h>
 
 using namespace ::chip;
@@ -50,17 +39,10 @@ using namespace ::chip::app::Clusters;
 void MatterPostAttributeChangeCallback(const chip::app::ConcreteAttributePath & attributePath, uint8_t type, uint16_t size,
                                        uint8_t * value)
 {
-    EndpointId endpoint     = attributePath.mEndpointId;
     ClusterId clusterId     = attributePath.mClusterId;
     AttributeId attributeId = attributePath.mAttributeId;
     switch (clusterId)
     {
-    case Identify::Id:
-        if (attributeId == Identify::Attributes::IdentifyTime::Id && *value > 0)
-        {
-            GetAppTask().PostAppIdentify();
-        }
-        break;
     case WindowCovering::Id:
         ChipLogProgress(Zcl, "Window covering cluster ID: " ChipLogFormatMEI " Type: %u Value: %u, length: %u",
                         ChipLogValueMEI(attributeId), type, *value, size);

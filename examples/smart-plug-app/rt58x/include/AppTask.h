@@ -30,7 +30,6 @@
 #include "BaseApplication.h"
 #include "FreeRTOS.h"
 #include "SmartPlugManager.h"
-// #include "sl_simple_button_instances.h"
 #include "timers.h" // provides FreeRTOS timer support
 #include <app/clusters/identify-server/identify-server.h>
 #include <ble/BLEEndPoint.h>
@@ -59,10 +58,6 @@ public:
     void PostLightActionRequest(int32_t aActor, SmartPlugManager::Action_t aAction);
     void PostEvent(const AppEvent * event);
 
-    static void IdentifyStartHandler(Identify *);
-    static void IdentifyStopHandler(Identify *);
-    static void IdentifyHandleOp(AppEvent * aEvent);
-    void PostAppIdentify();
 private:
     friend AppTask & GetAppTask(void);
 
@@ -77,7 +72,7 @@ private:
     static void UpdateClusterState(intptr_t arg);
     void DispatchEvent(AppEvent * event);
 
-    static void ButtonEventHandler(uint32_t pin, void* isr_param) ;
+    static void ButtonEventHandler(uint32_t pin, void* isr_param);
 
     static void FunctionTimerEventHandler(AppEvent * aEvent);
     static void FunctionHandler(AppEvent * aEvent);
@@ -101,7 +96,7 @@ private:
     bool mFunctionSwitchActive;
     bool mSyncClusterToButtonAction;
 
-    static AppTask sAppTask;   
+    static AppTask sAppTask;
 
 #if RAFAEL_CERTS_ENABLED
     chip::DeviceLayer::FactoryDataProvider<chip::DeviceLayer::InternalFlashFactoryData> mFactoryDataProvider;

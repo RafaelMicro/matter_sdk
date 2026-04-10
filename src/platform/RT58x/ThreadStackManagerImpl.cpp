@@ -36,7 +36,6 @@
 
 
 
-#define __WEAK __attribute__((__WEAK__))
 
 #include "log.h"
 namespace chip {

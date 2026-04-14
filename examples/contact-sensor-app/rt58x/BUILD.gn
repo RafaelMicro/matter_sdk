@@ -77,6 +77,8 @@ rt58x_executable("contact-sensor-app") {
     "${examples_plat_dir}/init_rt58x_platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
+    "${examples_plat_dir}/DTM.cpp",
+    "${examples_plat_dir}/DTM_RF.c",
     "src/AppTask.cpp",
     "src/PowerManager.cpp",
     "src/ContactManager.cpp",

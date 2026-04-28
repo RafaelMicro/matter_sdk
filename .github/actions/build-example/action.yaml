@@ -4,6 +4,9 @@ inputs:
   example_name:
     description: "the name of the example project"
     required: true
+  chip_name:
+    description: "the chip name (RT583/RT584H/RT584L/RT584HA4)"
+    required: true
   upload_bin_path:
     description: "the path of the upload bin folder"
     required: true
@@ -18,12 +21,12 @@ runs:
   steps:
     - name: Build example
       shell: bash
-      run : ./scripts/examples/gn_rt58x_example.sh ./examples/${{ inputs.example_name }}/rt58x ./out/${{ inputs.example_name }} RT583 ${{ inputs.opt_arg }}
+      run : ./scripts/examples/gn_rt58x_example.sh ./examples/${{ inputs.example_name }}/rt58x ./out/${{ inputs.example_name }} ${{ inputs.chip_name }} ${{ inputs.opt_arg }}
     
     - name: Copy bin file to upload project directory
       shell: bash
-      run : cp ./out/${{ inputs.example_name }}/RT583/RT583-${{ inputs.example_name }}-example.bin ${{ inputs.upload_bin_path }}/RT583-${{ inputs.example_name }}-example.bin
+      run : cp ./out/${{ inputs.example_name }}/${{ inputs.chip_name }}/${{ inputs.chip_name }}-${{ inputs.example_name }}-example.bin ${{ inputs.upload_bin_path }}/${{ inputs.chip_name }}-${{ inputs.example_name }}-example.bin
     
     - name: Copy size file to upload project directory
       shell: bash
-      run : cp ./out/${{ inputs.example_name }}/RT583/size.txt ${{ inputs.upload_size_path }}/RT583-${{ inputs.example_name }}-example-size.txt
+      run : cp ./out/${{ inputs.example_name }}/${{ inputs.chip_name }}/size.txt ${{ inputs.upload_size_path }}/${{ inputs.chip_name }}-${{ inputs.example_name }}-example-size.txt

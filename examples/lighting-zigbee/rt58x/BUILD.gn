@@ -69,7 +69,7 @@ rt58x_sdk("sdk") {
 }
 
 rt58x_executable("lighting_app") {
-  output_name = "${rafael_board}-lighting-app-example.out"
+  output_name = "${rafael_board}-lighting-zigbee-example.out"
   include_dirs = [ "include" ]
   defines = []
   sources = [

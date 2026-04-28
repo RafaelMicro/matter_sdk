@@ -95,6 +95,7 @@ declare_args() {
 
   # Rafael Platform
   raf_enable_multi_control = false
+  raf_enable_zigbee = false
   rafael_board = "RT58x"
 
   # Select DNS-SD implementation

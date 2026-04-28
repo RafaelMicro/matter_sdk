@@ -2,10 +2,9 @@
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 
-__STACK_SIZE = 0x1800;   /* 2 KB */
-__HEAP_SIZE  = 0x0800;   /* 2 KB */
+__STACK_SIZE = 0x1800;   /* 6 KB */
 __RAM_SIZE   = 192K;
-__DATA_SIZE  = __RAM_SIZE - __STACK_SIZE - __HEAP_SIZE - 8;
+__DATA_SIZE  = __RAM_SIZE - __STACK_SIZE - 8;
 
 MEMORY
 {
@@ -15,8 +14,7 @@ MEMORY
     LMA_MPSC (rx)  : ORIGIN = 0x101FE000, LENGTH = 8K
 	/* VMA (RAM) */
     VMA_DATA  (rwx) : ORIGIN = 0x30000000, LENGTH = __DATA_SIZE
-    VMA_HEAP  (rwx) : ORIGIN = ORIGIN(VMA_DATA) + LENGTH(VMA_DATA), LENGTH = __HEAP_SIZE
-    VMA_STACK (rwx) : ORIGIN = ORIGIN(VMA_HEAP) + LENGTH(VMA_HEAP), LENGTH = __STACK_SIZE + 8
+    VMA_STACK (rwx) : ORIGIN = ORIGIN(VMA_DATA) + LENGTH(VMA_DATA), LENGTH = __STACK_SIZE + 8
   
 }
 
@@ -217,17 +215,6 @@ SECTIONS
 	PROVIDE( _ld_rf_static_logfile_code_end   = _rf_static_logfile_code_end );
 	PROVIDE( _ld_rf_static_logpri_code_start = _rf_static_logpri_code_start );
 	PROVIDE( _ld_rf_static_logpri_code_end   = _rf_static_logpri_code_end );
-    
-
-    /* Reserve space and place heap in memory map. */
-    .heap (NOLOAD) : ALIGN(8)
-    {
-        __heap_start__ = .;
-        . = . + __HEAP_SIZE;
-        __heap_end__ = .;
-    } > VMA_HEAP
-
-    Image$$ARM_LIB_HEAP$$ZI$$Limit = ADDR(.heap) + SIZEOF(.heap);
 
     .stack (NOLOAD) : ALIGN(8)
     {

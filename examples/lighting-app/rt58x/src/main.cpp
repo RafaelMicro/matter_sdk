@@ -30,6 +30,7 @@
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 #include "RT58xConfig.h"
+#include "hosal_rf.h"
 
 #include <lib/core/CHIPError.h>
 
@@ -57,6 +58,7 @@ int main(void)
     init_rt58x_platform();
     init_lighting_app_rt58xPlatform();
     write_reboot_count();
+    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
 
     if (rt58x_factory_reset_check())
     {

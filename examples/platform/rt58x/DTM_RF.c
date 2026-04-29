@@ -64,7 +64,7 @@ void RFTaskMain(void * pvParameter)
     {
         tx_data_buf[i] = i;
     }
-    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
+    //hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL); //already init in main
     //Start Uart task.
     lmac15p4_callback_t mac_cb;
     lmac15p4_init(LMAC15P4_2P4G_OQPSK, 0);

@@ -50,12 +50,21 @@ uint8_t wait_dtm(void)
 
     tick_cfg.timeload_ticks = DTM_WAIT_TIMEOUT_MS + 50;
     tick_cfg.timeout_ticks = 0;
+#if defined(CONFIG_RT584H) ||  defined(CONFIG_RT584HA4) || defined(CONFIG_RT584L)
     NVIC_DisableIRQ((IRQn_Type)(SlowTimer1_IRQn));
     NVIC_SetPriority((IRQn_Type)(SlowTimer1_IRQn), 1);
+#else
+    NVIC_DisableIRQ((IRQn_Type)(Timer4_IRQn));
+    NVIC_SetPriority((IRQn_Type)(Timer4_IRQn), 1);
+#endif
     hosal_slow_timer_current_get(timer_id, &cur_tick);
     hosal_slow_timer_init(timer_id, cfg, (void*)nullptr);
     hosal_slow_timer_stop(timer_id);
+#if defined(CONFIG_RT584H) ||  defined(CONFIG_RT584HA4) || defined(CONFIG_RT584L)
     NVIC_EnableIRQ((IRQn_Type)(SlowTimer1_IRQn));
+#else
+    NVIC_EnableIRQ((IRQn_Type)(Timer4_IRQn));
+#endif
     hosal_slow_timer_start(timer_id, tick_cfg);
     
     while(1)

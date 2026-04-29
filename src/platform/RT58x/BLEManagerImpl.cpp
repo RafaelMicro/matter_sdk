@@ -30,6 +30,7 @@
 #include "lmac15p4.h"
 #include "log.h"
 #include "flashctl.h"
+#include "hosal_trng.h"
 
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
@@ -189,7 +190,6 @@ void BLEManagerImpl::ble_evt_task(void * arg)
 
     status = BLE_ERR_OK;
 
-    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
     lmac15p4_init(LMAC15P4_2P4G_OQPSK, 0);
     /* PHY PIB */
     lmac15p4_phy_pib_set(PHY_PIB_TURNAROUND_TIMER, PHY_PIB_CCA_DETECT_MODE,
@@ -789,7 +789,12 @@ int BLEManagerImpl::ble_init(void)
         }
         else
         {
-            for(int i=0;i<5;i++) DEVICE_ADDR.addr[i] = static_cast<int>(chip::Crypto::GetRandU8());
+            for(int i=0;i<5;i++)
+            {
+                uint32_t randnum;
+                hosal_trng_get_random_number(&randnum, 1);
+                DEVICE_ADDR.addr[i] = (uint8_t)(randnum & 0xFF);
+            }
             status = ble_cmd_device_addr_set((ble_gap_addr_t *)&DEVICE_ADDR);
             if (status != BLE_ERR_OK)
             {
@@ -1001,8 +1006,7 @@ CHIP_ERROR BLEManagerImpl::_SetDeviceName(const char * deviceName)
 
 CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
 {
-    CHIP_ERROR err;
-    CHIP_ERROR chipErr;
+    CHIP_ERROR chipErr = CHIP_NO_ERROR;;
     uint16_t discriminator;
     uint32_t mDeviceNameLength = 0;
     uint8_t index = 0;
@@ -1054,7 +1058,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"adv_data() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
     /**************** Prepare scan response data *******************************************/
     index = 0;
@@ -1073,7 +1077,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"scan_rsp() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
 
     /**************** Prepare advertising parameters *************************************/
@@ -1097,11 +1101,13 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     adv_param.adv_filter_policy = ADV_FILTER_POLICY_ACCEPT_ALL;
 
     vTaskDelay(5);
+    ble_cmd_adv_disable();
+    vTaskDelay(5);
     status = ble_cmd_adv_param_set(&adv_param);
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"adv_param() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
 #if 1
     if (status == BLE_ERR_OK)
@@ -1111,7 +1117,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
         if (status != BLE_ERR_OK)
         {
             ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
-            err = BLE_ERR_STATE_TRANSLATE(status);
+            chipErr = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
 #endif
@@ -1122,10 +1128,9 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
         if (status != BLE_ERR_OK)
         {
             ChipLogError(DeviceLayer,"ble_cmd_adv_enable() status = %d\n", status);
-            err = BLE_ERR_STATE_TRANSLATE(status);
+            chipErr = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
-    return CHIP_NO_ERROR;
 exit:
     return chipErr;
 }

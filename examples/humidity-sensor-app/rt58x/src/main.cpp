@@ -29,6 +29,7 @@
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 
 #include <lib/core/CHIPError.h>
+#include "hosal_rf.h"
 
 #if ENABLE_CHIP_SHELL
 #include "matter_shell.h"
@@ -49,6 +50,7 @@ int main(void)
 
     init_rt58x_platform();
     init_device_environment();
+    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
 
     err = chip::Platform::MemoryInit();
     if (err != CHIP_NO_ERROR)

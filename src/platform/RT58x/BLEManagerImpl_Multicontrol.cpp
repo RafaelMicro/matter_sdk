@@ -27,10 +27,15 @@
 #include "timers.h"
 #include "task.h"
 #include "hosal_rf.h"
+#include "hosal_trng.h"
 #include "lmac15p4.h"
 #include "ble_fota.h"
 #include "log.h"
 #include "flashctl.h"
+#ifdef RAF_ENABLE_ZIGBEE
+#include "MultiApp.h"
+#endif
+
 
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
@@ -58,6 +63,7 @@ namespace Internal {
 
 namespace {
 
+#define RAFAEL_APP_BLE_DEVICE_NAME "Rafael_BLE"
 #define CHIP_ADV_DATA_TYPE_FLAGS 0x01
 #define CHIP_ADV_DATA_TYPE_UUID 0x03
 #define CHIP_ADV_DATA_TYPE_NAME 0x09
@@ -194,7 +200,6 @@ void BLEManagerImpl::ble_evt_task(void * arg)
 
     status = BLE_ERR_OK;
 
-    hosal_rf_init(HOSAL_RF_MODE_MULTI_PROTOCOL);
     lmac15p4_init(LMAC15P4_2P4G_OQPSK, 0);
     /* PHY PIB */
     lmac15p4_phy_pib_set(PHY_PIB_TURNAROUND_TIMER, PHY_PIB_CCA_DETECT_MODE,
@@ -212,7 +217,7 @@ void BLEManagerImpl::ble_evt_task(void * arg)
         ChipLogError(DeviceLayer, "ble_init fail: %d", status);
         while (1);
     }
-
+    BLEMgrImpl().DriveBLEState();
     for (;;)
     {
         if (xQueueReceive(g_app_msg_q, &p_app_q, portMAX_DELAY) == pdTRUE)
@@ -432,7 +437,16 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
             ble_fota_disconnect();
             BLEMgrImpl().mFlags.Clear(Flags::kAdvertising);
             BLEMgrImpl().mFlags.Set(Flags::kRestartAdvertising);
-            PlatformMgr().ScheduleWork(DriveBLEState, 0);
+#ifdef RAF_ENABLE_ZIGBEE
+            if(GetMultiApp().GetCurrentProtocol() == MultiApp::CurrentProtocol::kZigbee)
+            {
+                BLEMgrImpl().DriveBLEState();
+            }
+            else
+#endif
+            {
+                PlatformMgr().ScheduleWork(DriveBLEState, 0);
+            }
         }        
         /* Send Connection close event */
         disconnectEvent.Type = DeviceEventType::kCHIPoBLEConnectionClosed;
@@ -607,20 +621,34 @@ void BLEManagerImpl::ble_svcs_trsps_evt_handler(void *p_matter_evt_param)
         case BLESERVICE_TRSPS_UDATRW01_WRITE_EVENT:
         case BLESERVICE_TRSPS_UDATRW01_WRITE_WITHOUT_RSP_EVENT:
         {
-            uint8_t* p_data =static_cast<uint8_t *>(chip::Platform::MemoryAlloc(p_param->length));
+            uint8_t* p_data =static_cast<uint8_t *>(pvPortMalloc(p_param->length));
 
             if (p_data != NULL)
             {
-                ChipDeviceEvent BleToAppEvent;
-                BleToAppEvent.Type = DeviceEventType::kBleToApp;
-                memcpy(p_data, p_param->data, p_param->length);
-                BleToAppEvent.Platform.TRSPData.len = p_param->length;
-                BleToAppEvent.Platform.TRSPData.data = p_data;
-                err = PlatformMgr().PostEvent(&BleToAppEvent);
-                if (err != CHIP_NO_ERROR)
+#ifdef RAF_ENABLE_ZIGBEE
+                if(GetMultiApp().GetCurrentProtocol() == MultiApp::CurrentProtocol::kZigbee)
                 {
-                    ChipLogError(DeviceLayer, "Failed to post BleToAppEvent");
+                    memcpy(p_data, p_param->data, p_param->length);
+                    GetMultiApp().SendBleMsgToZigbeeApp(p_param->data, p_param->length);
                 }
+                else
+#endif
+                {
+                    ChipDeviceEvent BleToAppEvent;
+                    BleToAppEvent.Type = DeviceEventType::kBleToApp;
+                    memcpy(p_data, p_param->data, p_param->length);
+                    BleToAppEvent.Platform.TRSPData.len = p_param->length;
+                    BleToAppEvent.Platform.TRSPData.data = p_data;
+                    err = PlatformMgr().PostEvent(&BleToAppEvent);
+                    if (err != CHIP_NO_ERROR)
+                    {
+                        ChipLogError(DeviceLayer, "Failed to post BleToAppEvent");
+                    }
+                }
+            }
+            else
+            {
+                printf("Failed to allocate memory for BLE data\r\n");
             }
         }
         break;
@@ -892,7 +920,12 @@ int BLEManagerImpl::ble_init(void)
         }
         else
         {
-            for(int i=0;i<5;i++) DEVICE_ADDR.addr[i] = static_cast<int>(chip::Crypto::GetRandU8());
+            for(int i=0;i<5;i++)
+            {
+                uint32_t randnum;
+                hosal_trng_get_random_number(&randnum, 1);
+                DEVICE_ADDR.addr[i] = (uint8_t)(randnum & 0xFF);
+            }
             status = ble_cmd_device_addr_set((ble_gap_addr_t *)&DEVICE_ADDR);
             if (status != BLE_ERR_OK)
             {
@@ -945,13 +978,19 @@ void BLEManagerImpl::app_evt_handler(void *p_param)
 }
 CHIP_ERROR BLEManagerImpl::_Init()
 {
+    log_info("Initializing BLE manager");
     CHIP_ERROR err= CHIP_NO_ERROR;
 
     mServiceMode = ConnectivityManager::kCHIPoBLEServiceMode_Enabled;
 
     // Initialize the CHIP BleLayer.
-    err = BleLayer::Init(this, this, &DeviceLayer::SystemLayer());
-    SuccessOrExit(err);
+#ifdef RAF_ENABLE_ZIGBEE
+    if(GetMultiApp().GetCurrentProtocol() != MultiApp::CurrentProtocol::kZigbee)
+#endif
+    {
+        err = BleLayer::Init(this, this, &DeviceLayer::SystemLayer());
+        SuccessOrExit(err);
+    }
 
     // BLE Stack init  
     ble_task_level.ble_host_level = configMAX_PRIORITIES - 7;
@@ -984,7 +1023,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
     if (BluetoothEventTaskHandle == NULL)
     {
         return CHIP_ERROR_NO_MEMORY;
-    }    
+    }
 
     // Create FreeRTOS sw timer for BLE timeouts and interval change.
     sbleAdvTimeoutTimer = xTimerCreate("BleAdvTimer",       // Just a text name, not used by the RTOS kernel
@@ -998,7 +1037,12 @@ CHIP_ERROR BLEManagerImpl::_Init()
                                 (void*)0, fota_timer_handler);
     mFlags.Set(Flags::kRTBLEStackInitialized);
     mFlags.Set(Flags::kFastAdvertisingEnabled);
-    PlatformMgr().ScheduleWork(DriveBLEState, 0);
+#ifdef RAF_ENABLE_ZIGBEE
+    if(GetMultiApp().GetCurrentProtocol() != MultiApp::CurrentProtocol::kZigbee)
+#endif
+    {
+        PlatformMgr().ScheduleWork(DriveBLEState, 0);
+    }
 exit:
     return err;
 }
@@ -1022,7 +1066,16 @@ void BLEManagerImpl::BleConnTimeoutHandler(TimerHandle_t xTimer)
     }
     vTaskDelay(300);
     BLEMgrImpl().mFlags.Set(Flags::kRestartAdvertising);
-    PlatformMgr().ScheduleWork(DriveBLEState, 0);
+#ifdef RAF_ENABLE_ZIGBEE
+    if(GetMultiApp().GetCurrentProtocol() == MultiApp::CurrentProtocol::kZigbee)
+    {
+        BLEMgrImpl().DriveBLEState();
+    }
+    else
+#endif
+    {
+        PlatformMgr().ScheduleWork(DriveBLEState, 0);
+    }
 }
 
 uint16_t BLEManagerImpl::_NumConnections(void)
@@ -1042,7 +1095,16 @@ CHIP_ERROR BLEManagerImpl::_SetAdvertisingEnabled(bool val)
     //if (mFlags.Has(Flags::kAdvertisingEnabled) != val)
     {
         mFlags.Set(Flags::kAdvertisingEnabled, val);
-        PlatformMgr().ScheduleWork(DriveBLEState, 0);
+#ifdef RAF_ENABLE_ZIGBEE
+        if(GetMultiApp().GetCurrentProtocol() == MultiApp::CurrentProtocol::kZigbee)
+        {
+            DriveBLEState();
+        }
+        else
+#endif
+        {
+            PlatformMgr().ScheduleWork(DriveBLEState, 0);
+        }
     }
 
     return err;
@@ -1064,7 +1126,16 @@ CHIP_ERROR BLEManagerImpl::_SetAdvertisingMode(BLEAdvertisingMode mode)
         return CHIP_ERROR_INVALID_ARGUMENT;
     }
     mFlags.Set(Flags::kRestartAdvertising);
-    PlatformMgr().ScheduleWork(DriveBLEState, 0);
+#ifdef RAF_ENABLE_ZIGBEE
+    if(GetMultiApp().GetCurrentProtocol() == MultiApp::CurrentProtocol::kZigbee)
+    {
+        DriveBLEState();
+    }
+    else
+#endif
+    {
+        PlatformMgr().ScheduleWork(DriveBLEState, 0);
+    }
     return CHIP_NO_ERROR;
 }
 
@@ -1103,9 +1174,7 @@ CHIP_ERROR BLEManagerImpl::_SetDeviceName(const char * deviceName)
 
 CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
 {
-    CHIP_ERROR err;
-    CHIP_ERROR chipErr;
-    uint16_t discriminator;
+    CHIP_ERROR chipErr = CHIP_NO_ERROR;
     uint32_t mDeviceNameLength = 0;
     uint8_t index = 0;
 
@@ -1117,30 +1186,22 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
     ble_adv_data_param_t adv_data;
     ble_adv_data_param_t scan_rsp;
     ble_err_t status;
-    chipErr = GetCommissionableDataProvider()->GetSetupDiscriminator(discriminator);
-    if (chipErr != CHIP_NO_ERROR)
-    {
-        return chipErr;
-    }
-
     if (!mFlags.Has(Flags::kDeviceNameSet))
     {
         memset(mDeviceName, 0, kMaxDeviceNameLength);
-        snprintf(mDeviceName, kMaxDeviceNameLength, "%s%04u", RAFAEL_APP_BLE_DEVICE_NAME_PREFIX, discriminator);
+        snprintf(mDeviceName, kMaxDeviceNameLength, "%s", RAFAEL_APP_BLE_DEVICE_NAME);
     }
     mDeviceNameLength = strlen(mDeviceName); // Device Name length + length field
     /**************** Prepare advertising data *******************************************/
-    chipErr = ConfigurationMgr().GetBLEDeviceIdentificationInfo(mDeviceIdInfo);
-    SuccessOrExit(chipErr);
-    mDeviceIdInfoLength = sizeof(mDeviceIdInfo);
-
-    if ((mDeviceIdInfoLength + CHIP_ADV_SHORT_UUID_LEN + 1) > BLE_ADV_DATA_SIZE_MAX)
-    {
-        return CHIP_ERROR_INCORRECT_STATE;
-    }
-
     if(matter_adv_enabled)
     {
+        chipErr = ConfigurationMgr().GetBLEDeviceIdentificationInfo(mDeviceIdInfo);
+        SuccessOrExit(chipErr);
+        mDeviceIdInfoLength = sizeof(mDeviceIdInfo);
+        if ((mDeviceIdInfoLength + CHIP_ADV_SHORT_UUID_LEN + 1) > BLE_ADV_DATA_SIZE_MAX)
+        {
+            return CHIP_ERROR_INCORRECT_STATE;
+        }
         adv_data.data[index++] = 0x02;                                                                    // length
         adv_data.data[index++] = CHIP_ADV_DATA_TYPE_FLAGS;                                                // AD type : flags
         adv_data.data[index++] = CHIP_ADV_DATA_FLAGS;                                                     // AD value
@@ -1163,7 +1224,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"adv_data() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
     /**************** Prepare scan response data *******************************************/
     index = 0;
@@ -1191,7 +1252,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"scan_rsp() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
 
     /**************** Prepare advertising parameters *************************************/
@@ -1213,13 +1274,14 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
 
     adv_param.adv_channel_map = ADV_CHANNEL_ALL;
     adv_param.adv_filter_policy = ADV_FILTER_POLICY_ACCEPT_ALL;
-
+    vTaskDelay(5);
+    ble_cmd_adv_disable();
     vTaskDelay(5);
     status = ble_cmd_adv_param_set(&adv_param);
     if (status != BLE_ERR_OK)
     {
         ChipLogError(DeviceLayer,"adv_param() status = %d\n", status);
-        err = BLE_ERR_STATE_TRANSLATE(status);
+        chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
 #if 1
     if (status == BLE_ERR_OK)
@@ -1229,7 +1291,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
         if (status != BLE_ERR_OK)
         {
             ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
-            err = BLE_ERR_STATE_TRANSLATE(status);
+            chipErr = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
 #endif
@@ -1240,10 +1302,9 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
         if (status != BLE_ERR_OK)
         {
             ChipLogError(DeviceLayer,"ble_cmd_adv_enable() status = %d\n", status);
-            err = BLE_ERR_STATE_TRANSLATE(status);
+            chipErr = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
-    return CHIP_NO_ERROR;
 exit:
     return chipErr;
 }
@@ -1588,6 +1649,35 @@ void BLEManagerImpl::HandleAppToBleEvent(const ChipDeviceEvent * event)
                                                 len);
     }
 }
+
+#if RAF_ENABLE_MULTI_CONTROL && defined(RAF_ENABLE_ZIGBEE)
+void BLEManagerImpl::BLESendMessage(uint8_t * data, uint8_t len)
+{
+    ble_err_t status;
+    ble_info_link0_t *p_profile_info;
+    p_profile_info = (ble_info_link0_t *)ble_app_link_info[0].profile_info;
+
+    ChipLogProgress(NotSpecified, "BLE send:\n");
+    log_hexdump_out("  ", 16, data, len);
+
+    if ((p_profile_info->svcs_info_trsps.server_info.data.udatni01_cccd & BLEGATT_CCCD_NOTIFICATION) != 0)
+    {
+        status = ble_svcs_trsps_server_send(0,
+                                            BLEGATT_CCCD_NOTIFICATION,
+                                            p_profile_info->svcs_info_trsps.server_info.handles.hdl_udatni01,
+                                            (uint8_t *)data,
+                                            len);
+    }
+    else if ((p_profile_info->svcs_info_trsps.server_info.data.udatni01_cccd & BLEGATT_CCCD_INDICATION) != 0)
+    {
+        status = ble_svcs_trsps_server_send(0,
+                                            BLEGATT_CCCD_INDICATION,
+                                            p_profile_info->svcs_info_trsps.server_info.handles.hdl_udatni01,
+                                            (uint8_t *)data,
+                                            len);
+    }
+}
+#endif // RAF_ENABLE_ZIGBEE
 
 } // namespace Internal
 } // namespace DeviceLayer

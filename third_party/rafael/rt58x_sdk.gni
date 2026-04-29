@@ -63,7 +63,10 @@ template("rt58x_sdk") {
       "${chip_root}/third_party/rafael/mbedtls/repo/library",
       "${chip_root}/third_party/rafael",
     ]
-
+    if(raf_enable_zigbee && rafael_board != "RT584HA4")
+    {
+      assert(false, "Zigbee is only supported on RT584HA4")
+    }
     # Chip-based include directory
     if (rafael_board == "RT583") {
       _include_dirs += [
@@ -132,6 +135,9 @@ template("rt58x_sdk") {
       "${rt58x_sdk_root}/components/network/bluetooth/ble-host/uecc/",
       "${chip_root}/third_party/rafael/BLE_App_Profile/Include/",
       "${chip_root}/third_party/rafael/BLE_FOTA/include/",
+      # ZB Include
+      "${rt58x_sdk_root}/components/network/zigbee/zboss/include",
+      "${rt58x_sdk_root}/components/network/zigbee/zboss_port/include",
     ]
 
     # Note that we're setting the mbedTLS and PSA configuration files through a
@@ -152,6 +158,10 @@ template("rt58x_sdk") {
       if (invoker.enable_sleepy_device) {
         defines += [ "CONFIG_HOSAL_SOC_IDLE_SLEEP=1",
                      "CONFIG_HOSAL_SOC_SLEEP_TIMER_ID=3" ]
+        if(raf_enable_zigbee) {
+          defines += [ "ZB_ED_ROLE",
+                        "ZB_USE_SLEEP" ]
+        }
       }
     }
     if (rafael_board == "RT583") {
@@ -195,7 +205,7 @@ template("rt58x_sdk") {
                 ]
     }
     defines += [ "CONFIG_BOARD=\"evb\"",
-                  "CONFIG_LOG_MAX_LEVEL=3", # LOG_LEVEL_WARN=3, see log.h
+                  "CONFIG_LOG_MAX_LEVEL=2", # LOG_LEVEL_WARN=3, see log.h
                    "CONFIG_RCO32K_ENABLE",
                    "CONFIG_FREERTOS=1",
                    "SET_SYS_CLK=2",
@@ -212,6 +222,7 @@ template("rt58x_sdk") {
                    "CONFIG_CRYPTO_SECT163R2_ENABLE=1",
                    "CONFIG_CRYPTO_SM2P256V1_ENABLE=1",
                    "CONFIG_CRYPTO_SM2_P192_ENABLE=1",
+                   "CONFIG_BUILD_COMPONENT_ZIGBEE",
                    ]
     if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       defines += [ 
@@ -489,6 +500,19 @@ template("rt58x_sdk") {
       "${chip_root}/third_party/rafael/Crypto/hw_ecdsa.c",
       "${chip_root}/third_party/rafael/Crypto/hw_ecp.c",
     ]
+    if(raf_enable_zigbee)
+    {
+      sources += [
+        # ZB Source
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_crypto.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_freertos.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_nvram.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_powersaving.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_radio.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_serial.c",
+        "${rt58x_sdk_root}/components/network/zigbee/zboss_port/src/zb_timer.c",
+      ]
+    }
     # public_configs = [ ":${sdk_target_name}_config" ]
     public_deps = [ ":RT_SDK" ]
   }
@@ -500,6 +524,35 @@ template("rt58x_sdk") {
     }
     public_configs = [ ":${sdk_target_name}_config" ]
     libs = [ "${rt58x_sdk_root}/components/network/lmac15p4/liblmac15p4.a" ]
+    if(raf_enable_zigbee)
+    {
+      if(invoker.enable_sleepy_device)
+      {
+        libs += [ "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_aps_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_commissioning_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_common_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_mac_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_nwk_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_secure_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zcl_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zdo_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zgp_rfd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zse_rfd.a"]
+      }
+      else
+      {
+        libs += [ "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_aps_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_commissioning_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_common_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_mac_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_nwk_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_secure_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zcl_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zdo_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zgp_ffd.a",
+                  "${rt58x_sdk_root}/components/network/zigbee/zboss/libzboss_zse_ffd.a"]
+      }
+    }
     if (rafael_board == "RT583")
     {
       libs += [ "${rt58x_sdk_root}/components/network/bluetooth/ble-host/libCM3_ble_host.a" ]

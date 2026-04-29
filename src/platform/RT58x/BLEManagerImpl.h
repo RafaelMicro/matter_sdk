@@ -32,9 +32,6 @@
 #include "FreeRTOS.h"
 #include "timers.h"
 
-#ifndef RAFAEL_APP_BLE_DEVICE_NAME_PREFIX
-#define RAFAEL_APP_BLE_DEVICE_NAME_PREFIX "Rafael_"
-#endif
 
 namespace chip {
 namespace DeviceLayer {
@@ -49,6 +46,11 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
     // Allow the BLEManager interface class to delegate method calls to
     // the implementation methods provided by this class.
     friend BLEManager;
+
+#if RAF_ENABLE_MULTI_CONTROL && defined(RAF_ENABLE_ZIGBEE)
+public:
+    void BLESendMessage(uint8_t * data, uint8_t len);
+#endif
 
 private:
     // ===== Members that implement the BLEManager internal interface.

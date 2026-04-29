@@ -47,11 +47,21 @@ jobs:
                 mkdir -p $UPLOAD_FOLDER/$BIN_FOLDER
                 mkdir -p $UPLOAD_FOLDER/$SIZE_FOLDER
 
-            - name: Build lighting-app example
+            - name: Build contact-sensor-app example
               uses: ./.github/actions/build-example
               with:
-                example_name: lighting-app
-                opt_arg: --sed=no --ota=yes --certs=yes
+                example_name: contact-sensor-app
+                chip_name: RT583
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build humidity-sensor-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: humidity-sensor-app
+                chip_name: RT584H
+                opt_arg: --sed=yes --ota=yes --certs=yes
                 upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
@@ -59,6 +69,97 @@ jobs:
               uses: ./.github/actions/build-example
               with:
                 example_name: light-switch-app
+                chip_name: RT584L
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build lighting-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: lighting-app
+                chip_name: RT584HA4
+                opt_arg: --sed=no --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build lighting-zigbee example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: lighting-zigbee
+                chip_name: RT584HA4
+                opt_arg: --sed=no --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build lock-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: lock-app
+                chip_name: RT583
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build occupancy-sensor-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: occupancy-sensor-app
+                chip_name: RT584H
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build smart-plug-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: smart-plug-app
+                chip_name: RT584L
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build smoke-alarm-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: smoke-alarm-app
+                chip_name: RT584HA4
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build temperature-measurement-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: temperature-measurement-app
+                chip_name: RT583
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build thermostat example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: thermostat
+                chip_name: RT584H
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build water-valve-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: water-valve-app
+                chip_name: RT584L
+                opt_arg: --sed=yes --ota=yes --certs=yes
+                upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
+                upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
+
+            - name: Build window-app example
+              uses: ./.github/actions/build-example
+              with:
+                example_name: window-app
+                chip_name: RT584HA4
                 opt_arg: --sed=yes --ota=yes --certs=yes
                 upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER

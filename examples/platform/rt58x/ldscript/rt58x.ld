@@ -12,7 +12,6 @@ GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 
 __STACK_SIZE = DEFINED(__STACK_SIZE) ? __STACK_SIZE : 2K;
-__CACHE_SIZE = DEFINED(__CACHE_SIZE) ? __CACHE_SIZE : 4K;
 
 MEMORY
 {

@@ -47,6 +47,7 @@
                 "humidity-sensor-app",
                 "light-switch-app",
                 "lighting-app",
+                "lighting-zigbee",
                 "lock-app",
                 "occupancy-sensor-app",
                 "smart-plug-app",

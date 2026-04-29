@@ -73,6 +73,8 @@ rt58x_executable("lighting_app") {
     "${examples_plat_dir}/init_rt58x_platform.cpp",
     "${examples_plat_dir}/matter_config.cpp",
     "${examples_plat_dir}/uart.cpp",
+    "${examples_plat_dir}/DTM.cpp",
+    "${examples_plat_dir}/DTM_RF.c",
     "include/LightingManager.h",
     "src/AppTask.cpp",
     "src/LightingManager.cpp",

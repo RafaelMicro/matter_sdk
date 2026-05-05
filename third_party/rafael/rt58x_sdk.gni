@@ -223,6 +223,7 @@ template("rt58x_sdk") {
                    "CONFIG_CRYPTO_SM2P256V1_ENABLE=1",
                    "CONFIG_CRYPTO_SM2_P192_ENABLE=1",
                    "CONFIG_BUILD_COMPONENT_ZIGBEE",
+                   "TX_PWR_COMP_DEBUG=1",
                    ]
     if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       defines += [ 

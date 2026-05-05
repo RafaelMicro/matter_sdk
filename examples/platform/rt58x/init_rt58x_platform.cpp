@@ -119,6 +119,14 @@ void init_rt58x_platform(void)
 {
     vHeapRegionsInt();
     __libc_init_array();
+
+    /*set all pin to gpio, except GPIO16, GPIO17 */
+    for (int i = 0; i < 32; i++) {
+        if (i == 16 || i == 17) {
+            continue; // Skip GPIO16 and GPIO17
+        }
+        hosal_pin_set_mode(i, HOSAL_MODE_GPIO);
+    }
     wdt_init();
     uartConsoleInit();
     _dump_boot_info();

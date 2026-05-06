@@ -41,7 +41,7 @@ using namespace chip::Credentials;
 using Protocols::InteractionModel::Status;
 
 // Is the device identifying?
-bool  __attribute__((weak)) emberAfIsDeviceIdentifying(EndpointId endpoint)
+static bool emberAfIsDeviceIdentifying(EndpointId endpoint)
 {
 #ifdef ZCL_USING_IDENTIFY_CLUSTER_SERVER
     auto cluster = FindIdentifyClusterOnEndpoint(endpoint);
@@ -344,7 +344,7 @@ bool emberAfGroupsClusterRemoveAllGroupsCallback(app::CommandHandler * commandOb
     }
 #endif
 
-    provider->RemoveEndpoint(fabricIndex, commandPath.mEndpointId);
+    TEMPORARY_RETURN_IGNORED provider->RemoveEndpoint(fabricIndex, commandPath.mEndpointId);
     status = Status::Success;
     MatterReportingAttributeChangeCallback(kRootEndpointId, GroupKeyManagement::Id, GroupKeyManagement::Attributes::GroupTable::Id);
 exit:

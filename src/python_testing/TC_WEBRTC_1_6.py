@@ -23,7 +23,10 @@ from test_plan_support import commission_if_required
 from matter.ChipDeviceCtrl import TransportPayloadCapability
 from matter.clusters import CameraAvStreamManagement, Objects, WebRTCTransportProvider
 from matter.clusters.Types import NullValue
-from matter.testing.matter_testing import MatterBaseTest, TestStep, default_matter_test_main, has_feature, run_if_endpoint_matches
+from matter.interaction_model import InteractionModelError, Status
+from matter.testing.decorators import has_feature, run_if_endpoint_matches
+from matter.testing.matter_testing import MatterBaseTest
+from matter.testing.runner import TestStep, default_matter_test_main
 from matter.webrtc import BrowserPeerConnection, WebRTCManager
 
 
@@ -66,26 +69,21 @@ class TC_WEBRTC_1_6(MatterBaseTest, WebRTCTestHelper):
             ),
             TestStep(
                 8,
-                description="DUT sends ICECandidates command to the TH/WEBRTCR.",
-                expectation="Verify that ICECandidates command contains the same WebRTCSessionID saved in step 4 and contain a non-empty ICE candidates.",
-            ),
-            TestStep(
-                9,
-                description="TH waits for 5 seconds",
+                description="TH waits for 10 seconds",
                 expectation="Verify the WebRTC session has been successfully established. Verify TH is playing live audio received from DUT. Verify DUT is able to play the live audio in its speaker sent by TH. If DUT supports AVSM.S.F01(VDO) feature, Verify TH is playing live video received from DUT.",
             ),
             TestStep(
-                10,
+                9,
                 description="TH sends the EndSession command with the WebRTCSessionID saved in step 4 to the DUT.",
                 expectation="DUT responds with SUCCESS status code.",
             ),
             TestStep(
-                11,
+                10,
                 description="TH sends the VideoStreamDeallocate command if allocated, with the VideoStreamID saved in step 2 to the DUT.",
                 expectation="DUT responds with SUCCESS status code.",
             ),
             TestStep(
-                12,
+                11,
                 description="TH sends the AudioStreamDeallocate command with the AudioStreamID saved in step 3 to the DUT.",
                 expectation="DUT responds with SUCCESS status code.",
             ),
@@ -210,12 +208,6 @@ class TC_WEBRTC_1_6(MatterBaseTest, WebRTCTestHelper):
         )
 
         self.step(8)
-        ice_session_id, remote_candidates = await webrtc_peer.get_remote_ice_candidates()
-        asserts.assert_equal(session_id, ice_session_id, "ProvideIceCandidates invoked with wrong session id")
-        asserts.assert_true(len(remote_candidates) > 0, "Invalid remote ice candidates received")
-        await webrtc_peer.set_remote_ice_candidates(remote_candidates)
-
-        self.step(9)
         if not await webrtc_peer.check_for_session_establishment():
             logging.error("Failed to establish webrtc session")
             raise Exception("Failed to establish webrtc session")
@@ -223,24 +215,31 @@ class TC_WEBRTC_1_6(MatterBaseTest, WebRTCTestHelper):
         if not self.is_pics_sdk_ci_only:
             self.user_verify_two_way_talk("Verify if two way talk back is working")
 
-        self.step(10)
-        await self.send_single_cmd(
-            cmd=WebRTCTransportProvider.Commands.EndSession(
-                webRTCSessionID=session_id, reason=Objects.Globals.Enums.WebRTCEndReasonEnum.kUserHangup
-            ),
-            endpoint=endpoint,
-            payloadCapability=TransportPayloadCapability.LARGE_PAYLOAD,
-        )
+        self.step(9)
+        try:
+            await self.send_single_cmd(
+                cmd=WebRTCTransportProvider.Commands.EndSession(
+                    webRTCSessionID=session_id, reason=Objects.Globals.Enums.WebRTCEndReasonEnum.kUserHangup
+                ),
+                endpoint=endpoint,
+                payloadCapability=TransportPayloadCapability.LARGE_PAYLOAD,
+            )
+        except InteractionModelError as e:
+            # Since on closing the browser popup, the PC state changes to Disconnected/Closed.
+            # Some implementations can remove session from CurrentSessions on connection state
+            # switching to Disconnected/Closed. Hence ignore NotFound status response.
+            if (e.status != Status.NotFound):
+                raise
 
         if dut_has_vdo_feature:
-            self.step(11)
+            self.step(10)
             await self.send_single_cmd(
                 endpoint=endpoint, cmd=CameraAvStreamManagement.Commands.VideoStreamDeallocate(videoStreamID=aVideoStreamID)
             )
         else:
-            self.skip_step(11)
+            self.skip_step(10)
 
-        self.step(12)
+        self.step(11)
         await self.send_single_cmd(
             endpoint=endpoint, cmd=CameraAvStreamManagement.Commands.AudioStreamDeallocate(audioStreamID=aAudioStreamID)
         )

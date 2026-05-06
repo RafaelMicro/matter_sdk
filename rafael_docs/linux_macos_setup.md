@@ -15,31 +15,46 @@
 ## Prerequisites
 
 -   Before building, you'll need to install a few OS-specific dependencies.
--   For Linux:
+### For Linux:
     -   On Debian-based Linux distributions such as Ubuntu, these dependencies
         can be satisfied with the following:
     ```
-    $ sudo apt-get install git gcc g++ pkg-config libssl-dev libdbus-1-dev \
-         libglib2.0-dev libavahi-client-dev ninja-build python3-venv python3-dev \
-         python3-pip unzip libgirepository1.0-dev libcairo2-dev libreadline-dev
+    sudo apt-get install git gcc g++ pkg-config cmake libssl-dev libdbus-1-dev \
+        libglib2.0-dev libavahi-client-dev ninja-build python3-venv python3-dev \
+        python3-pip unzip libgirepository1.0-dev libcairo2-dev libreadline-dev \
+        default-jre
     ```
--   For macOS:
-    -   On macOS, first install Xcode from the Mac App Store. The remaining
+#### Upgrading Python on Ubuntu 22.04
+
+-   Ubuntu 22.04 ships with Python 3.10 by default, but Matter SDK requires Python
+    3.11 or newer. To upgrade Python, run the following commands:
+
+    ```shell
+    sudo apt-get install python3.11 python3.11-dev python3.11-venv
+    # Register python3.10 so that it can be switched back if needed
+    sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+    # Register python3.11 with higher priority (will be automatically selected)
+    sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 2
+    # Verify that python3 points to python3.11
+    python3 --version
+    ```
+### For macOS:
+-   On macOS, first install Xcode from the Mac App Store. The remaining
         dependencies can be installed and satisfied using
         [Brew](https://brew.sh/):
     ```
     $ brew install openssl pkg-config
     ```
-    -   However, that does not expose the package to **pkg-config**. To fix
+-   However, that does not expose the package to **pkg-config**. To fix
         that, one needs to run something like the following:
-        -   Intel:
+-   Intel:
         ```
         $ cd /usr/local/lib/pkgconfig
         $ ln -s ../../Cellar/openssl@1.1/1.1.1g/lib/pkgconfig/* .
         ```
         where openssl@1.1/1.1.1g may need to be replaced with the actual version
         of OpenSSL installed by Brew.
-        -   Apple Silicon:
+-   Apple Silicon:
         ```
         $ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:"/opt/homebrew/opt/openssl@3/lib/pkgconfig"
         ```

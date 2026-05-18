@@ -16,7 +16,7 @@
 
 -   Before building, you'll need to install a few OS-specific dependencies.
 ### For Linux:
-    -   On Debian-based Linux distributions such as Ubuntu, these dependencies
+-   On Debian-based Linux distributions such as Ubuntu, these dependencies
         can be satisfied with the following:
     ```
     sudo apt-get install git gcc g++ pkg-config cmake libssl-dev libdbus-1-dev \
@@ -91,17 +91,31 @@ which is expensive, so avoid running it unless the environment is out of date.
 
 ### Building project
 
-Run the following command to build a project: 1. Select target board
-(RT583) 2. Select OTA support or not 3. Select sleep end device (SED)
-support or not 4. Select certs support or not
-
+Run the following command to build a project:
 ```
-$ ./scripts/examples/gn_rt58x_example.sh ./examples/<project-name>/rt58x ./out/<project-name> <Board(RT583)> <optional>
+$ ./scripts/examples/gn_rt58x_example.sh ./examples/<project-name>/rt58x ./out/<project-name> <board> [--sed=<yes|no>] [--ota=<yes|no>] [--certs=<yes|dac-only|no>]
+```
+
+**Arguments:**
+
+| Argument | Possible Values |
+|---|---|
+| `<project-name>` | `contact-sensor-app`, `humidity-sensor-app`, `light-switch-app`, `lighting-app`, `lighting-zigbee`, `lock-app`, `occupancy-sensor-app`, `smart-plug-app`, `smoke-alarm-app`, `temperature-measurement-app`, `thermostat`, `water-valve-app`, `window-app` |
+| `<board>` | `RT583`, `RT584H`, `RT584L`, `RT584HA4` |
+| `--sed` | `yes` / `no` (default: `no`) — Sleep End Device support |
+| `--ota` | `yes` / `no` (default: `no`) — OTA update support |
+| `--certs` | `yes` / `dac-only` / `no` (default: `no`) — Attestation credentials |
+
 Example:
-$ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583
-$ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583 --sed=yes --ota=yes
+```
 $ ./scripts/examples/gn_rt58x_example.sh ./examples/lighting-app/rt58x ./out/lighting-app RT583 --sed=yes --ota=yes --certs=yes
 ```
+
+> **VSCode Task Explorer**: If you have the
+> [Task Explorer](https://marketplace.visualstudio.com/items?itemName=spmeesseman.vscode-taskexplorer)
+> extension installed, you can use the **`Matter: Build Example`** task instead.
+> It will prompt you to select the project, board, and optional features
+> interactively.
 
 ### Removing build artifacts
 
@@ -112,3 +126,7 @@ following command:
 ```
 $ sudo rm -fr ./out/<project-name>
 ```
+
+> **VSCode Task Explorer**: Alternatively, run the
+> **`Matter: Clean Build Output`** task, which will prompt you to
+> select the project and board to clean up.

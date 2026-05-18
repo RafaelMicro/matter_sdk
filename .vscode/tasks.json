@@ -2,38 +2,27 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "RT matter dev setup",
+            "label": "Matter: Activate Environment",
             "type": "shell",
-            "command": "echo 'Env setup finished'",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "RT matter image build (Step I)",
-                "RT matter container env run/setup (Step II)"
-            ]
-        },
-        {
-            "label": "RT matter image build (Step I)",
-            "type": "shell",
-            "command": "docker build -f ${workspaceFolder}/.devcontainer/RT582_Dockerfile -t rafael_matter . --no-cache",
+            "command": "source scripts/activate.sh",
             "group": "build"
         },
         {
-            "label": "RT matter container env run/setup (Step II)",
+            "label": "Matter: Build Example",
             "type": "shell",
-            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter bash /var/chip/scripts/activate.sh",
+            "command": "./scripts/examples/gn_rt58x_example.sh ./examples/${input:exampleproject}/rt58x ./out/${input:exampleproject} ${input:board} --sed=${input:sed} --ota=${input:OTA} --certs=${input:Certificate}",
             "group": "build"
         },
         {
-            "label": 
-            "Build RT example",
-            "type": "shell",
-            "command": "docker run --rm -i --name Rafael_matter_builder -v ${workspaceFolder}:/var/chip rafael_matter /var/chip/scripts/examples/gn_rt58x_example.sh /var/chip/examples/${input:exampleproject}/rt58x /var/chip/out/${input:exampleproject} ${input:board} --sed=${input:sed} --ota=${input:OTA} --certs=${input:Certificate}",
-            "group": "build"
-        },
-        {
-            "label": "Remove output of RT building example",
+            "label": "Matter: Clean Build Output",
             "type": "shell",
             "command": "sudo rm -fr out/${input:exampleproject}/${input:board}",
+            "group": "build"
+        },
+        {
+            "label": "Matter: Generate OTA Image",
+            "type": "shell",
+            "command": "./third_party/rafael/rafael_ota_tool.py create -v 0x1346 -p 0x400E -vn ${input:versionNum} -vs \"${input:versionStr}\" -da sha256 out/${input:exampleproject}/${input:board}/${input:board}-${input:exampleproject}-example.bin out/${input:exampleproject}/${input:board}/${input:board}-${input:exampleproject}-example.ota",
             "group": "build"
         },
     ],
@@ -86,6 +75,18 @@
             "description": "Use attestation credentials?",
             "options": ["yes", "dac-only", "no"],
             "default": "no"
+        },
+        {
+            "type": "promptString",
+            "id": "versionNum",
+            "description": "Version number (e.g. 2)",
+            "default": "2"
+        },
+        {
+            "type": "promptString",
+            "id": "versionStr",
+            "description": "Version string (e.g. 2.0)",
+            "default": "2.0"
         }
     ]
 }

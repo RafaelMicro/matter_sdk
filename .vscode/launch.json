@@ -41,7 +41,7 @@
         {
             "type": "pickString",
             "id": "exampleproject",
-            "description": "Which example do you want to create?",
+            "description": "Which example do you want to debug?",
             "options": [
                 "contact-sensor-app",
                 "humidity-sensor-app",

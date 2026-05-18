@@ -9,25 +9,25 @@
 ## Create Matter OTA file
 - On a Linux platform create the Matter OTA file using Rafael OTA tool
 
-      ./src/app/rafael_ota_tool.py create -v 0xFFF1 -p 0x8005 -vn 2 -vs "2.0" -da sha256 out/RT583/chip-rt58x-lighting-app-example.bin out/RT583/chip-rt58x-lighting-app-example.ota
+      ./third_party/rafael/rafael_ota_tool.py create -v 0x1346 -p 0x400E -vn 2 -vs "2.0" -da sha256 out/lighting-app/RT583/RT583-lighting-app-example.bin out/lighting-app/RT583/RT583-lighting-app-example.ota
         
 - To verify the Matter OTA file, run the script with following command
         
-      ./src/app/rafael_ota_tool.py show out/RT583/chip-rt58x-lighting-app-example.ota
+      ./third_party/rafael/rafael_ota_tool.py show out/RT583/chip-rt58x-lighting-app-example.ota
 
 - Example output
 
       Magic: 1beef11e
-      Total Size: 443856
+      Total Size: 515439
       Header Size: 63
       Header TLV:
-         [0] Vendor Id: 65521 (0xfff1)
-         [1] Product Id: 32773 (0x8005)
-         [2] Version: 2 (0x2)
-         [3] Version String: 2.0
-         [4] Payload Size: 443777 (0x6c581)
-         [8] Digest Type: 1 (0x1)
-         [9] Digest: 7828284dfc715ecd89292b03b798cca37c87301cf84691292e52e12eab6990b9
+      [0] Vendor Id: 4934 (0x1346)
+      [1] Product Id: 16398 (0x400e)
+      [2] Version: 2 (0x2)
+      [3] Version String: 2.0
+      [4] Payload Size: 515360 (0x7dd20)
+      [8] Digest Type: 1 (0x1)
+      [9] Digest: 22aba633ce23cc4d78abea6697e3bc95c0d4874b2511c69dc9e1616b5ca48658
 
 ## Building OTA Provider on Raspberrypi
 

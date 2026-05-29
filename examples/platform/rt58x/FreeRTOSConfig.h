@@ -22,13 +22,13 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configUSE_PREEMPTION			1
 #define configUSE_IDLE_HOOK				0
 #define configUSE_TICK_HOOK				0
+#define configUSE_MALLOC_FAILED_HOOK	0
 #define configUSE_TICKLESS_IDLE			CONFIG_HOSAL_SOC_IDLE_SLEEP
 
 #define configMAX_PRIORITIES			( 32 )
 
 
 #define configMINIMAL_STACK_SIZE		( ( unsigned short ) 256 ) /* SIZE-1-1-12-16-30-34>=4 */
-#define configTOTAL_HEAP_SIZE			( ( size_t ) 20*1024 )
 #define configMAX_TASK_NAME_LEN			( 16 )
 #define configUSE_TRACE_FACILITY		1
 #define configUSE_STATS_FORMATTING_FUNCTIONS 1
@@ -38,7 +38,6 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 #define configQUEUE_REGISTRY_SIZE		8
 #define configCHECK_FOR_STACK_OVERFLOW	1
 #define configUSE_RECURSIVE_MUTEXES		1
-#define configUSE_MALLOC_FAILED_HOOK	1
 #define configUSE_APPLICATION_TASK_TAG	0
 #define configUSE_COUNTING_SEMAPHORES	1
 #define configGENERATE_RUN_TIME_STATS	0

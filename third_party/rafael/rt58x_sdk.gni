@@ -172,6 +172,7 @@ template("rt58x_sdk") {
                    "ENV_AREA_SIZE=0x10000",
                    "EFD_GC_EMPTY_SEC_THRESHOLD=8",
                    "CONFIG_RF_POWER_10DBM",
+                   "CONFIG_RF_MCU_CONST_LOAD_SUPPORTED=1",
                 ]
     }
     else if (rafael_board == "RT584H") {

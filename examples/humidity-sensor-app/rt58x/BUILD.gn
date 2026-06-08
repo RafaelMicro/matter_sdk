@@ -56,6 +56,8 @@ rt58x_sdk("sdk") {
 
   defines = [
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
+    # Enable TX power compensation for device that operates in wide temp range
+    "RF_TX_POWER_COMP=0",  # TX power temp compensation not required for this device type
   ]
 
   if (chip_build_platform_attestation_credentials_provider) {

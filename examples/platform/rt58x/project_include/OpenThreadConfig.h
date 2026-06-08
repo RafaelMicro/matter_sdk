@@ -29,137 +29,148 @@
 /**
  * @file
  *   This file includes all compile-time configuration constants used by
- *   efr32 applications for OpenThread.
+ *   RT58x applications for OpenThread.
  */
 #ifndef OPENTHREAD_CORE_RT58X_CONFIG_H_
 #define OPENTHREAD_CORE_RT58X_CONFIG_H_
 
+/* ========================================================================== */
+/* Logging                                                                     */
+/* ========================================================================== */
+
 //#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
 //#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
 #define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
-//#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+//#define OPENTHREAD_CONFIG_LOG_LEVEL             OT_LOG_LEVEL_DEBG
 
-// Turn on a moderate level of logging in OpenThread
-// Enable use of external heap allocator (calloc/free) for OpenThread.
-#define OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE 1
+#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 0
+#define OPENTHREAD_CONFIG_LOG_PLATFORM          1
+#define OPENTHREAD_CONFIG_LOG_OUTPUT            OPENTHREAD_CONFIG_LOG_OUTPUT_APP
 
-/*
- * @def OPENTHREAD_CONFIG_PLATFORM_INFO
- *
- * The platform-specific string to insert into the OpenThread version string.
- *
- */
+/* ========================================================================== */
+/* Platform                                                                    */
+/* ========================================================================== */
+
+#define OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE  1
 
 #ifndef OPENTHREAD_CONFIG_PLATFORM_INFO
-#define OPENTHREAD_CONFIG_PLATFORM_INFO "RT58x"
+#define OPENTHREAD_CONFIG_PLATFORM_INFO         "RT58x"
 #endif
 
-/**
- * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
- *
- * The maximum number of children.
- *
- */
-#ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
-#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 16
-#endif
+#define OPENTHREAD_CONFIG_THREAD_VERSION        OT_THREAD_VERSION_1_4
+#define OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE 0
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
 
-
-/**
- * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
- *
- * Define to 1 if you want to enable software transmission security logic.
- *
- */
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 1
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 0
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE 0
-#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE 1
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
- *
- * Define to 1 if you want to support microsecond timer in platform.
- *
- */
 #ifndef OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
 #define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 0
 #endif
 
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
- *
- * Define to 1 to enable otPlatFlash* APIs to support non-volatile storage.
- *
- * When defined to 1, the platform MUST implement the otPlatFlash* APIs instead of the otPlatSettings* APIs.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE 0
+#ifndef OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE
+#define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE    (2048 * sizeof(void *))
 #endif
 
-/**
- * @def OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE
- *
- * The size of heap buffer when DTLS is enabled.
- *
- */
-#ifndef OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE
-#define OPENTHREAD_CONFIG_HEAP_INTERNAL_SIZE (2048 * sizeof(void *))
-#endif
-/**
- * @def OPENTHREAD_CONFIG_CLI_TX_BUFFER_SIZE
- *
- *  The size of CLI message buffer in bytes
- *
- */
 #ifndef OPENTHREAD_CONFIG_CLI_UART_TX_BUFFER_SIZE
 #define OPENTHREAD_CONFIG_CLI_UART_TX_BUFFER_SIZE 256
 #endif
-// disable unused features
-#define OPENTHREAD_CONFIG_COAP_API_ENABLE 0
-#define OPENTHREAD_CONFIG_JOINER_ENABLE 0
-#define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE 0
-#define OPENTHREAD_CONFIG_UDP_FORWARD_ENABLE 0
-#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 0
-#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE 0
-#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE 0
-#define OPENTHREAD_CONFIG_TCP_ENABLE 0
 
-#define OPENTHREAD_CONFIG_SECURE_TRANSPORT_ENABLE 0
-#define OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS_MANAGEMENT 0
-#define OPENTHREAD_CONFIG_PING_SENDER_ENABLE    0
+/* ========================================================================== */
+/* Radio                                                                       */
+/* ========================================================================== */
 
-#define OPENTHREAD_CONFIG_ECDSA_ENABLE 1
-#define OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE 1
-#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 80
-#define OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_DIRECT 4
+#define OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT  0
+#define OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT  1
+
+/* ========================================================================== */
+/* MAC                                                                         */
+/* ========================================================================== */
+
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 0
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE  0
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE   1
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_ENERGY_SCAN_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE         0
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US        0
+#define OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_DIRECT   4
 #define OPENTHREAD_CONFIG_MAC_DEFAULT_MAX_FRAME_RETRIES_INDIRECT 8
 
-#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 0
-#define OPENTHREAD_CONFIG_LOG_PLATFORM 1
-#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_APP
+/* ========================================================================== */
+/* Security / ECDSA                                                            */
+/* ========================================================================== */
 
-#define OPENTHREAD_CONFIG_RADIO_915MHZ_OQPSK_SUPPORT 0
-#define OPENTHREAD_CONFIG_RADIO_2P4GHZ_OQPSK_SUPPORT 1
+#define OPENTHREAD_CONFIG_ECDSA_ENABLE                    1
+#define OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE      1
+#define OPENTHREAD_CONFIG_SECURE_TRANSPORT_ENABLE         0
+#define OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS_MANAGEMENT 0
 
-//#define OPENTHREAD_CONFIG_IP6_FRAGMENTATION_ENABLE 1
+/* ========================================================================== */
+/* Memory                                                                      */
+/* ========================================================================== */
 
+#define OPENTHREAD_CONFIG_MESSAGE_USE_HEAP_ENABLE 0
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS     80
 
-#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
-#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE 1
-//#define OPENTHREAD_CONFIG_THREAD_VERSION OT_THREAD_VERSION_1_2
+/* ========================================================================== */
+/* TCP                                                                         */
+/* ========================================================================== */
 
-#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 0
+#define OPENTHREAD_CONFIG_TCP_ENABLE 0
 
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 0
-#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
-//#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 35000
-#endif // OPENTHREAD_CORE_RT58X_CONFIG_H_
+/* ========================================================================== */
+/* Common OpenThread features (FTD and MTD)                                   */
+/* ========================================================================== */
 
+#define OPENTHREAD_CONFIG_ASSERT_ENABLE                   1
+#define OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE          0
+#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE            0
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_DHCP6_PD_ENABLE  0
+#define OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE           0
+#define OPENTHREAD_CONFIG_COAP_API_ENABLE                 0
+#define OPENTHREAD_CONFIG_COAP_BLOCKWISE_TRANSFER_ENABLE  0
+#define OPENTHREAD_CONFIG_COAP_OBSERVE_API_ENABLE         0
+#define OPENTHREAD_CONFIG_COAP_SECURE_API_ENABLE          0
+#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE             0
+#define OPENTHREAD_CONFIG_DIAG_ENABLE                     0
+#define OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE             0
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE               1
+#define OPENTHREAD_CONFIG_DNS_DSO_ENABLE                  0
+#define OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE       0
+#define OPENTHREAD_CONFIG_DUA_ENABLE                      0
+#define OPENTHREAD_CONFIG_HISTORY_TRACKER_ENABLE          0
+#define OPENTHREAD_CONFIG_IP6_BR_COUNTERS_ENABLE          0
+#define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE                1
+#define OPENTHREAD_CONFIG_JOINER_ENABLE                   0
+#define OPENTHREAD_CONFIG_LINK_RAW_ENABLE                 0
+#define OPENTHREAD_CONFIG_MAC_FILTER_ENABLE               1
+#define OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE 1
+#define OPENTHREAD_CONFIG_MLR_ENABLE                      1
+#define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_ENABLE        0
+#define OPENTHREAD_CONFIG_NAT64_BORDER_ROUTING_ENABLE     0
+#define OPENTHREAD_CONFIG_NAT64_TRANSLATOR_ENABLE         0
+#define OPENTHREAD_CONFIG_NETDATA_PUBLISHER_ENABLE        0
+#define OPENTHREAD_CONFIG_PING_SENDER_ENABLE              0
+#define OPENTHREAD_CONFIG_SNTP_CLIENT_ENABLE              1
+#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE               1
+#define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE               0
+#define OPENTHREAD_CONFIG_TIME_SYNC_ENABLE                0
+#define OPENTHREAD_CONFIG_TMF_ANYCAST_LOCATOR_ENABLE      0
+#define OPENTHREAD_CONFIG_TX_QUEUE_STATISTICS_ENABLE      0
+#define OPENTHREAD_CONFIG_UDP_FORWARD_ENABLE              0
 
-#define OPENTHREAD_CONFIG_DUA_ENABLE 0
-#define OPENTHREAD_CONFIG_MLR_ENABLE 1
-#define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE 1
+#define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE                     0
+#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE                     0
 
-//#define OPENTHREAD_CONFIG_MLE_CHILD_TIMEOUT_DEFAULT 120
+#ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 16
+#endif
+
+/* ========================================================================== */
+/* Matter LIT Config                                                          */
+/* Suggestion: MLE Child Timeout > Check Timeout > Polling Interval           */
+/* ========================================================================== */
+#if CHIP_CONFIG_ENABLE_ICD_LIT
+#define OPENTHREAD_CONFIG_MLE_CHILD_TIMEOUT_DEFAULT       240
+#define OPENTHREAD_CONFIG_CHILD_SUPERVISION_CHECK_TIMEOUT 190
+#endif
+
+#endif /* OPENTHREAD_CORE_RT58X_CONFIG_H_ */

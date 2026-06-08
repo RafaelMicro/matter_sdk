@@ -181,6 +181,7 @@ template("rt58x_sdk") {
                    "ENV_AREA_SIZE=0x10000",
                    "EFD_GC_EMPTY_SEC_THRESHOLD=8",
                    "CONFIG_RF_POWER_10DBM",
+                   "CONFIG_RF_MCU_CONST_LOAD_SUPPORTED=1",
                 ]
     }
     else if (rafael_board == "RT584H") {
@@ -232,7 +233,7 @@ template("rt58x_sdk") {
                    "CONFIG_CRYPTO_SM2P256V1_ENABLE=1",
                    "CONFIG_CRYPTO_SM2_P192_ENABLE=1",
                    "CONFIG_BUILD_COMPONENT_ZIGBEE",
-                   "TX_PWR_COMP_DEBUG=1",
+                   #"TX_PWR_COMP_DEBUG=1",
                    ]
     if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       defines += [ 

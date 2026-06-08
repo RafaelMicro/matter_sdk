@@ -33,6 +33,7 @@
 
 #include <assert.h>
 #include <DeviceInfoProviderImpl.h>
+#include <setup_payload/OnboardingCodesUtil.h>
 #include <setup_payload/QRCodeSetupPayloadGenerator.h>
 #include <setup_payload/SetupPayload.h>
 

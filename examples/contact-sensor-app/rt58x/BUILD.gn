@@ -73,7 +73,6 @@ rt58x_executable("contact-sensor-app") {
   output_name = "${rafael_board}-contact-sensor-app-example.out"
   include_dirs = [ "include" ]
   defines = []
-
   sources = [
     "${examples_plat_dir}/heap_5_rt58x.c",
     "${examples_plat_dir}/init_rt58x_platform.cpp",

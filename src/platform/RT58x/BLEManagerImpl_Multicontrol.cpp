@@ -1435,11 +1435,9 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         break;
 
     case DeviceEventType::kThreadStateChange:
-        //HandleThreadStateChange(event);
-        break;    
+        break;
 
     case DeviceEventType::kOperationalNetworkEnabled:
-        //HandleOperationalNetworkEnabled(event);
         break;
 
     case DeviceEventType::kAppToBle:
@@ -1452,25 +1450,6 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
     }
 }
 
-
-CHIP_ERROR BLEManagerImpl::HandleOperationalNetworkEnabled(const ChipDeviceEvent * event)
-{
-    ChipDeviceEvent disconnectEvent;
-
-    ChipLogDetail(DeviceLayer, "HandleOperationalNetworkEnabled");
-    ble_cmd_conn_terminate(0);
-
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR BLEManagerImpl::HandleThreadStateChange(const ChipDeviceEvent * event)
-{
-    CHIP_ERROR error = CHIP_NO_ERROR;
-
-    ChipLogDetail(DeviceLayer, "HandleThreadStateChange");
-
-    return error;
-}
 
 CHIP_ERROR BLEManagerImpl::SubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId)
 {

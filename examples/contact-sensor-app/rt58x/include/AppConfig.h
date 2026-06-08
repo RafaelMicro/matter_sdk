@@ -19,10 +19,6 @@
 
 #pragma once
 
-// #include "efr32_utils.h"
-
-// ---- Lighting Example App Config ----
-
 #define APP_TASK_NAME "APP"
 
 // Time it takes in ms for the simulated actuator to move from one

@@ -19,9 +19,6 @@
 
 #pragma once
 
-// #include "efr32_utils.h"
-
-// ---- Lighting Example App Config ----
 
 #define APP_TASK_NAME "APP"
 

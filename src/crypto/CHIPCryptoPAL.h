@@ -1185,6 +1185,10 @@ class Spake2p
 public:
     Spake2p(size_t fe_size, size_t point_size, size_t hash_size);
     virtual ~Spake2p() = default;
+    /* add 2 virtual functions */
+    virtual CHIP_ERROR ComputeZ(void *Z_in, void * xy_in, void * XY_in, void * w0_in, void * MN_in) = 0;
+    virtual CHIP_ERROR ComputeVerifierV(void * V_in, void * y_in, void * L_in) = 0;
+    virtual CHIP_ERROR ComputeProverV(void * V_in, void * w0_in, void * w1_in, void * XY_in, void * MN_in) = 0;
 
     /**
      * @brief Initialize Spake2+ with some context specific information.
@@ -1587,6 +1591,12 @@ public:
 
     CHIP_ERROR ComputeW0(uint8_t * w0out, size_t * w0_len, const uint8_t * w0sin, size_t w0sin_len) override;
     CHIP_ERROR ComputeL(uint8_t * Lout, size_t * L_len, const uint8_t * w1sin, size_t w1sin_len) override;
+
+    /* add 2 extra functions for using HW to caculate the Z and V for SPAKE2+ verifier */
+    CHIP_ERROR ComputeZ(void *Z_in, void * xy_in, void * XY_in, void * w0_in, void * MN_in) override;
+    CHIP_ERROR ComputeVerifierV(void * V_in, void * y_in, void * L_in) override;
+    CHIP_ERROR ComputeProverV(void * V_in, void * w0_in, void * w1_in, void * XY_in, void * MN_in) override;
+
 
 protected:
     CHIP_ERROR InitImpl() override;

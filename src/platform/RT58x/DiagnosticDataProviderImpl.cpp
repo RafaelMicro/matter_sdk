@@ -35,6 +35,8 @@
 
 using namespace ::chip::app::Clusters::GeneralDiagnostics;
 
+extern uint8_t _heap_size;
+
 namespace chip {
 namespace DeviceLayer {
 
@@ -61,7 +63,7 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapFree(uint64_t & currentHeap
 CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapUsed(uint64_t & currentHeapUsed)
 {
     // Calculate the Heap used based on Total heap - Free heap
-    int64_t heapUsed = (configTOTAL_HEAP_SIZE - xPortGetFreeHeapSize());
+    int64_t heapUsed = ((unsigned int)&_heap_size - xPortGetFreeHeapSize());
 
     // Something went wrong, this should not happen
     VerifyOrReturnError(heapUsed >= 0, CHIP_ERROR_INVALID_INTEGER_VALUE);

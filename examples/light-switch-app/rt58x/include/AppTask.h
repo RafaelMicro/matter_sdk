@@ -27,7 +27,6 @@
 #include <stdint.h>
 
 #include "AppEvent.h"
-#include "BaseApplication.h"
 #include "FreeRTOS.h"
 #include "LightSwitchMgr.h"
 #include "timers.h" // provides FreeRTOS timer support

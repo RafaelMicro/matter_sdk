@@ -354,7 +354,7 @@ void DoFactoryReset(intptr_t arg)
         }
     }
 #endif
-    ConnectivityMgr().ErasePersistentInfo();
+    //ConnectivityMgr().ErasePersistentInfo();
 #endif
 #if 1
     vTaskSuspendAll();

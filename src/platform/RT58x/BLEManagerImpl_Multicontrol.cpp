@@ -90,7 +90,7 @@ namespace {
 #define MAC_PIB_MAC_ACK_WAIT_DURATION                                          \
     544 // non-beacon mode; 864 for beacon mode
 #define MAC_PIB_MAC_MAX_BE                    5
-#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 16416
+#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 0     /* OpenThread control */
 #define MAC_PIB_MAC_MAX_FRAME_RETRIES         4
 #define MAC_PIB_MAC_MAX_CSMACA_BACKOFFS       5
 #define MAC_PIB_MAC_MIN_BE                    2

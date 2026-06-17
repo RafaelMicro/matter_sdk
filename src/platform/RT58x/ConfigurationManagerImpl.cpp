@@ -127,6 +127,14 @@ CHIP_ERROR ConfigurationManagerImpl::StoreRebootCount(uint32_t rebootCount)
     return WriteConfigValue(RT58xConfig::kConfigKey_RebootCount, rebootCount);
 }
 
+CHIP_ERROR ConfigurationManagerImpl::GetBootReason(uint32_t & bootReason)
+{
+    return ReadConfigValue(RT58xConfig::kCounterKey_BootReason, bootReason);
+}
+CHIP_ERROR ConfigurationManagerImpl::StoreBootReason(uint32_t bootReason)
+{
+    return WriteConfigValue(RT58xConfig::kCounterKey_BootReason, bootReason);
+}
 CHIP_ERROR ConfigurationManagerImpl::ReadConfigValue(Key key, bool & val)
 {
     return RT58xConfig::ReadConfigValue(key, val);

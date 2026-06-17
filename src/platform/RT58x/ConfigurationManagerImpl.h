@@ -50,6 +50,8 @@ private:
     CHIP_ERROR StoreRebootCount(uint32_t rebootCount) override;
     CHIP_ERROR GetSoftwareVersion(uint32_t & softwareVer) override;
     CHIP_ERROR StoreSoftwareVersion(uint32_t softwareVer) override;
+    CHIP_ERROR GetBootReason(uint32_t & bootReason) override;
+    CHIP_ERROR StoreBootReason(uint32_t bootReason) override;
 
     // NOTE: Other public interface methods are implemented by GenericConfigurationManagerImpl<>.
 

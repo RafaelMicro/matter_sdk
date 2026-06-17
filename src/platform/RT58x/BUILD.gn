@@ -33,7 +33,7 @@ if (chip_crypto == "platform") {
 
 static_library("RT58x") {
   sources = [
-    "../FreeRTOS/SystemTimeSupport.cpp",
+    "SystemTimeSupport.cpp",
     "../SingletonConfigurationManager.cpp",
     "../logging/LogV.h",
     "BLEManagerImpl.h",

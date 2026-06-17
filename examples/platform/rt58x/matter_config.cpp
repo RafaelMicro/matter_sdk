@@ -312,6 +312,15 @@ void MatterFotaInit(void)
         flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
         taskEXIT_CRITICAL();
     }
+    else
+    {
+        uint32_t bootreason = 0;
+        ConfigurationMgr().GetBootReason(bootreason);
+        if(bootreason == 5)
+        {
+            ConfigurationMgr().StoreBootReason(1);//kPowerOnReboot
+        }
+    }
 }
 void MatterNetworkInit(void)
 {

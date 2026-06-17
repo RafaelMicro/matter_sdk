@@ -36,7 +36,6 @@
 using namespace ::chip::app::Clusters::GeneralDiagnostics;
 
 extern uint8_t _heap_size;
-
 namespace chip {
 namespace DeviceLayer {
 
@@ -70,6 +69,23 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapUsed(uint64_t & currentHeap
     currentHeapUsed = static_cast<uint64_t>(heapUsed);
     return CHIP_NO_ERROR;
 }
+CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapHighWatermark(uint64_t & currentHeapHighWatermark)
+{
+    // Calculate the Heap used based on Total heap - Free heap
+    size_t maxheapUsed = ((unsigned int)&_heap_size - xPortGetMinimumEverFreeHeapSize());
+
+    currentHeapHighWatermark = static_cast<uint64_t>(maxheapUsed);
+    return CHIP_NO_ERROR;
+}
+CHIP_ERROR DiagnosticDataProviderImpl::ResetWatermarks()
+{
+    // If implemented, the server SHALL set the value of the CurrentHeapHighWatermark attribute to the
+    // value of the CurrentHeapUsed.
+    xPortResetHeapMinimumEverFreeHeapSize();
+    return CHIP_NO_ERROR;
+}
+
+
 
 
 CHIP_ERROR DiagnosticDataProviderImpl::GetRebootCount(uint16_t & rebootCount)
@@ -86,6 +102,50 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetRebootCount(uint16_t & rebootCount)
     return err;
 }
 
+CHIP_ERROR DiagnosticDataProviderImpl::GetThreadMetrics(ThreadMetrics ** threadMetricsOut)
+{
+    /* Obtain all available task information */
+    TaskStatus_t * taskStatusArray;
+    ThreadMetrics * head = nullptr;
+    uint32_t arraySize, x, dummy;
+
+    arraySize = uxTaskGetNumberOfTasks();
+
+    taskStatusArray = static_cast<TaskStatus_t *>(chip::Platform::MemoryCalloc(arraySize, sizeof(TaskStatus_t)));
+
+    if (taskStatusArray != NULL)
+    {
+        /* Generate raw status information about each task. */
+        arraySize = uxTaskGetSystemState(taskStatusArray, arraySize, &dummy);
+        /* For each populated position in the taskStatusArray array,
+           format the raw data as human readable ASCII data. */
+
+        for (x = 0; x < arraySize; x++)
+        {
+            ThreadMetrics * thread = new ThreadMetrics();
+            if (thread)
+            {
+                Platform::CopyString(thread->NameBuf, taskStatusArray[x].pcTaskName);
+                thread->name.Emplace(CharSpan::fromCharString(thread->NameBuf));
+                thread->id = taskStatusArray[x].xTaskNumber;
+                thread->stackFreeMinimum.Emplace(taskStatusArray[x].usStackHighWaterMark);
+
+                /* Unsupported metrics */
+                // thread->stackSize
+                // thread->stackFreeCurrent
+
+                thread->Next = head;
+                head         = thread;
+            }
+        }
+
+        *threadMetricsOut = head;
+        /* The array is no longer needed, free the memory it consumes. */
+        chip::Platform::MemoryFree(taskStatusArray);
+    }
+
+    return CHIP_NO_ERROR;
+}
 CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** netifpp)
 {
     NetworkInterface * ifp = new NetworkInterface();
@@ -124,8 +184,15 @@ CHIP_ERROR DiagnosticDataProviderImpl::GetNetworkInterfaces(NetworkInterface ** 
 CHIP_ERROR DiagnosticDataProviderImpl::GetBootReason(BootReasonType & bootReason)
 {
     uint32_t reason = 1;
-    CHIP_ERROR err  = CHIP_NO_ERROR;
+
+    CHIP_ERROR err = ConfigurationMgr().GetBootReason(reason);
+
+    if (err == CHIP_NO_ERROR)
+    {
+        VerifyOrReturnError(reason <= UINT8_MAX, CHIP_ERROR_INVALID_INTEGER_VALUE);
+    }
     bootReason = static_cast<BootReasonType>(reason);
+
     return err;
 }
 DiagnosticDataProvider & GetDiagnosticDataProviderImpl()

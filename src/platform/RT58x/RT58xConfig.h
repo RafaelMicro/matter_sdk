@@ -71,7 +71,8 @@ public:
     /** Counter Keys, diagnostic information  */
     static constexpr const char * kCounterKey_RebootCount           = ("reboot-count");
     static constexpr const char * kCounterKey_TotalOperationalHours = ("total-hours");
-    static constexpr const char * kCounterKey_UpTime                = ("up-time");  
+    static constexpr const char * kCounterKey_UpTime                = ("up-time");
+    static constexpr const char * kCounterKey_BootReason            = ("boot-reason");
 
     static CHIP_ERROR Init(void);
     // Configuration methods used by the GenericConfigurationManagerImpl<> template.

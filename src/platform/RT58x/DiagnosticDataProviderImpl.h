@@ -42,6 +42,11 @@ public:
     CHIP_ERROR GetCurrentHeapUsed(uint64_t & currentHeapUsed) override;
     CHIP_ERROR GetRebootCount(uint16_t & rebootCount) override;
     CHIP_ERROR GetBootReason(BootReasonType & bootReason) override;
+    CHIP_ERROR GetThreadMetrics(ThreadMetrics ** threadMetricsOut) override;
+    bool SupportsWatermarks() { return true; };
+    CHIP_ERROR GetCurrentHeapHighWatermark(uint64_t & currentHeapHighWatermark) override;
+    CHIP_ERROR ResetWatermarks(void) override;
+
     CHIP_ERROR GetNetworkInterfaces(NetworkInterface ** netifpp);
 };
 

@@ -30,7 +30,6 @@
 #endif
 #include "AppConfig.h"
 #include "FreeRTOS.h"
-// #include "heap_4_silabs.h"
 #include <lib/support/CHIPMemString.h>
 
 using namespace ::chip::app::Clusters::GeneralDiagnostics;
@@ -45,13 +44,6 @@ DiagnosticDataProviderImpl & DiagnosticDataProviderImpl::GetDefaultInstance()
     return sInstance;
 }
 
-// Software Diagnostics Getters
-/*
- * The following Heap stats are compiled values done by the FreeRTOS Heap4 implementation.
- * See /examples/platform/efr32/heap_4_silabs.c
- * It keeps track of the number of calls to allocate and free memory as well as the
- * number of free bytes remaining, but says nothing about fragmentation.
- */
 CHIP_ERROR DiagnosticDataProviderImpl::GetCurrentHeapFree(uint64_t & currentHeapFree)
 {
     size_t freeHeapSize = xPortGetFreeHeapSize();

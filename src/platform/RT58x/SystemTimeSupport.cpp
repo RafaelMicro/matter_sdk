@@ -1,8 +1,7 @@
 /*
  *
- *    Copyright (c) 2020 Project CHIP Authors
- *    Copyright (c) 2018 Nest Labs, Inc.
- *    All rights reserved.
+ *    Copyright (c) 2024 Project CHIP Authors
+ *    Copyright (c) 2024 Rafael Microelectronics, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -19,22 +18,31 @@
 
 /**
  *    @file
- *          Provides implementations of the CHIP System Layer platform
- *          time/clock functions for the RT58x platform (FreeRTOS-based).
+ *          CHIP System Layer clock support for Rafael RT58x SoCs.
  *
- *          Unlike the generic FreeRTOS implementation, GetClock_RealTime is
- *          fully implemented here so that the Time Synchronization cluster
- *          can read back UTC time after a successful SetUTCTime command.
+ *          The monotonic clock is sourced from the OpenThread platform
+ *          timer service (otPlatTimeGet), which the RT58x port backs with
+ *          the 802.15.4 MAC hardware counter when the OpenThread
+ *          microsecond timer is enabled, or with the RTOS tick otherwise.
+ *
+ *          Wall-clock (UTC) time is tracked as an offset against that
+ *          monotonic base. The offset is seeded at boot by
+ *          InitClock_RealTime() and updated through SetClock_RealTime(),
+ *          e.g. by the Time Synchronization cluster, so that UTC time can
+ *          be read back at any point afterwards.
  */
-/* this file behaves like a config.h, comes first */
+
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 
+#include <lib/support/CodeUtils.h>
 #include <lib/support/TimeUtils.h>
+#include <lib/support/logging/CHIPLogging.h>
 #include <platform/RT58x/SystemTimeSupport.h>
-#include <support/logging/CHIPLogging.h>
 
-#include "FreeRTOS.h"
-#include "task.h"
+#include <openthread-core-config.h>
+#include <openthread/platform/time.h>
+
+#include <inttypes.h>
 
 namespace chip {
 namespace System {
@@ -46,125 +54,74 @@ ClockImpl gClockImpl;
 
 namespace {
 
-constexpr uint32_t kTicksOverflowShift = (configUSE_16_BIT_TICKS) ? 16 : 32;
-
-uint64_t sBootTimeUS = 0;
-
-#ifdef __CORTEX_M
-BaseType_t sNumOfOverflows;
+// otPlatTimeGet() advances in microseconds when the OpenThread microsecond
+// timer is enabled; otherwise the RT58x port derives it from the RTOS tick
+// and it advances in milliseconds.
+#if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+constexpr uint64_t kPlatTimeTickUS = 1;
+#else
+constexpr uint64_t kPlatTimeTickUS = kMicrosecondsPerMillisecond;
 #endif
-} // unnamed namespace
+
+// UTC time corresponding to the monotonic-clock zero point.
+Microseconds64 sUtcTimeBase = Microseconds64::zero();
+
+Microseconds64 Uptime()
+{
+    return Microseconds64(otPlatTimeGet() * kPlatTimeTickUS);
+}
+
+} // namespace
+
+Microseconds64 ClockImpl::GetMonotonicMicroseconds64(void)
+{
+    return Uptime();
+}
+
+Milliseconds64 ClockImpl::GetMonotonicMilliseconds64(void)
+{
+    return std::chrono::duration_cast<Milliseconds64>(Uptime());
+}
+
+CHIP_ERROR ClockImpl::GetClock_RealTime(Microseconds64 & aCurTime)
+{
+    aCurTime = sUtcTimeBase + Uptime();
+
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ClockImpl::GetClock_RealTimeMS(Milliseconds64 & aCurTime)
+{
+    Microseconds64 curTimeUS;
+
+    ReturnErrorOnFailure(GetClock_RealTime(curTimeUS));
+    aCurTime = std::chrono::duration_cast<Milliseconds64>(curTimeUS);
+
+    return CHIP_NO_ERROR;
+}
+
+CHIP_ERROR ClockImpl::SetClock_RealTime(Microseconds64 aNewCurTime)
+{
+    const Microseconds64 uptime = Uptime();
+
+    // A timestamp smaller than the current uptime cannot be anchored to the
+    // monotonic clock; fall back to the epoch in that case.
+    sUtcTimeBase = (aNewCurTime > uptime) ? aNewCurTime - uptime : Microseconds64::zero();
+
+    return CHIP_NO_ERROR;
+}
 
 /**
- * Returns the number of FreeRTOS ticks since the system booted.
- *
- * NOTE: The default implementation of this function uses FreeRTOS's
- * vTaskSetTimeOutState() function to get the total number of ticks,
- * irrespective of tick counter overflows.  Unfortunately, this function cannot
- * be called in interrupt context, no equivalent ISR function exists, and
- * FreeRTOS provides no portable way of determining whether a function is being
- * called in an interrupt context.  Adaptations that need to use the Chip
- * Get/SetClock methods from within an interrupt handler must override this
- * function with a suitable alternative that works on the target platform.  The
- * provided version is safe to call on ARM Cortex platforms with CMSIS
- * libraries.
+ * Seed the wall clock with CHIP_SYSTEM_CONFIG_VALID_REAL_TIME_THRESHOLD so
+ * that real-time reads pass the validity check even before the first
+ * synchronization. Called once during platform initialization.
  */
-
-uint64_t FreeRTOSTicksSinceBoot(void) __attribute__((weak));
-
-uint64_t FreeRTOSTicksSinceBoot(void)
-{
-    TimeOut_t timeOut;
-
-#ifdef __CORTEX_M
-    if (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) // running in an interrupt context
-    {
-        // Note that sNumOverflows may be quite stale, and under those
-        // circumstances, the function may violate monotonicity guarantees
-        timeOut.xTimeOnEntering = xTaskGetTickCountFromISR();
-        timeOut.xOverflowCount  = sNumOfOverflows;
-    }
-    else
-    {
-#endif
-
-        vTaskSetTimeOutState(&timeOut);
-
-#ifdef __CORTEX_M
-        // BaseType_t is supposed to be atomic
-        sNumOfOverflows = timeOut.xOverflowCount;
-    }
-#endif
-
-    return static_cast<uint64_t>(timeOut.xTimeOnEntering) + (static_cast<uint64_t>(timeOut.xOverflowCount) << kTicksOverflowShift);
-}
-
-Clock::Microseconds64 ClockImpl::GetMonotonicMicroseconds64(void)
-{
-    return Clock::Microseconds64((FreeRTOSTicksSinceBoot() * kMicrosecondsPerSecond) / configTICK_RATE_HZ);
-}
-
-Clock::Milliseconds64 ClockImpl::GetMonotonicMilliseconds64(void)
-{
-    return Clock::Milliseconds64((FreeRTOSTicksSinceBoot() * kMillisecondsPerSecond) / configTICK_RATE_HZ);
-}
-
-uint64_t GetClock_Monotonic(void)
-{
-    return (FreeRTOSTicksSinceBoot() * kMicrosecondsPerSecond) / configTICK_RATE_HZ;
-}
-
-uint64_t GetClock_MonotonicMS(void)
-{
-    return (FreeRTOSTicksSinceBoot() * kMillisecondsPerSecond) / configTICK_RATE_HZ;
-}
-
-uint64_t GetClock_MonotonicHiRes(void)
-{
-    return GetClock_Monotonic();
-}
-
-CHIP_ERROR ClockImpl::GetClock_RealTime(Clock::Microseconds64 & aCurTime)
-{
-    if (sBootTimeUS == 0)
-    {
-        return CHIP_ERROR_REAL_TIME_NOT_SYNCED;
-    }
-    aCurTime = Clock::Microseconds64(sBootTimeUS + GetClock_Monotonic());
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR ClockImpl::GetClock_RealTimeMS(Clock::Milliseconds64 & aCurTime)
-{
-    if (sBootTimeUS == 0)
-    {
-        return CHIP_ERROR_REAL_TIME_NOT_SYNCED;
-    }
-    aCurTime = Clock::Milliseconds64((sBootTimeUS + GetClock_Monotonic()) / 1000);
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR ClockImpl::SetClock_RealTime(Clock::Microseconds64 aNewCurTime)
-{
-    uint64_t timeSinceBootUS = GetClock_Monotonic();
-    if (aNewCurTime.count() > timeSinceBootUS)
-    {
-        sBootTimeUS = aNewCurTime.count() - timeSinceBootUS;
-    }
-    else
-    {
-        sBootTimeUS = 0;
-    }
-    return CHIP_NO_ERROR;
-}
-
 CHIP_ERROR InitClock_RealTime()
 {
-    Clock::Microseconds64 curTime =
-        Clock::Microseconds64((static_cast<uint64_t>(CHIP_SYSTEM_CONFIG_VALID_REAL_TIME_THRESHOLD) * UINT64_C(1000000)));
-    // Use CHIP_SYSTEM_CONFIG_VALID_REAL_TIME_THRESHOLD as the initial value of RealTime.
-    // Then the RealTime obtained from GetClock_RealTime will be always valid.
-    return System::SystemClock().SetClock_RealTime(curTime);
+    const Microseconds64 threshold =
+        Microseconds64(static_cast<uint64_t>(CHIP_SYSTEM_CONFIG_VALID_REAL_TIME_THRESHOLD) * kMicrosecondsPerSecond);
+
+    return System::SystemClock().SetClock_RealTime(threshold);
 }
 
 } // namespace Clock

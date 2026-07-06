@@ -23,11 +23,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-//0x1F0000~0x1F2000: openthread
-//0x1F2000~0x1F3000: check factory reset
-//0x1F3000~0x1F4000: reserved
-#define CHECK_RESET_START_ADDRESS 0xF0000
-#define CHECK_RESET_BLOCK_SIZE 0x1000
 
 void init_rt58x_platform(void);
 void kvs_init(void);

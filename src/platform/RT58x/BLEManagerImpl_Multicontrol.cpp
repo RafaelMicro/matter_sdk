@@ -948,6 +948,13 @@ int BLEManagerImpl::ble_init(void)
         }
 
         vTaskDelay(5);
+        status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
+        if (status != BLE_ERR_OK)
+        {
+            break;
+        }
+
+        vTaskDelay(5);
         status = server_profile_init(0);
         if (status != BLE_ERR_OK)
         {
@@ -1283,18 +1290,6 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
         ChipLogError(DeviceLayer,"adv_param() status = %d\n", status);
         chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
-#if 1
-    if (status == BLE_ERR_OK)
-    {
-        vTaskDelay(5);
-        status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
-        if (status != BLE_ERR_OK)
-        {
-            ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
-            chipErr = BLE_ERR_STATE_TRANSLATE(status);
-        }
-    }
-#endif
     if (status == BLE_ERR_OK)
     {
         vTaskDelay(5);

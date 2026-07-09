@@ -152,48 +152,28 @@ tools/
         ├── interface/cmsis-dap.cfg
         ├── target/rt58x.cfg
         └── openocd_rt58x.sh
-toolchain/arm/Linux/bin/
-├── arm-none-eabi-gdb
-└── arm-none-eabi-objdump
+.vscode/
+├── launch.json                    # cortex-debug configuration
+└── arm-none-eabi-gdb.sh           # GDB launcher (uses the SDK build environment)
 ```
 
-### 5.1 Download ARM GNU Toolchain (Linux, 14.2.rel1)
+### 5.1 GDB — No Separate Toolchain Download Required
 
-**Step 1 — Download**
+Debugging uses the **arm-none-eabi-gdb bundled with the Matter build environment** (`.environment/`), which is installed automatically when the SDK environment is bootstrapped. This is the same Arm GNU Toolchain that builds the firmware image, so the compiler and debugger versions always match.
 
-Go to the Arm GNU Toolchain Downloads page:
+`launch.json` points to the launcher script `.vscode/arm-none-eabi-gdb.sh`, which sets up the required PATH and Python environment, then runs the pigweed-venv `arm-none-eabi-gdb`. No manual toolchain download or configuration is needed.
 
-```
-https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
-```
-
-Under **Version 14.2.Rel1**, find the **x86_64 Linux hosted** section and download:
-
-```
-arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
-```
-
-**Step 2 — Extract and place into SDK**
-
-Extract the archive and place its contents so that the SDK directory structure looks like this:
-
-```
-toolchain/arm/Linux/
-├── bin/
-│   ├── arm-none-eabi-gdb
-│   └── arm-none-eabi-objdump
-├── lib/
-├── include/
-└── ...
-```
-
-> The `bin/` directory must be directly under `toolchain/arm/Linux/`, not inside a subdirectory named after the archive.
-
-**Step 3 — Verify**
+**Prerequisite** — the build environment must exist. If `.environment/` is missing, bootstrap it once (this also happens automatically the first time you build):
 
 ```bash
-./toolchain/arm/Linux/bin/arm-none-eabi-gdb --version
-# Expected: GNU gdb (Arm GNU Toolchain 14.2.Rel1 ...) 14.2.x
+source scripts/activate.sh
+```
+
+**Verify**
+
+```bash
+./.vscode/arm-none-eabi-gdb.sh --version
+# Expected: GNU gdb (Arm GNU Toolchain 12.2.MPACBTI-Rel1 ...) 13.1.x
 ```
 
 ### Test OpenOCD

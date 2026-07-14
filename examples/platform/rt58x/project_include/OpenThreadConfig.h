@@ -161,7 +161,7 @@
 #define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE                     0
 
 #ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
-#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 16
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 10
 #endif
 
 /* ========================================================================== */

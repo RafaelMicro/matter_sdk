@@ -2,7 +2,7 @@
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 
-__STACK_SIZE = 0x1800;   /* 6 KB */
+__STACK_SIZE =  0xC00;   /* 3 KB */
 __RAM_SIZE   = 192K;
 __DATA_SIZE  = __RAM_SIZE - __STACK_SIZE - 8;
 

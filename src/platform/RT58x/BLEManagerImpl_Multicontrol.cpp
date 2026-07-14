@@ -948,13 +948,6 @@ int BLEManagerImpl::ble_init(void)
         }
 
         vTaskDelay(5);
-        status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
-        if (status != BLE_ERR_OK)
-        {
-            break;
-        }
-
-        vTaskDelay(5);
         status = server_profile_init(0);
         if (status != BLE_ERR_OK)
         {
@@ -1290,6 +1283,17 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
         ChipLogError(DeviceLayer,"adv_param() status = %d\n", status);
         chipErr = BLE_ERR_STATE_TRANSLATE(status);
     }
+#if 1
+    if (status == BLE_ERR_OK)
+    {
+        vTaskDelay(5);
+        status = ble_cmd_default_mtu_size_set(0, BLE_GATT_ATT_MTU_MAX);
+        if (status != BLE_ERR_OK)
+        {
+            ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
+        }
+    }
+#endif
     if (status == BLE_ERR_OK)
     {
         vTaskDelay(5);
@@ -1360,6 +1364,15 @@ CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
 void BLEManagerImpl::DriveBLEState(void)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
+    uint16_t conn_id;
+
+    // Host id 0 cannot advertise while its link is still connected (or the
+    // disconnect has not completed yet); defer the restart and let the
+    // BLE_GAP_EVT_DISCONN_COMPLETE handler re-drive advertising.
+    if (bhc_host_id_is_connected_check(0, &conn_id))
+    {
+        return;
+    }
     // Check if BLE stack is initialized
     // VerifyOrExit(mFlags.Has(Flags::kRTBLEStackInitialized), /* */);
     // Start advertising if needed...

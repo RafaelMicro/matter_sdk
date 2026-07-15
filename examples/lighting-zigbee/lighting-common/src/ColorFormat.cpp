@@ -23,48 +23,69 @@
 // define a clamp macro to substitute the std::clamp macro which is available from C++17 onwards
 #define clamp(a, min, max) ((a) < (min) ? (min) : ((a) > (max) ? (max) : (a)))
 
+namespace {
+
+constexpr uint16_t kMatterColorMax            = 254;
+constexpr uint16_t kMatterHuePeriod           = kMatterColorMax + 1;
+constexpr uint16_t kHueRegionCount            = 6;
+constexpr uint16_t kColorTemperatureMaxMireds = 0xFEFF;
+
+uint16_t DivRound(uint32_t value, uint16_t divisor)
+{
+    return static_cast<uint16_t>((value + (divisor / 2)) / divisor);
+}
+
+} // namespace
+
 RgbColor_t HsvToRgb(HsvColor_t hsv)
 {
     RgbColor_t rgb;
 
-    uint8_t region, p, q, t;
+    uint8_t region;
+    uint16_t p, q, t;
     uint32_t h, s, v, remainder;
 
-    if (hsv.s == 0)
+    h = hsv.h > kMatterColorMax ? kMatterColorMax : hsv.h;
+    s = hsv.s > kMatterColorMax ? kMatterColorMax : hsv.s;
+    v = hsv.v > kMatterColorMax ? kMatterColorMax : hsv.v;
+
+    if (s == 0 || v == 0)
     {
-        rgb.r = rgb.g = rgb.b = hsv.v;
+        rgb.r = rgb.g = rgb.b = static_cast<uint8_t>(v);
     }
     else
     {
-        h = hsv.h;
-        s = hsv.s;
-        v = hsv.v;
+        uint32_t scaledHue = h * kHueRegionCount;
+        region            = static_cast<uint8_t>(scaledHue / kMatterHuePeriod);
+        remainder         = scaledHue - (static_cast<uint32_t>(region) * kMatterHuePeriod);
 
-        region    = h / 43;
-        remainder = (h - (region * 43)) * 6;
-        p         = (v * (255 - s)) >> 8;
-        q         = (v * (255 - ((s * remainder) >> 8))) >> 8;
-        t         = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+        uint16_t saturationRemainder = DivRound(s * remainder, kMatterHuePeriod);
+        uint16_t saturationInverse   = DivRound(s * (kMatterHuePeriod - remainder), kMatterHuePeriod);
+
+        p = DivRound(v * (kMatterColorMax - s), kMatterColorMax);
+        q = DivRound(v * (kMatterColorMax - saturationRemainder), kMatterColorMax);
+        t = DivRound(v * (kMatterColorMax - saturationInverse), kMatterColorMax);
+
         switch (region)
         {
         case 0:
-            rgb.r = v, rgb.g = t, rgb.b = p;
+            rgb.r = static_cast<uint8_t>(v), rgb.g = static_cast<uint8_t>(t), rgb.b = static_cast<uint8_t>(p);
             break;
         case 1:
-            rgb.r = q, rgb.g = v, rgb.b = p;
+            rgb.r = static_cast<uint8_t>(q), rgb.g = static_cast<uint8_t>(v), rgb.b = static_cast<uint8_t>(p);
             break;
         case 2:
-            rgb.r = p, rgb.g = v, rgb.b = t;
+            rgb.r = static_cast<uint8_t>(p), rgb.g = static_cast<uint8_t>(v), rgb.b = static_cast<uint8_t>(t);
             break;
         case 3:
-            rgb.r = p, rgb.g = q, rgb.b = v;
+            rgb.r = static_cast<uint8_t>(p), rgb.g = static_cast<uint8_t>(q), rgb.b = static_cast<uint8_t>(v);
             break;
         case 4:
-            rgb.r = t, rgb.g = p, rgb.b = v;
+            rgb.r = static_cast<uint8_t>(t), rgb.g = static_cast<uint8_t>(p), rgb.b = static_cast<uint8_t>(v);
             break;
         case 5:
         default:
-            rgb.r = v, rgb.g = p, rgb.b = q;
+            rgb.r = static_cast<uint8_t>(v), rgb.g = static_cast<uint8_t>(p), rgb.b = static_cast<uint8_t>(q);
             break;
         }
     }
@@ -86,14 +107,19 @@ RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY)
     // y = currentY/65536
     // z = 1-x-y
 
-    RgbColor_t rgb;
+    RgbColor_t rgb = { 0, 0, 0 };
 
     float x, y, z;
     float X, Y, Z;
     float r, g, b;
 
-    x = (static_cast<float>(currentX)) / 65535.0f;
-    y = (static_cast<float>(currentY)) / 65535.0f;
+    if (currentY == 0)
+    {
+        return rgb;
+    }
+
+    x = (static_cast<float>(currentX)) / 65536.0f;
+    y = (static_cast<float>(currentY)) / 65536.0f;
 
     z = 1.0f - x - y;
 
@@ -131,13 +157,21 @@ RgbColor_t XYToRgb(uint8_t Level, uint16_t currentX, uint16_t currentY)
 
 RgbColor_t CTToRgb(CtColor_t ct)
 {
-    RgbColor_t rgb;
+    RgbColor_t rgb = { 0, 0, 0 };
     float r, g, b;
 
     // Algorithm credits to Tanner Helland: https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
+    if (ct.ctMireds == 0)
+    {
+        return rgb;
+    }
+
+    uint16_t ctMireds = ct.ctMireds > kColorTemperatureMaxMireds ? kColorTemperatureMaxMireds
+                                                                 : ct.ctMireds;
+
     // Convert Mireds to centiKelvins. k = 1,000,000/mired
-    float ctCentiKelvin = 10000 / static_cast<float>(ct.ctMireds);
+    float ctCentiKelvin = 10000 / static_cast<float>(ctMireds);
 
     // Red
     if (ctCentiKelvin <= 66)

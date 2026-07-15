@@ -20,6 +20,12 @@
             "group": "build"
         },
         {
+            "label": "Matter: Generate ZAP Files",
+            "type": "shell",
+            "command": "export ZAP_INSTALL_PATH=$PWD/.environment/cipd/packages/zap && ZAP_FILE=$(find examples/${input:exampleproject} -maxdepth 2 -name '*.zap' | head -1) && ./scripts/tools/zap/generate.py \"$ZAP_FILE\" -o \"$(dirname \"$ZAP_FILE\")/\"",
+            "group": "build"
+        },
+        {
             "label": "Matter: Generate OTA Image",
             "type": "shell",
             "command": "./third_party/rafael/rafael_ota_tool.py create -v 0x1346 -p 0x400E -vn ${input:versionNum} -vs \"${input:versionStr}\" -da sha256 out/${input:exampleproject}/${input:board}/${input:board}-${input:exampleproject}-example.bin out/${input:exampleproject}/${input:board}/${input:board}-${input:exampleproject}-example.ota",

@@ -63,7 +63,7 @@ CHIP_ERROR BoltLockManager::Init()
     if (sLockTimer == nullptr)
     {
         ChipLogProgress(NotSpecified, "sLockTimer timer create failed");
-        return APP_ERROR_CREATE_TIMER_FAILED;
+        return CHIP_ERROR_NO_MEMORY;
     }
     status = DoorLock::Attributes::LockState::Get(1, lockstate);
     if (status == Status::Success && !lockstate.IsNull())

@@ -57,7 +57,7 @@ CHIP_ERROR HumidityManager::Init()
     if (sHumiTimer == NULL)
     {
         ChipLogProgress(NotSpecified, "sHumiTimer timer create failed");
-        return APP_ERROR_CREATE_TIMER_FAILED;
+        return CHIP_ERROR_NO_MEMORY;
     }
     xTimerStart(sHumiTimer, 10);
     HumidityAttr::MeasuredValue::Set(kHumidityMeasurementEndpoint, 5800);

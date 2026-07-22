@@ -58,7 +58,7 @@ CHIP_ERROR TemperatureManager::Init()
     if (sTempTimer == NULL)
     {
         ChipLogProgress(NotSpecified, "sTempTimer timer create failed");
-        return APP_ERROR_CREATE_TIMER_FAILED;
+        return CHIP_ERROR_NO_MEMORY;
     }
 
     // Trigger periodic update

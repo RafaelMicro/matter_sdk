@@ -169,8 +169,6 @@ void AppTask::ActionCompleted(SmartPlugManager::Action_t aAction)
 }
 void AppTask::ActionEventHandler(AppEvent * aEvent)
 {
-    CHIP_ERROR err = CHIP_NO_ERROR;
-
     if (aEvent->Type == AppEvent::kEventType_Button)
     {
         PlatformMgr().LockChipStack();
@@ -180,10 +178,6 @@ void AppTask::ActionEventHandler(AppEvent * aEvent)
         {
             ChipLogProgress(NotSpecified, "ERR: updating on/off %x", status);
         }
-    }
-    else
-    {
-        err = APP_ERROR_UNHANDLED_EVENT;
     }
 }
 

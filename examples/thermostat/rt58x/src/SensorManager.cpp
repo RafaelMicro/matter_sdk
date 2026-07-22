@@ -46,7 +46,7 @@ CHIP_ERROR SensorManager::Init()
     if (sSensorTimer == NULL)
     {
         ChipLogProgress(NotSpecified, "sSensorTimer timer create failed");
-        return APP_ERROR_CREATE_TIMER_FAILED;
+        return CHIP_ERROR_NO_MEMORY;
     }
 
     xTimerStart(sSensorTimer, 10);

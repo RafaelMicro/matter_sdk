@@ -76,7 +76,7 @@ CHIP_ERROR OccupancyManager::Init()
     if (mHoldTimer == NULL)
     {
         ChipLogError(NotSpecified, "HoldTimer create failed");
-        return APP_ERROR_CREATE_TIMER_FAILED;
+        return CHIP_ERROR_NO_MEMORY;
     }
 
     ChipLogProgress(NotSpecified, "OccupancyManager::Init done");

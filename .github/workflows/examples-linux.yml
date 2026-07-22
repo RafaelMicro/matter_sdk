@@ -192,6 +192,7 @@ jobs:
 
             - name: Check all example builds succeeded
               if: always()
+              shell: bash
               env:
                 contact_sensor_app: ${{ steps.build_contact_sensor_app.outcome }}
                 humidity_sensor_app: ${{ steps.build_humidity_sensor_app.outcome }}

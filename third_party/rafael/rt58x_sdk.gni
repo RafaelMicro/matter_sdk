@@ -149,10 +149,19 @@ template("rt58x_sdk") {
     defines += ["BLE_SUPPORT_NUM_CONN_MAX = 1",
                 "CONFIG_BUILD_COMPONENT_CLI",]
     # Get Git Hash
-    git_hash = exec_script("${chip_root}/third_party/rafael/get_git_hash.py", [], "trim string")
-    defines +=  [ "RAFAEL_SDK_VER=\"${git_hash}\"",
-                  "LIB_VER=0x${git_hash}",
-                  "CONFIG_BUILD_PORJECT=\"matter-app\"" ]
+    git_hash = exec_script("${chip_root}/third_party/rafael/get_git_hash.py",
+                           [],
+                           "trim string")
+
+    # Get FW versions (BUILD_MAC_FW_INFO / BUILD_BLE_FW_INFO / BUILD_MULTI_FW_INFO)
+    _fw_info = exec_script("${chip_root}/third_party/rafael/get_fw_version.py",
+                           [ rafael_board ],
+                           "list lines")
+
+    defines +=  [ "RAFAEL_SDK_VER=\"1.5.1.0\"",
+                  "BUILD_HASH_INFO=0x${git_hash}",
+                  "CONFIG_BUILD_PORJECT=\"matter-app\""]
+    defines += _fw_info
 
     if (defined(invoker.enable_sleepy_device)) {
       if (invoker.enable_sleepy_device) {
@@ -224,7 +233,7 @@ template("rt58x_sdk") {
                    "CONFIG_CRYPTO_SM2P256V1_ENABLE=1",
                    "CONFIG_CRYPTO_SM2_P192_ENABLE=1",
                    "CONFIG_BUILD_COMPONENT_ZIGBEE",
-                   "TX_PWR_COMP_DEBUG=1",
+                   #"TX_PWR_COMP_DEBUG=1",
                    ]
     if (rafael_board == "RT584H" || rafael_board == "RT584L" || rafael_board == "RT584HA4") {
       defines += [ 

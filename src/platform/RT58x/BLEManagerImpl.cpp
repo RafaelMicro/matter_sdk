@@ -81,7 +81,7 @@ namespace {
 #define MAC_PIB_MAC_ACK_WAIT_DURATION                                          \
     544 // non-beacon mode; 864 for beacon mode
 #define MAC_PIB_MAC_MAX_BE                    5
-#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 16416
+#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 0     /* OpenThread control */
 #define MAC_PIB_MAC_MAX_FRAME_RETRIES         4
 #define MAC_PIB_MAC_MAX_CSMACA_BACKOFFS       5
 #define MAC_PIB_MAC_MIN_BE                    2
@@ -462,55 +462,6 @@ void BLEManagerImpl::ble_evt_handler(void *p_param)
     }
 }
 
-bool BLEManagerImpl::app_request_set(uint8_t host_id, uint32_t request, bool from_isr)
-{
-    app_queue_t p_app_q;
-
-    p_app_q.event = 0; // from BLE
-    p_app_q.param_type = QUEUE_TYPE_APP_REQ;
-    p_app_q.param.app_req.host_id = host_id;
-    p_app_q.param.app_req.app_req = request;
-
-    if (from_isr == false)
-    {
-        if (xSemaphoreTake(semaphore_app, 0) == pdTRUE)
-        {
-            p_app_q.from_isr = false;
-            if (xQueueSendToBack(g_app_msg_q, &p_app_q, 0) != pdTRUE)
-            {
-                // send error
-                xSemaphoreGive(semaphore_app);
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else
-    {
-        BaseType_t context_switch = pdFALSE;
-
-        if (xSemaphoreTakeFromISR(semaphore_isr, &context_switch) == pdTRUE)
-        {
-            p_app_q.from_isr = true;
-            context_switch = pdFALSE;
-            if (xQueueSendToBackFromISR(g_app_msg_q, &p_app_q, &context_switch) != pdTRUE)
-            {
-                context_switch = pdFALSE;
-                xSemaphoreGiveFromISR(semaphore_isr, &context_switch);
-                return false;
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    return true;
-}
 void BLEManagerImpl::ble_svcs_matter_evt_handler(void *p_matter_evt_param)
 {
     ble_evt_att_param_t *p_param = (ble_evt_att_param_t *)p_matter_evt_param;
@@ -829,19 +780,6 @@ int BLEManagerImpl::ble_init(void)
 
 void BLEManagerImpl::app_evt_handler(void *p_param)
 {
-    app_req_param_t *p_app_param = (app_req_param_t *)p_param;
-    ble_err_t status;
-    uint8_t host_id;
-    ble_info_link0_t *p_profile_info;
-
-    host_id = p_app_param->host_id;
-    p_profile_info = (ble_info_link0_t *)ble_app_link_info[host_id].profile_info;
-
-    switch (p_app_param->app_req)
-    {
-    default:
-        break;
-    }
 }
 CHIP_ERROR BLEManagerImpl::_Init()
 {
@@ -1276,11 +1214,9 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         break;
 
     case DeviceEventType::kThreadStateChange:
-        //HandleThreadStateChange(event);
-        break;    
+        break;
 
     case DeviceEventType::kOperationalNetworkEnabled:
-        //HandleOperationalNetworkEnabled(event);
         break;
 
     default:
@@ -1289,25 +1225,6 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
     }
 }
 
-
-CHIP_ERROR BLEManagerImpl::HandleOperationalNetworkEnabled(const ChipDeviceEvent * event)
-{
-    ChipDeviceEvent disconnectEvent;
-
-    ChipLogDetail(DeviceLayer, "HandleOperationalNetworkEnabled");
-    ble_cmd_conn_terminate(0);
-
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR BLEManagerImpl::HandleThreadStateChange(const ChipDeviceEvent * event)
-{
-    CHIP_ERROR error = CHIP_NO_ERROR;
-
-    ChipLogDetail(DeviceLayer, "HandleThreadStateChange");
-
-    return error;
-}
 
 CHIP_ERROR BLEManagerImpl::SubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId)
 {

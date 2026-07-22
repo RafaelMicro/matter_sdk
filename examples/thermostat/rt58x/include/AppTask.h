@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #include "AppEvent.h"
-#include "BaseApplication.h"
 #include "EnhancedFlashDataset.h"
 #include "FactoryDataProvider.h"
 #include "FreeRTOS.h"

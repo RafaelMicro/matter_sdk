@@ -57,9 +57,9 @@ rt58x_sdk("sdk") {
   ]
 
   defines = [
-    "CHIP_DEVICE_CONFIG_USE_TEST_SETUP_PIN_CODE=${setupPinCode}",
-    "CHIP_DEVICE_CONFIG_USE_TEST_SETUP_DISCRIMINATOR=${setupDiscriminator}",
     "OTA_PERIODIC_TIMEOUT=${OTA_periodic_query_timeout}",
+    # Enable TX power compensation for device that operates in wide temp range
+    "RF_TX_POWER_COMP=0",  # TX power temp compensation not required for this device type
   ]
 
   if (chip_build_platform_attestation_credentials_provider) {

@@ -2,15 +2,15 @@
 GROUP(libgcc.a libc.a libm.a libnosys.a)
 
 
-__STACK_SIZE = 0x1800;   /* 6 KB */
+__STACK_SIZE =  0xC00;   /* 3 KB */
 __RAM_SIZE   = 192K;
 __DATA_SIZE  = __RAM_SIZE - __STACK_SIZE - 8;
 
 MEMORY
 {
     LMA_BOOT (rx)  : ORIGIN = 0x10000000, LENGTH = 64K
-    LMA_CORE (rx)  : ORIGIN = 0x10010000, LENGTH = 1920K
-    LMA_USER (rx)  : ORIGIN = 0x101F0000, LENGTH = 56K
+    LMA_CORE (rx)  : ORIGIN = 0x10010000, LENGTH = 1160K
+    LMA_USER (rx)  : ORIGIN = 0x101F0000, LENGTH = 16K
     LMA_MPSC (rx)  : ORIGIN = 0x101FE000, LENGTH = 8K
 	/* VMA (RAM) */
     VMA_DATA  (rwx) : ORIGIN = 0x30000000, LENGTH = __DATA_SIZE

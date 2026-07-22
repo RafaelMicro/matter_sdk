@@ -90,7 +90,7 @@ namespace {
 #define MAC_PIB_MAC_ACK_WAIT_DURATION                                          \
     544 // non-beacon mode; 864 for beacon mode
 #define MAC_PIB_MAC_MAX_BE                    5
-#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 16416
+#define MAC_PIB_MAC_MAX_FRAME_TOTAL_WAIT_TIME 0     /* OpenThread control */
 #define MAC_PIB_MAC_MAX_FRAME_RETRIES         4
 #define MAC_PIB_MAC_MAX_CSMACA_BACKOFFS       5
 #define MAC_PIB_MAC_MIN_BE                    2
@@ -1291,7 +1291,6 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(uint8_t matter_adv_enabled)
         if (status != BLE_ERR_OK)
         {
             ChipLogError(DeviceLayer,"ble_cmd_default_mtu_size_set() status = %d\n", status);
-            chipErr = BLE_ERR_STATE_TRANSLATE(status);
         }
     }
 #endif
@@ -1365,6 +1364,15 @@ CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
 void BLEManagerImpl::DriveBLEState(void)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
+    uint16_t conn_id;
+
+    // Host id 0 cannot advertise while its link is still connected (or the
+    // disconnect has not completed yet); defer the restart and let the
+    // BLE_GAP_EVT_DISCONN_COMPLETE handler re-drive advertising.
+    if (bhc_host_id_is_connected_check(0, &conn_id))
+    {
+        return;
+    }
     // Check if BLE stack is initialized
     // VerifyOrExit(mFlags.Has(Flags::kRTBLEStackInitialized), /* */);
     // Start advertising if needed...
@@ -1435,11 +1443,9 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         break;
 
     case DeviceEventType::kThreadStateChange:
-        //HandleThreadStateChange(event);
-        break;    
+        break;
 
     case DeviceEventType::kOperationalNetworkEnabled:
-        //HandleOperationalNetworkEnabled(event);
         break;
 
     case DeviceEventType::kAppToBle:
@@ -1452,25 +1458,6 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
     }
 }
 
-
-CHIP_ERROR BLEManagerImpl::HandleOperationalNetworkEnabled(const ChipDeviceEvent * event)
-{
-    ChipDeviceEvent disconnectEvent;
-
-    ChipLogDetail(DeviceLayer, "HandleOperationalNetworkEnabled");
-    ble_cmd_conn_terminate(0);
-
-    return CHIP_NO_ERROR;
-}
-
-CHIP_ERROR BLEManagerImpl::HandleThreadStateChange(const ChipDeviceEvent * event)
-{
-    CHIP_ERROR error = CHIP_NO_ERROR;
-
-    ChipLogDetail(DeviceLayer, "HandleThreadStateChange");
-
-    return error;
-}
 
 CHIP_ERROR BLEManagerImpl::SubscribeCharacteristic(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId)
 {

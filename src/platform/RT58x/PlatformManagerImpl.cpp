@@ -25,7 +25,7 @@
 #include <platform/internal/CHIPDeviceLayerInternal.h>
 #include <crypto/CHIPCryptoPAL.h>
 #include <platform/RT58x/DiagnosticDataProviderImpl.h>
-#include <platform/FreeRTOS/SystemTimeSupport.h>
+#include <platform/RT58x/SystemTimeSupport.h>
 #include <platform/KeyValueStoreManager.h>
 #include <platform/PlatformManager.h>
 #include <platform/internal/GenericPlatformManagerImpl_FreeRTOS.ipp>

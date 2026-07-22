@@ -67,7 +67,7 @@ inline KeyValueStoreManager & KeyValueStoreMgr(void)
  * Returns the platform-specific implementation of the KeyValueStoreManager singleton object.
  *
  * Chip applications can use this to gain access to features of the KeyValueStoreManager
- * that are specific to the ESP32 platform.
+ * that are specific to the RT58x platform.
  */
 inline KeyValueStoreManagerImpl & KeyValueStoreMgrImpl(void)
 {

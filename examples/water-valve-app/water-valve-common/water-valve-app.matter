@@ -352,6 +352,8 @@ fabric_scoped struct WebRTCSessionStruct {
   nullable int16u videoStreamID = 4;
   nullable int16u audioStreamID = 5;
   boolean metadataEnabled = 6;
+  optional int16u videoStreams[] = 7;
+  optional int16u audioStreams[] = 8;
   fabric_idx fabricIndex = 254;
 }
 
@@ -435,7 +437,7 @@ cluster Descriptor = 29 {
       and enforce Access Control for the Node's endpoints and their associated
       cluster instances. */
 cluster AccessControl = 31 {
-  revision 3;
+  revision 2;
 
   enum AccessControlAuxiliaryTypeEnum : enum8 {
     kSystem = 0;
@@ -1286,6 +1288,42 @@ cluster GeneralDiagnostics = 51 {
   command TimeSnapshot(): TimeSnapshotResponse = 1;
   /** Request a variable length payload response. */
   command access(invoke: manage) PayloadTestRequest(PayloadTestRequestRequest): PayloadTestResponse = 3;
+}
+
+/** The Software Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems. */
+cluster SoftwareDiagnostics = 52 {
+  revision 1;
+
+  bitmap Feature : bitmap32 {
+    kWatermarks = 0x1;
+  }
+
+  struct ThreadMetricsStruct {
+    int64u id = 0;
+    optional char_string<8> name = 1;
+    optional int32u stackFreeCurrent = 2;
+    optional int32u stackFreeMinimum = 3;
+    optional int32u stackSize = 4;
+  }
+
+  info event SoftwareFault = 0 {
+    int64u id = 0;
+    optional char_string name = 1;
+    optional long_octet_string faultRecording = 2;
+  }
+
+  readonly attribute optional ThreadMetricsStruct threadMetrics[] = 0;
+  readonly attribute optional int64u currentHeapFree = 1;
+  readonly attribute optional int64u currentHeapUsed = 2;
+  readonly attribute optional int64u currentHeapHighWatermark = 3;
+  readonly attribute command_id generatedCommandList[] = 65528;
+  readonly attribute command_id acceptedCommandList[] = 65529;
+  readonly attribute attrib_id attributeList[] = 65531;
+  readonly attribute bitmap32 featureMap = 65532;
+  readonly attribute int16u clusterRevision = 65533;
+
+  /** This command is used to reset the high watermarks for heap and stack memory. */
+  command access(invoke: manage) ResetWatermarks(): DefaultSuccess = 0;
 }
 
 /** The Thread Network Diagnostics Cluster provides a means to acquire standardized diagnostics metrics that MAY be used by a Node to assist a user or Administrative Node in diagnosing potential problems */
@@ -2172,6 +2210,7 @@ endpoint 0 {
     callback attribute networkInterfaces;
     callback attribute rebootCount;
     callback attribute upTime;
+    callback attribute bootReason;
     callback attribute testEventTriggersEnabled default = false;
     callback attribute featureMap;
     callback attribute clusterRevision;
@@ -2179,6 +2218,20 @@ endpoint 0 {
     handle command TestEventTrigger;
     handle command TimeSnapshot;
     handle command TimeSnapshotResponse;
+  }
+
+  server cluster SoftwareDiagnostics {
+    callback attribute threadMetrics;
+    callback attribute currentHeapFree;
+    callback attribute currentHeapUsed;
+    callback attribute currentHeapHighWatermark;
+    callback attribute generatedCommandList;
+    callback attribute acceptedCommandList;
+    callback attribute attributeList;
+    callback attribute featureMap;
+    callback attribute clusterRevision;
+
+    handle command ResetWatermarks;
   }
 
   server cluster ThreadNetworkDiagnostics {

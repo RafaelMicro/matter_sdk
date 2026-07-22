@@ -29,8 +29,12 @@
 
 // ==================== General Platform Adaptations ====================
 
-#define CHIP_CONFIG_ABORT() sys_software_reset()
-
+#undef NL_ASSERT_ABORT
+#define NL_ASSERT_ABORT() CHIP_CONFIG_ABORT()
+#define CHIP_CONFIG_ABORT() printf("CHIP ASSERT %s %s %d\r\n", __FILE__, __func__, __LINE__);                                           \
+        __disable_irq();                                                                                                           \
+        for (;;)                                                                                                                   \
+            ;
 #define CHIP_CONFIG_PERSISTED_STORAGE_KEY_TYPE uint16_t
 #define CHIP_CONFIG_PERSISTED_STORAGE_ENC_MSG_CNTR_ID 1
 #define CHIP_CONFIG_PERSISTED_STORAGE_MAX_KEY_LENGTH 2
@@ -78,34 +82,43 @@
 #endif
 
 
-#ifndef CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL
-#define CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL chip::System::Clock::Milliseconds32(1000)
-#endif
-
-#ifndef CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL
-#define CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL chip::System::Clock::Milliseconds32(100)
-#endif
 
 #ifndef CHIP_DEVICE_CONFIG_ICD_SLOW_POLL_INTERVAL
-#define CHIP_DEVICE_CONFIG_ICD_SLOW_POLL_INTERVAL CHIP_DEVICE_CONFIG_SED_IDLE_INTERVAL
+#define CHIP_DEVICE_CONFIG_ICD_SLOW_POLL_INTERVAL chip::System::Clock::Milliseconds32(1000)
 #endif
 
 #ifndef CHIP_DEVICE_CONFIG_ICD_FAST_POLL_INTERVAL
-#define CHIP_DEVICE_CONFIG_ICD_FAST_POLL_INTERVAL CHIP_DEVICE_CONFIG_SED_ACTIVE_INTERVAL
+#if CHIP_CONFIG_ENABLE_ICD_LIT
+#define CHIP_DEVICE_CONFIG_ICD_FAST_POLL_INTERVAL chip::System::Clock::Milliseconds32(1000)
+#else
+#define CHIP_DEVICE_CONFIG_ICD_FAST_POLL_INTERVAL chip::System::Clock::Milliseconds32(100)
+#endif
 #endif
 
 #ifndef CHIP_CONFIG_ICD_IDLE_MODE_DURATION_SEC
+#if CHIP_CONFIG_ENABLE_ICD_LIT
+#define CHIP_CONFIG_ICD_IDLE_MODE_DURATION_SEC 3600
+#else
 #define CHIP_CONFIG_ICD_IDLE_MODE_DURATION_SEC 300
+#endif
 #endif
 
 //minimum 300ms
 #ifndef CHIP_CONFIG_ICD_ACTIVE_MODE_DURATION_MS
+#if CHIP_CONFIG_ENABLE_ICD_LIT
+#define CHIP_CONFIG_ICD_ACTIVE_MODE_DURATION_MS 25000
+#else
 #define CHIP_CONFIG_ICD_ACTIVE_MODE_DURATION_MS 300
+#endif
 #endif
 
 //minimum 300ms
 #ifndef CHIP_CONFIG_ICD_ACTIVE_MODE_THRESHOLD_MS
+#if CHIP_CONFIG_ENABLE_ICD_LIT
+#define CHIP_CONFIG_ICD_ACTIVE_MODE_THRESHOLD_MS 25000
+#else
 #define CHIP_CONFIG_ICD_ACTIVE_MODE_THRESHOLD_MS 300
+#endif
 #endif
 
 #ifndef CHIP_CONFIG_ICD_CLIENTS_SUPPORTED_PER_FABRIC

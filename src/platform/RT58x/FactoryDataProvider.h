@@ -21,9 +21,6 @@
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 
-// #include <drivers/flash.h>
-// #include <fprotect.h>
-// #include <pm_config.h>
 #include <system/SystemError.h>
 
 #include "mbedtls/aes.h"
@@ -75,12 +72,10 @@
 namespace chip {
 namespace DeviceLayer {
 
-// size_t GetDecryptedData(uint8_t *Encrypt, uint8_t *Decrypt, uint8_t *key, uint32_t length);
-
 struct InternalFlashFactoryData
 {
-    template<typename T>
-    CHIP_ERROR GetDecryptedData(T *enc, T *dec, uint8_t *key)
+    template<typename TEnc, typename TDec>
+    CHIP_ERROR GetDecryptedData(TEnc *enc, TDec *dec, uint8_t *key)
     {
         mbedtls_aes_context aes_ctx;
 
@@ -99,22 +94,23 @@ struct InternalFlashFactoryData
                                   &dec->data[blockIndex * blockSize]);
         }
         mbedtls_aes_free(&aes_ctx);
+        for (unsigned int i = blockNumber * blockSize; i < enc->len; i++)
+        {
+            dec->data[i] = 0;
+        }
         dec->len = enc->len - dec->data[enc->len - 1];
         return CHIP_NO_ERROR;
     }
 
     CHIP_ERROR GetFactoryData(struct FactoryData * mFactoryData)
     {
-        // data     = reinterpret_cast<uint8_t *>(PM_FACTORY_DATA_ADDRESS);
-        // dataSize = PM_FACTORY_DATA_SIZE;
-        
         uint8_t sha256[4] = {0xef, 0x37, 0x92, 0xf8};
         uint8_t key[16] = {0};
 
         size_t Mode = 0;
         size_t CD_Count = 0;
 
-        struct FactoryData mFlashData;
+        struct FactoryDataCert mFlashData;
 
         mbedtls_sha256_ret(sha256, 4, key, 0);
 
@@ -128,82 +124,73 @@ struct InternalFlashFactoryData
         CD_Count |= flash_read_byte(MODE_CD_COUNT_DATA_ADDR + 6);
         CD_Count |= flash_read_byte(MODE_CD_COUNT_DATA_ADDR + 7);
         
-        mFlashData.pai_cert.len =  flash_read_byte(PAI_CERT_LEN_ADDR);
-        mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 1) << 8;
-        mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 2) << 16;
-        mFlashData.pai_cert.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 3) << 24;
+        mFlashData.len =  flash_read_byte(PAI_CERT_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(PAI_CERT_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.pai_cert.len > 640)
+        if (mFlashData.len > 640)
         {
-            mFlashData.pai_cert.len = 640;
+            mFlashData.len = 640;
         }
 
-        for (size_t i = 0; i < mFlashData.pai_cert.len; i++) 
+        for (size_t i = 0; i < mFlashData.len; i++)
         {
-            mFlashData.pai_cert.data[i] = flash_read_byte(PAI_CERT_DATA_ADDR + i);
+            mFlashData.data[i] = flash_read_byte(PAI_CERT_DATA_ADDR + i);
         }
 
-        GetDecryptedData((struct FactoryDataCert *)&mFlashData.pai_cert, 
-                         (struct FactoryDataCert *)&mFactoryData->pai_cert, 
-                         key);
+        GetDecryptedData(&mFlashData, &mFactoryData->pai_cert, key);
 
-        mFlashData.dac_cert.len =  flash_read_byte(DAC_CERT_LEN_ADDR);
-        mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 1) << 8;
-        mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 2) << 16;
-        mFlashData.dac_cert.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 3) << 24;
+        mFlashData.len =  flash_read_byte(DAC_CERT_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(DAC_CERT_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.dac_cert.len > 640)
+        if (mFlashData.len > 640)
         {
-            mFlashData.dac_cert.len = 640;
+            mFlashData.len = 640;
         }
 
-        for (size_t i = 0; i < mFlashData.dac_cert.len; i++) 
+        for (size_t i = 0; i < mFlashData.len; i++)
         {
-            mFlashData.dac_cert.data[i] = flash_read_byte(DAC_CERT_DATA_ADDR + i);
+            mFlashData.data[i] = flash_read_byte(DAC_CERT_DATA_ADDR + i);
         }
 
-        GetDecryptedData((struct FactoryDataCert *)&mFlashData.dac_cert, 
-                         (struct FactoryDataCert *)&mFactoryData->dac_cert, 
-                         key);
+        GetDecryptedData(&mFlashData, &mFactoryData->dac_cert, key);
 
-        mFlashData.dac_privkey.len =  flash_read_byte(DAC_PRIVKEY_LEN_ADDR);
-        mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 1) << 8;
-        mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 2) << 16;
-        mFlashData.dac_privkey.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 3) << 24;
+        mFlashData.len =  flash_read_byte(DAC_PRIVKEY_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(DAC_PRIVKEY_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.dac_privkey.len > 640)
+        if (mFlashData.len > 640)
         {
-            mFlashData.dac_privkey.len = 640;
+            mFlashData.len = 640;
         }
 
-        for (size_t i = 0; i < mFlashData.dac_privkey.len; i++) 
+        for (size_t i = 0; i < mFlashData.len; i++)
         {
-            mFlashData.dac_privkey.data[i] = flash_read_byte(DAC_PRIVKEY_DATA_ADDR + i);
+            mFlashData.data[i] = flash_read_byte(DAC_PRIVKEY_DATA_ADDR + i);
         }
 
-        GetDecryptedData((struct FactoryDataCert *)&mFlashData.dac_privkey, 
-                         (struct FactoryDataCert *)&mFactoryData->dac_privkey, 
-                         key);
+        GetDecryptedData(&mFlashData, &mFactoryData->dac_privkey, key);
 
-        mFlashData.cd.len =  flash_read_byte(CD0_LEN_ADDR);
-        mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 1) << 8;
-        mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 2) << 16;
-        mFlashData.cd.len |= flash_read_byte(CD0_LEN_ADDR + 3) << 24;
+        mFlashData.len =  flash_read_byte(CD0_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(CD0_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(CD0_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(CD0_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.cd.len > 640)
+        if (mFlashData.len > 640)
         {
-            mFlashData.cd.len = 640;
-        }
-        mFactoryData->cd.len = mFlashData.cd.len;
-
-        for (size_t i = 0; i < mFlashData.cd.len; i++) 
-        {
-            mFlashData.cd.data[i] = flash_read_byte(CD0_DATA_ADDR + i);
+            mFlashData.len = 640;
         }
 
-        GetDecryptedData((struct FactoryDataCert *)&mFlashData.cd, 
-                         (struct FactoryDataCert *)&mFactoryData->cd, 
-                         key);
+        for (size_t i = 0; i < mFlashData.len; i++)
+        {
+            mFlashData.data[i] = flash_read_byte(CD0_DATA_ADDR + i);
+        }
+
+        GetDecryptedData(&mFlashData, &mFactoryData->cd, key);
 
         mFactoryData->passcode =  (flash_read_byte(PASSCODE_DATA_ADDR + 0) - 0x30) * 10000000;
         mFactoryData->passcode += (flash_read_byte(PASSCODE_DATA_ADDR + 1) - 0x30) * 1000000;
@@ -253,46 +240,42 @@ struct InternalFlashFactoryData
         mFactoryData->qrcode.data[mFactoryData->qrcode.len] = '\0';
         mFactoryData->qrcode.len += 1;
 
-        mFlashData.spake2_salt.len =  flash_read_byte(SALT_LEN_ADDR);
-        mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 1) << 8;
-        mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 2) << 16;
-        mFlashData.spake2_salt.len |= flash_read_byte(SALT_LEN_ADDR + 3) << 24; 
+        mFlashData.len =  flash_read_byte(SALT_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(SALT_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(SALT_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(SALT_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.spake2_salt.len > 47)
+        if (mFlashData.len > 47)
         {
-            mFlashData.spake2_salt.len = 47;
+            mFlashData.len = 47;
         }
 
-        for (size_t i = 0; i < mFlashData.spake2_salt.len; i++)
+        for (size_t i = 0; i < mFlashData.len; i++)
         {
-            mFlashData.spake2_salt.data[i] = flash_read_byte(SALT_DATA_ADDR + i);
+            mFlashData.data[i] = flash_read_byte(SALT_DATA_ADDR + i);
         }
 
-        GetDecryptedData((struct FactoryDataSalt *)&mFlashData.spake2_salt, 
-                         (struct FactoryDataSalt *)&mFactoryData->spake2_salt, 
-                         key);
+        GetDecryptedData(&mFlashData, &mFactoryData->spake2_salt, key);
 
         mFactoryData->spake2_salt.data[mFactoryData->spake2_salt.len] = '\0';
         mFactoryData->spake2_salt.len += 1;
 
-        mFlashData.spake2_verifier.len =  flash_read_byte(VERIFIER_LEN_ADDR);
-        mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 1) << 8;
-        mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 2) << 16;
-        mFlashData.spake2_verifier.len |= flash_read_byte(VERIFIER_LEN_ADDR + 3) << 24;
+        mFlashData.len =  flash_read_byte(VERIFIER_LEN_ADDR);
+        mFlashData.len |= flash_read_byte(VERIFIER_LEN_ADDR + 1) << 8;
+        mFlashData.len |= flash_read_byte(VERIFIER_LEN_ADDR + 2) << 16;
+        mFlashData.len |= flash_read_byte(VERIFIER_LEN_ADDR + 3) << 24;
 
-        if (mFlashData.spake2_verifier.len > 255)
+        if (mFlashData.len > 255)
         {
-            mFlashData.spake2_verifier.len = 255;
+            mFlashData.len = 255;
         }
 
-        for (size_t i = 0; i < mFlashData.spake2_verifier.len; i++)
+        for (size_t i = 0; i < mFlashData.len; i++)
         {
-            mFlashData.spake2_verifier.data[i] = flash_read_byte(VERIFIER_DATA_ADDR + i);
+            mFlashData.data[i] = flash_read_byte(VERIFIER_DATA_ADDR + i);
         }
 
-        GetDecryptedData((struct FactoryDataVerifier *)&mFlashData.spake2_verifier, 
-                         (struct FactoryDataVerifier *)&mFactoryData->spake2_verifier, 
-                         key);
+        GetDecryptedData(&mFlashData, &mFactoryData->spake2_verifier, key);
 
         mFactoryData->spake2_verifier.data[mFactoryData->spake2_verifier.len] = '\0';
         mFactoryData->spake2_verifier.len += 1;
@@ -302,25 +285,6 @@ struct InternalFlashFactoryData
 
         return CHIP_NO_ERROR;
     }
-
-    // CHIP_ERROR GetFactoryDataPasscode(uint8_t *& data, size_t & dataSize)
-    // {
-    //     return CHIP_NO_ERROR;
-    // }
-
-    // CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
-    // {
-    //     data     = reinterpret_cast<uint8_t *>(PM_FACTORY_DATA_ADDRESS);
-    //     dataSize = PM_FACTORY_DATA_SIZE;
-    //     return CHIP_NO_ERROR;
-    // }
-
-    // CHIP_ERROR ProtectFactoryDataPartitionAgainstWrite()
-    // {
-    //     int ret = fprotect_area(PM_FACTORY_DATA_ADDRESS, PM_FACTORY_DATA_SIZE);
-    //     return System::MapErrorZephyr(ret);
-    //     return CHIP_NO_ERROR;
-    // }
 };
 
 struct ExternalFlashFactoryData
@@ -334,31 +298,6 @@ struct ExternalFlashFactoryData
     {
         return CHIP_NO_ERROR;
     }
-
-    // CHIP_ERROR GetFactoryDataPasscode(uint8_t *& data, size_t & dataSize)
-    // {
-    //     return CHIP_NO_ERROR;
-    // }
-
-    // CHIP_ERROR GetFactoryDataPartition(uint8_t *& data, size_t & dataSize)
-    // {
-    //     int ret = flash_read(mFlashDevice, PM_FACTORY_DATA_ADDRESS, mFactoryDataBuffer, PM_FACTORY_DATA_SIZE);
-
-    //     if (ret != 0)
-    //     {
-    //         return CHIP_ERROR_READ_FAILED;
-    //     }
-
-    //     data     = mFactoryDataBuffer;
-    //     dataSize = PM_FACTORY_DATA_SIZE;
-
-    //     return CHIP_NO_ERROR;
-    // }
-
-    // CHIP_ERROR ProtectFactoryDataPartitionAgainstWrite() { return CHIP_ERROR_NOT_IMPLEMENTED; }
-
-    // const struct device * mFlashDevice = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
-    // uint8_t mFactoryDataBuffer[2]; //PM_FACTORY_DATA_SIZE
 };
 
 template <class FlashFactoryData>
@@ -403,8 +342,8 @@ public:
     CHIP_ERROR GetEnableKey(MutableByteSpan & enableKey);
 
 private:
-    static constexpr uint16_t kFactoryDataPartitionSize    = 100; // PM_FACTORY_DATA_SIZE
-    static constexpr uint32_t kFactoryDataPartitionAddress = 100; // PM_FACTORY_DATA_ADDRESS
+    static constexpr uint16_t kFactoryDataPartitionSize    = 100;
+    static constexpr uint32_t kFactoryDataPartitionAddress = 100;
     static constexpr uint8_t kDACPrivateKeyLength          = 32;
     static constexpr uint8_t kDACPublicKeyLength           = 65;
 

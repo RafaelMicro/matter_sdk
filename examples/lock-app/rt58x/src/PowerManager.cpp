@@ -34,7 +34,7 @@ using namespace chip;
 using namespace chip::DeviceLayer;
 using namespace chip::app::Clusters;
 
-constexpr EndpointId kContactEndpoint = 1;
+constexpr EndpointId kPowerSourceEndpoint = 1;
 
 /**********************************************************
  * Variable declarations
@@ -48,7 +48,7 @@ CHIP_ERROR PowerManager::Init()
 {
     ChipLogProgress(NotSpecified, "PowerManager::Init");
     /* Init Battery Percentage Remaining, unit: 0.5%. e.g. 200 means 100% */
-    PowerSource::Attributes::BatPercentRemaining::Set(kContactEndpoint, 200);
+    PowerSource::Attributes::BatPercentRemaining::Set(kPowerSourceEndpoint, 200);
     /* simulate battery power decrease by 5% every minutes */
     sPowerTimer = xTimerCreateStatic("pow", pdMS_TO_TICKS(600000), true, nullptr, PowerTimerEventHandler,
                                      &sPowerTimerStruct);
@@ -69,6 +69,6 @@ void PowerManager::PowerTimerEventHandler(TimerHandle_t xTimer)
     }
     ChipLogProgress(NotSpecified, "Battery power Remaining: %d%%", BatteryPercentRemaining / 2);
     PlatformMgr().LockChipStack();
-    PowerSource::Attributes::BatPercentRemaining::Set(kContactEndpoint, BatteryPercentRemaining);
+    PowerSource::Attributes::BatPercentRemaining::Set(kPowerSourceEndpoint, BatteryPercentRemaining);
     PlatformMgr().UnlockChipStack();
 }

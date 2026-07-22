@@ -3,6 +3,7 @@
 #include "hosal_crypto_ecc.h"
 #include "hosal_crypto_sha256.h"
 #include "hosal_status.h"
+#include "hw_ecc_lock.h"
 /*
  *  secp256r1
  *
@@ -23,7 +24,9 @@ int rt583_ecc_public_key_gen(uint8_t * pt_pri_k, uint8_t * pt_pub_k_x, uint8_t *
     hosal_crypto_ecc_p256_t ecc_p256;
     ECPoint_P256 Public_key;
 
+
     /* initial the ECC Engine */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
 
     /* generate the publick key by */
@@ -33,6 +36,7 @@ int rt583_ecc_public_key_gen(uint8_t * pt_pri_k, uint8_t * pt_pub_k_x, uint8_t *
     ecc_p256.p_key = (uint32_t *) pt_pri_k;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
 
     memcpy(pt_pub_k_x, Public_key.x, (secp256r1_op_num << 2));
     memcpy(pt_pub_k_y, Public_key.y, (secp256r1_op_num << 2));
@@ -47,12 +51,14 @@ int rt583_ecc_shared_secert_gen(uint8_t * pt_sh_k_x, uint8_t * pt_sh_k_y, uint8_
     hosal_crypto_ecc_p256_t ecc_p256;
     ECPoint_P256 Share_key, Public_key;
 
+
     // printf("    caculate shared secret by using hardware ECDH\n");
 
     memcpy(Public_key.x, pt_pub_k_x, (secp256r1_op_num << 2));
     memcpy(Public_key.y, pt_pub_k_y, (secp256r1_op_num << 2));
 
     /* initial the curve data */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
 
     /* generate the publick key by */
@@ -62,6 +68,8 @@ int rt583_ecc_shared_secert_gen(uint8_t * pt_sh_k_x, uint8_t * pt_sh_k_y, uint8_
     ecc_p256.p_key = (uint32_t *) pt_prv_k_y;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
+
     memcpy(pt_sh_k_x, Share_key.x, (secp256r1_op_num << 2));
     memcpy(pt_sh_k_y, Share_key.y, (secp256r1_op_num << 2));
 

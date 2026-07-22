@@ -3,6 +3,7 @@
 #include "hosal_crypto_ecc.h"
 #include "hosal_crypto_sha256.h"
 #include "hosal_status.h"
+#include "hw_ecc_lock.h"
 static void endian_swap(uint8_t * dst, uint8_t * src, uint32_t size)
 {
     uint32_t i = 0;
@@ -22,10 +23,12 @@ int rt583_ecdsa_p256_sign(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t 
     uint8_t buf[32];
     Signature_P256 data_signature;
 
+
     /* swap the hash value endian */
     endian_swap(buf, hash, sizeof(buf));
 
     /* initial the ECC Engine */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
 
     /*ecdsa signature.*/
@@ -36,6 +39,7 @@ int rt583_ecdsa_p256_sign(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_t 
     ecc_p256.p_k = (uint32_t*) mod_k;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
 
     memcpy(s_r, data_signature.r, (secp256r1_op_num << 2));
     memcpy(s_s, data_signature.s, (secp256r1_op_num << 2));
@@ -51,6 +55,7 @@ int rt583_ecdsa_p256_verify(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_
     Signature_P256 data_signature;
     ECPoint_P256 Public_key;
 
+
     /* swap the hash value endian */
     endian_swap(buf, hash, sizeof(buf));
 
@@ -62,6 +67,7 @@ int rt583_ecdsa_p256_verify(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_
     /*ecdsa signature.*/
     hosal_crypto_ecc_p256_t ecc_p256;
 
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECDA_CURVE_P256_VERIFY_INIT);
 
     ecc_p256.crypto_operation = HOSAL_ECDA_P256_VERIFY;
@@ -70,6 +76,7 @@ int rt583_ecdsa_p256_verify(uint8_t * s_r, uint8_t * s_s, uint8_t * hash, uint8_
     ecc_p256.base = &Public_key;
 
     status = hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
 
     return ((int) status);
 }

@@ -85,9 +85,6 @@ private:
     void NotifyChipConnectionClosed(BLE_CONNECTION_OBJECT conId) override;
 
 
-    CHIP_ERROR HandleThreadStateChange(const ChipDeviceEvent * event);
-    CHIP_ERROR HandleOperationalNetworkEnabled(const ChipDeviceEvent * event);
-
     // ===== Members for internal use by the following friends.
 
     friend BLEManager & BLEMgr(void);
@@ -101,8 +98,6 @@ private:
         kRestartAdvertising     = 0x0008,
         kRTBLEStackInitialized  = 0x0010,
         kDeviceNameSet          = 0x0020,
-        kAdvertisingLink0       = 0x0040,
-        kAdvertisingLink1       = 0x0080,
     };
     BitFlags<BLEManagerImpl::Flags> mFlags;
 
@@ -113,8 +108,6 @@ private:
         kUnusedIndex         = 0xFF,
     };
 
-    // The advertising set handle allocated from Bluetooth stack.
-    uint8_t advertising_set_handle = 0xff;
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     PacketBufferHandle c3AdditionalDataBufferHandle;
 #endif
@@ -122,8 +115,6 @@ private:
     CHIPoBLEServiceMode mServiceMode;
     char mDeviceName[kMaxDeviceNameLength + 1];
     void DriveBLEState(void);
-    CHIP_ERROR MapBLEError(int bleErr);
-    CHIP_ERROR ConfigureAdvertising(void);
     CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
 
@@ -131,7 +122,6 @@ private:
     static ble_err_t ble_service_data_cb(void *p_param);
 
     static void ble_evt_task(void * arg);
-    static void ble_evt_indication_cb(uint32_t data_len);
     static void ble_evt_handler(void *p_param);
     static void ble_svcs_matter_evt_handler(void *p_matter_evt_param);
 

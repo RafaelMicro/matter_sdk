@@ -37,7 +37,7 @@ StaticTask_t shellTaskStruct;
 void MatterShellTask(void * args)
 {
     cmd_misc_init();
-    cmd_otcli_init();
+    // cmd_otcli_init();
     cmd_rafael_init();
     chip::Shell::Engine::Root().RunMainLoop();
 }

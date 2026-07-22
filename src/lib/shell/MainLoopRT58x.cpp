@@ -15,7 +15,6 @@
  *    limitations under the License.
  */
 
-#include "matter_shell.h"
 #include "streamer.h"
 #include <lib/shell/Engine.h>
 #include <lib/support/CHIPMem.h>
@@ -35,10 +34,9 @@ namespace {
 constexpr const char kShellPrompt[] = "CHIP_Cli > ";
 char line_buf[CHIP_SHELL_MAX_LINE_SIZE];
 // max > 1
-void ReadLine(char * buffer, size_t max)
+size_t ReadLine(char * buffer, size_t max)
 {
     size_t line_sz = 0;
-    uint8_t cnt;
 
     // Read in characters until we get a line ending or EOT.
     for (bool done = false; !done;)
@@ -50,52 +48,50 @@ void ReadLine(char * buffer, size_t max)
             break;
         }
 
-        //chip::WaitForShellActivity();
-        cnt = streamer_read(streamer_get(), buffer + line_sz, 1);
-        if (cnt == 0)
+        if (streamer_read(streamer_get(), buffer + line_sz, 1) != 1)
         {
             continue;
         }
+
         // Process character we just read.
-        while(cnt--)
+        switch (buffer[line_sz])
         {
-            // printf("[%d] %d\r\n", line_sz, buffer[line_sz]);
-            // line_sz++;
-            switch (buffer[line_sz])
+        case '\r':
+        case '\n':
+            streamer_printf(streamer_get(), "\r\n");
+            buffer[line_sz] = '\0';
+            line_sz++;
+            done = true;
+            break;
+        case 0x04:
+            // Do not accept EOT character (i.e. don't increment line_sz).
+            // Stop the read loop if the input is still empty.
+            if (line_sz == 0u)
             {
-                case '\r':
-                case '\n':
-                    streamer_printf(streamer_get(), "\r\n");
-                    buffer[line_sz] = '\0';
-                    line_sz++;
-                    done = true;
-                    break;
-                case 0x03:
-                case 0x04:
-                    streamer_printf(streamer_get(), "\r\n");
-                    memset(buffer, 0, max);
-                    line_sz = 0;
-                    done = true;
-                    break;
-                case 0x08:
-                case 0x7F:
-                    // Do not accept backspace character (i.e. don't increment line_sz) and remove 1 additional character if it exists.
-                    if (line_sz >= 1u)
-                    {
-                        streamer_printf(streamer_get(), "\b \b");
-                        line_sz--;
-                    }
-                    break;
-                default:
-                    if (isprint(static_cast<int>(buffer[line_sz])) || buffer[line_sz] == '\t')
-                    {
-                        streamer_printf(streamer_get(), "%c", buffer[line_sz]);
-                        line_sz++;
-                    }
-                    break;
+                done = true;
             }
+            break;
+        case 0x08:
+        case 0x7F:
+            // Do not accept backspace character (i.e. don't increment line_sz) and remove 1 additional character if it exists.
+            if (line_sz >= 1u)
+            {
+                streamer_printf(streamer_get(), "\b \b");
+                line_sz--;
+            }
+            break;
+        default:
+            if (isprint(static_cast<int>(buffer[line_sz])) || buffer[line_sz] == '\t')
+            {
+                streamer_printf(streamer_get(), "%c", buffer[line_sz]);
+                line_sz++;
+            }
+            break;
         }
     }
+
+    // Return the length of the buffer including the terminating null byte.
+    return line_sz;
 }
 
 bool IsSeparator(char ch)
@@ -143,9 +139,7 @@ int TokenizeLine(char * buffer, char ** tokens, int max_tokens)
         else if (IsSeparator(buffer[i]))
         {
             buffer[i] = 0;
-            // Don't treat the previous character as a separator if this one is 0
-            // otherwise the trailing space will become a token
-            if (!IsSeparator(buffer[i + 1]) && buffer[i + 1] != 0)
+            if (!IsSeparator(buffer[i + 1]))
             {
                 tokens[cursor++] = &buffer[i + 1];
             }
@@ -211,6 +205,7 @@ void Engine::RunMainLoop()
 #else
         ProcessShellLine(reinterpret_cast<intptr_t>(line_buf));
 #endif
+        vTaskDelay(20);
     }
 }
 

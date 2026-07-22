@@ -17,7 +17,7 @@
             "request": "attach",
             "servertype": "external",
             "gdbTarget": "127.0.0.1:50000",
-            "gdbPath": "${workspaceFolder}/toolchain/arm/Linux/bin/arm-none-eabi-gdb",
+            "gdbPath": "${workspaceFolder}/.vscode/arm-none-eabi-gdb.sh",
             "executable": "${workspaceFolder}/out/${input:exampleproject}/${input:board}/${input:board}-${input:exampleproject}-example.out",
             "showDevDebugOutput": "raw",
             "console": "integratedTerminal",
@@ -41,7 +41,7 @@
         {
             "type": "pickString",
             "id": "exampleproject",
-            "description": "Which example do you want to create?",
+            "description": "Which example do you want to debug?",
             "options": [
                 "contact-sensor-app",
                 "humidity-sensor-app",

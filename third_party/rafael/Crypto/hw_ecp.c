@@ -3,6 +3,26 @@
 #include "hosal_crypto_ecc.h"
 #include "hosal_crypto_sha256.h"
 #include "hosal_status.h"
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "hw_ecc_lock.h"
+
+static SemaphoreHandle_t s_ecc_hw_mutex = NULL;
+static StaticSemaphore_t s_ecc_hw_mutex_buf;
+
+void hw_ecc_lock(void)
+{
+    if (s_ecc_hw_mutex == NULL)
+    {
+        s_ecc_hw_mutex = xSemaphoreCreateMutexStatic(&s_ecc_hw_mutex_buf);
+    }
+    xSemaphoreTake(s_ecc_hw_mutex, portMAX_DELAY);
+}
+
+void hw_ecc_unlock(void)
+{
+    xSemaphoreGive(s_ecc_hw_mutex);
+}
 /*
  *  secp256r1
  *
@@ -26,10 +46,12 @@ int rt583_spake2p_compute_L(uint8_t * L, uint8_t * w1)
     ECPoint_P256 Result_point;
     uint8_t w1_le[32];
 
+
     /*change w1 to little endian*/
     buffer_endian_exchange((uint32_t *) w1_le, (uint32_t *) w1, 8);
 
     /* initial the ECC Engine */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     ecc_p256.crypto_operation = HOSAL_GFP_P256_MULTI;
     ecc_p256.result = (ECPoint_P256*) &Result_point;
@@ -37,6 +59,7 @@ int rt583_spake2p_compute_L(uint8_t * L, uint8_t * w1)
     ecc_p256.p_key = (uint32_t *) w1_le;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
 
     buffer_endian_exchange((uint32_t *) L, (uint32_t *) Result_point.x, 8);
     buffer_endian_exchange((uint32_t *) (L + (secp256r1_op_num << 2)), (uint32_t *) Result_point.y, 8);
@@ -52,6 +75,7 @@ int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x
     hosal_crypto_ecc_p256_t ecc_p256_1, ecc_p256_2, ecc_p256_3;
     ECPoint_P256 R, P, Q, tmp_1, tmp_2;
 
+
     /* init the P, Q values*/
     memcpy(P.x, P_x, (secp256r1_op_num << 2));
     memcpy(P.y, P_y, (secp256r1_op_num << 2));
@@ -60,6 +84,7 @@ int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x
 
     /* (tmp_1 = m * P) */
     /* initial the ECC Engine */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     /* generate the publick key by */
 
@@ -89,6 +114,7 @@ int rt583_ecc_multi_add(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x
     ecc_p256_3.p_point_x2 = (ECPoint_P256*) &tmp_2;
 
     hosal_crypto_ecc_p256(&ecc_p256_3);
+    hw_ecc_unlock();
 
     memcpy(R_x, R.x, (secp256r1_op_num << 2));
     memcpy(R_y, R.y, (secp256r1_op_num << 2));
@@ -105,9 +131,11 @@ int rt583_ecc_mul(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint
     hosal_crypto_ecc_p256_t ecc_p256;
     ECPoint_P256 R, P;
 
+
     memcpy(P.x, P_x, (secp256r1_op_num << 2));
     memcpy(P.y, P_y, (secp256r1_op_num << 2));
 
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     ecc_p256.crypto_operation = HOSAL_GFP_P256_MULTI;
     ecc_p256.result = (ECPoint_P256*) &R;
@@ -115,6 +143,7 @@ int rt583_ecc_mul(uint8_t * R_x, uint8_t * R_y, uint8_t * m, uint8_t * P_x, uint
     ecc_p256.p_key = (uint32_t *) m;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
 
     memcpy(R_x, R.x, (secp256r1_op_num << 2));
     memcpy(R_y, R.y, (secp256r1_op_num << 2));
@@ -130,18 +159,18 @@ int rt583_spake2p_compute_Z(uint8_t * Z_x, uint8_t * Z_y, uint8_t * y, uint8_t *
     hosal_crypto_ecc_p256_t ecc_p256_1, ecc_p256_2, ecc_p256_3;
     ECPoint_P256 Z, X, M, tmp_1, tmp_2;
 
+
     /* init the X, M values*/
     memcpy(X.x, X_x, (secp256r1_op_num << 2));
     memcpy(X.y, X_y, (secp256r1_op_num << 2));
     memcpy(M.x, M_x, (secp256r1_op_num << 2));
     memcpy(M.y, M_y, (secp256r1_op_num << 2));
 
-    hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
-
     /*Invert M...*/ /*Invert M = (-M).  Invert M is little endian */
     gfp_point_p256_invert(&M, &M);
 
     /*so M now is -w0*M,  little endian */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     ecc_p256_1.crypto_operation = HOSAL_GFP_P256_MULTI;
     ecc_p256_1.result = (ECPoint_P256*) &M;
@@ -167,7 +196,7 @@ int rt583_spake2p_compute_Z(uint8_t * Z_x, uint8_t * Z_y, uint8_t * y, uint8_t *
     ecc_p256_3.p_key = (uint32_t *) y;
 
     hosal_crypto_ecc_p256(&ecc_p256_3);
-
+    hw_ecc_unlock();
 
     memcpy(Z_x, Z.x, (secp256r1_op_num << 2));
     memcpy(Z_y, Z.y, (secp256r1_op_num << 2));
@@ -181,10 +210,12 @@ int rt583_spake2p_verifier_V(uint8_t * V_x, uint8_t * V_y, uint8_t * y, uint8_t 
     hosal_crypto_ecc_p256_t ecc_p256;
     ECPoint_P256 V, L;
 
+
     /* init the X, M values*/
     memcpy(L.x, L_x, (secp256r1_op_num << 2));
     memcpy(L.y, L_y, (secp256r1_op_num << 2));
 
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     ecc_p256.crypto_operation = HOSAL_GFP_P256_MULTI;
     ecc_p256.result = (ECPoint_P256*) &V;
@@ -192,21 +223,9 @@ int rt583_spake2p_verifier_V(uint8_t * V_x, uint8_t * V_y, uint8_t * y, uint8_t 
     ecc_p256.p_key = (uint32_t *) y;
 
     hosal_crypto_ecc_p256(&ecc_p256);
+    hw_ecc_unlock();
     memcpy(V_x, V.x, (secp256r1_op_num << 2));
     memcpy(V_y, V.y, (secp256r1_op_num << 2));
-
-#if 0
-    {
-        int i;
-        printf("verifier V point:\n");
-        for (i = 0; i < 32; i++)
-            printf("%2x-", V_x[i]);
-        printf("\n");
-        for (i = 0; i < 32; i++)
-            printf("%2x-", V_y[i]);
-        printf("\n");
-    }
-#endif
 
     return 0;
 }
@@ -218,6 +237,7 @@ int rt583_spake2p_prover_V(uint8_t * V_x, uint8_t * V_y, uint8_t * w0, uint8_t *
     hosal_crypto_ecc_p256_t ecc_p256_1, ecc_p256_2, ecc_p256_3;
     ECPoint_P256 V, Y, N, tmp_1, tmp_2;
 
+
     /* init the X, M values*/
     memcpy(Y.x, Y_x, (secp256r1_op_num << 2));
     memcpy(Y.y, Y_y, (secp256r1_op_num << 2));
@@ -226,10 +246,10 @@ int rt583_spake2p_prover_V(uint8_t * V_x, uint8_t * V_y, uint8_t * w0, uint8_t *
 
 
     /*Invert N...*/ /*Invert N = (-N).  Invert M is little endian */
-    hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     gfp_point_p256_invert(&N, &N);
 
     /*so M now is -w0*N,  little endian */
+    hw_ecc_lock();
     hosal_crypto_ecc_init(HOSAL_ECC_CURVE_P256_INIT);
     ecc_p256_1.crypto_operation = HOSAL_GFP_P256_MULTI;
     ecc_p256_1.result = (ECPoint_P256*) &N;
@@ -254,6 +274,7 @@ int rt583_spake2p_prover_V(uint8_t * V_x, uint8_t * V_y, uint8_t * w0, uint8_t *
     ecc_p256_3.p_key = (uint32_t *) w1;
 
     hosal_crypto_ecc_p256(&ecc_p256_3);
+    hw_ecc_unlock();
 
 
     memcpy(V_x, V.x, (secp256r1_op_num << 2));

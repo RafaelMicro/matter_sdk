@@ -1,7 +1,6 @@
 /*
  *
  *    Copyright (c) 2020 Project CHIP Authors
- *    Copyright (c) 2022 Silabs.
  *    All rights reserved.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -312,6 +311,15 @@ void MatterFotaInit(void)
         flash_erase(FLASH_ERASE_SECTOR, FOTA_UPDATE_BANK_INFO_ADDRESS);
         taskEXIT_CRITICAL();
     }
+    else
+    {
+        uint32_t bootreason = 0;
+        ConfigurationMgr().GetBootReason(bootreason);
+        if(bootreason == 5)
+        {
+            ConfigurationMgr().StoreBootReason(1);//kPowerOnReboot
+        }
+    }
 }
 void MatterNetworkInit(void)
 {
@@ -354,7 +362,7 @@ void DoFactoryReset(intptr_t arg)
         }
     }
 #endif
-    ConnectivityMgr().ErasePersistentInfo();
+    //ConnectivityMgr().ErasePersistentInfo();
 #endif
 #if 1
     vTaskSuspendAll();

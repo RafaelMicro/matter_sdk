@@ -48,6 +48,8 @@ jobs:
                 mkdir -p $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build contact-sensor-app example
+              id: build_contact_sensor_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: contact-sensor-app
@@ -57,6 +59,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build humidity-sensor-app example
+              id: build_humidity_sensor_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: humidity-sensor-app
@@ -66,6 +70,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build light-switch-app example
+              id: build_light_switch_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: light-switch-app
@@ -75,6 +81,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build lighting-app example
+              id: build_lighting_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: lighting-app
@@ -84,6 +92,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build lighting-zigbee example
+              id: build_lighting_zigbee
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: lighting-zigbee
@@ -93,6 +103,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build lock-app example
+              id: build_lock_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: lock-app
@@ -102,6 +114,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build occupancy-sensor-app example
+              id: build_occupancy_sensor_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: occupancy-sensor-app
@@ -111,6 +125,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build smart-plug-app example
+              id: build_smart_plug_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: smart-plug-app
@@ -120,6 +136,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build smoke-alarm-app example
+              id: build_smoke_alarm_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: smoke-alarm-app
@@ -129,6 +147,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build temperature-measurement-app example
+              id: build_temperature_measurement_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: temperature-measurement-app
@@ -138,6 +158,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build thermostat example
+              id: build_thermostat
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: thermostat
@@ -147,6 +169,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build water-valve-app example
+              id: build_water_valve_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: water-valve-app
@@ -156,6 +180,8 @@ jobs:
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
             - name: Build window-app example
+              id: build_window_app
+              continue-on-error: true
               uses: ./.github/actions/build-example
               with:
                 example_name: window-app
@@ -164,7 +190,38 @@ jobs:
                 upload_bin_path: $UPLOAD_FOLDER/$BIN_FOLDER
                 upload_size_path: $UPLOAD_FOLDER/$SIZE_FOLDER
 
+            - name: Check all example builds succeeded
+              if: always()
+              env:
+                contact_sensor_app: ${{ steps.build_contact_sensor_app.outcome }}
+                humidity_sensor_app: ${{ steps.build_humidity_sensor_app.outcome }}
+                light_switch_app: ${{ steps.build_light_switch_app.outcome }}
+                lighting_app: ${{ steps.build_lighting_app.outcome }}
+                lighting_zigbee: ${{ steps.build_lighting_zigbee.outcome }}
+                lock_app: ${{ steps.build_lock_app.outcome }}
+                occupancy_sensor_app: ${{ steps.build_occupancy_sensor_app.outcome }}
+                smart_plug_app: ${{ steps.build_smart_plug_app.outcome }}
+                smoke_alarm_app: ${{ steps.build_smoke_alarm_app.outcome }}
+                temperature_measurement_app: ${{ steps.build_temperature_measurement_app.outcome }}
+                thermostat: ${{ steps.build_thermostat.outcome }}
+                water_valve_app: ${{ steps.build_water_valve_app.outcome }}
+                window_app: ${{ steps.build_window_app.outcome }}
+              run: |
+                failed=0
+                for name in contact_sensor_app humidity_sensor_app light_switch_app lighting_app lighting_zigbee lock_app occupancy_sensor_app smart_plug_app smoke_alarm_app temperature_measurement_app thermostat water_valve_app window_app; do
+                  outcome="${!name}"
+                  echo "$name: $outcome"
+                  if [ "$outcome" != "success" ]; then
+                    failed=1
+                  fi
+                done
+                if [ "$failed" -eq 1 ]; then
+                  echo "One or more example builds failed"
+                  exit 1
+                fi
+
             - name: Clean out build output
+              if: always()
               run: rm -rf ./out
 
             - name: Uploading Files

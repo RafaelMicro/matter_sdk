@@ -1,4 +1,17 @@
 [![Rafael Micro](./rafael_docs/images/rafael_logo.jpg)](https://www.rafaelmicro.com/)
+
+> # ⚠️ This repository is archived and no longer maintained
+>
+> Starting from **v1.6.0.0**, the Rafael Matter SDK has moved to a new
+> repository:
+>
+> ### 👉 https://github.com/RafaelMicro/Rafael_Matter_SDK
+>
+> This repository is kept read-only for reference; its final release is
+> **v1.5.1.0**. All new development, bug fixes, releases and support happen in
+> the new repository. Please migrate your work there — issues and pull requests
+> opened here will not be reviewed.
+
 ## Rafael RT58x Matter SDK
 
 Welcome to the Rafael RT58x Matter SDK github repo. It is built on top of the [Matter open source SDK](https://github.com/project-chip/connectedhomeip/) and added related components e.g., RT58x RF library(thread/BLE), system/peripheral driver... in this repo to help the user to build the Matter application with RT58x platform.
